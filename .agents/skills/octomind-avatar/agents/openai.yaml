@@ -1,0 +1,4 @@
+interface:
+  display_name: "Avatar Octomind"
+  short_description: "Crea avatares coherentes con el estilo Octomind"
+  default_prompt: "Usa $octomind-avatar para convertir este retrato en un avatar y agregarlo al selector de narrador."

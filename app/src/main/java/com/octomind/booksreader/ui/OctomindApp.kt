@@ -1,0 +1,2036 @@
+package com.octomind.booksreader.ui
+
+import android.net.Uri
+import android.graphics.BitmapFactory
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.AutoStories
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Remove
+import androidx.compose.material.icons.rounded.UploadFile
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.octomind.booksreader.R
+import com.octomind.booksreader.domain.BookSummary
+import com.octomind.booksreader.domain.AmbientIntensity
+import com.octomind.booksreader.domain.FocusNavigation
+import com.octomind.booksreader.domain.FocusPresentation
+import com.octomind.booksreader.domain.NarratorAvatar
+import com.octomind.booksreader.domain.PageTheme
+import com.octomind.booksreader.domain.ReaderFontStyle
+import com.octomind.booksreader.domain.ReadingBlock
+import com.octomind.booksreader.domain.ReadingMode
+import com.octomind.booksreader.domain.ReadingParagraph
+import com.octomind.booksreader.domain.ReadingSessionSummary
+import com.octomind.booksreader.domain.ReadingAmbience
+import com.octomind.booksreader.domain.ReadingAmbienceSelector
+import com.octomind.booksreader.ui.theme.ReaderPageTheme
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlin.math.roundToInt
+
+@Composable
+fun OctomindApp(viewModel: OctomindViewModel = viewModel()) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> viewModel.resumeForForeground()
+                Lifecycle.Event.ON_STOP -> viewModel.pauseForBackground()
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    LaunchedEffect(state.message) {
+        state.message?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            viewModel.consumeMessage()
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        when (val screen = state.screen) {
+            AppScreen.Starting -> LoadingScreen()
+            AppScreen.Onboarding -> OnboardingScreen(onConfirm = viewModel::confirmAdult)
+            AppScreen.Library -> LibraryScreen(
+                books = state.books,
+                busy = state.busy,
+                onImport = viewModel::importBook,
+                onOpen = viewModel::openBook,
+                onDelete = viewModel::deleteBook,
+            )
+            is AppScreen.Reader -> ReaderScreen(
+                state = screen.state,
+                onBack = viewModel::finishReader,
+                onToggleFocus = viewModel::toggleFocus,
+                onMoveBlock = viewModel::moveBlock,
+                onVisibleParagraph = viewModel::setVisibleParagraph,
+                onPageTheme = viewModel::updatePageTheme,
+                onFontStyle = viewModel::updateFontStyle,
+                onFontSize = viewModel::updateFontSize,
+                onFocusDimming = viewModel::updateFocusDimming,
+                onShowFocusMascot = viewModel::updateShowFocusMascot,
+                onFocusPresentation = viewModel::updateFocusPresentation,
+                onNarratorAvatar = viewModel::updateNarratorAvatar,
+                onImportCustomAvatar = viewModel::importCustomNarratorAvatar,
+                onDeleteCustomAvatar = viewModel::deleteCustomNarratorAvatar,
+                onReaderControlsExpanded = viewModel::updateReaderControlsExpanded,
+                onAmbientIntensity = viewModel::updateAmbientIntensity,
+                onNarratorGestureLearned = viewModel::dismissNarratorGestureHint,
+            )
+            is AppScreen.SessionResult -> SessionResultScreen(
+                summary = screen.summary,
+                onFinish = viewModel::returnToLibrary,
+            )
+        }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(16.dp),
+        )
+    }
+}
+
+@Composable
+private fun LoadingScreen() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            CircularProgressIndicator()
+            Spacer(Modifier.height(16.dp))
+            Text(stringResource(R.string.loading), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun OnboardingScreen(onConfirm: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 28.dp, vertical = 24.dp),
+        verticalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Column {
+            Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(50)) {
+                Text(
+                    text = stringResource(R.string.onboarding_badge),
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                    letterSpacing = 1.2.sp,
+                )
+            }
+            Spacer(Modifier.height(30.dp))
+            Text(stringResource(R.string.onboarding_title), style = MaterialTheme.typography.headlineLarge)
+            Spacer(Modifier.height(16.dp))
+            Text(
+                stringResource(R.string.onboarding_body),
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Normal,
+            )
+        }
+
+        Column {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                shape = RoundedCornerShape(22.dp),
+            ) {
+                Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.Top) {
+                    Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(14.dp))
+                    Column {
+                        Text(stringResource(R.string.adult_only_title), fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            stringResource(R.string.adult_only_body),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(18.dp))
+            Button(onClick = onConfirm, modifier = Modifier.fillMaxWidth().height(56.dp)) {
+                Text(stringResource(R.string.confirm_adult))
+            }
+            Spacer(Modifier.height(12.dp))
+            Text(
+                stringResource(R.string.privacy_note),
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 13.sp,
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LibraryScreen(
+    books: List<BookSummary>,
+    busy: Boolean,
+    onImport: (Uri) -> Unit,
+    onOpen: (String) -> Unit,
+    onDelete: (String) -> Unit,
+) {
+    var pendingDelete by remember { mutableStateOf<BookSummary?>(null) }
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let(onImport)
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(stringResource(R.string.library_brand), fontWeight = FontWeight.Bold)
+                        Text(
+                            stringResource(R.string.library_title),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                },
+                actions = {
+                    FilledIconButton(
+                        onClick = { launcher.launch(arrayOf("text/plain", "application/epub+zip")) },
+                        enabled = !busy,
+                    ) {
+                        if (busy) {
+                            CircularProgressIndicator(Modifier.size(22.dp), color = MaterialTheme.colorScheme.onPrimary)
+                        } else {
+                            Icon(Icons.Rounded.Add, stringResource(R.string.import_book))
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFF3D293)),
+            )
+        },
+    ) { padding ->
+        if (books.isEmpty()) {
+            EmptyLibrary(
+                modifier = Modifier.padding(padding),
+                onImport = { launcher.launch(arrayOf("text/plain", "application/epub+zip")) },
+            )
+        } else {
+            BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(padding)) {
+                val columns = if (maxWidth >= 600.dp) 5 else 3
+                val horizontalPadding = 16.dp
+                val spacing = 12.dp
+                val coverWidth = (maxWidth - horizontalPadding * 2 - spacing * (columns - 1)) / columns
+                val coverHeight = coverWidth * 1.48f
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize().woodLibraryBackground(),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp),
+                ) {
+                    items(books.chunked(columns), key = { row -> row.joinToString("|") { it.id } }) { rowBooks ->
+                        BookshelfRow(
+                            books = rowBooks,
+                            coverWidth = coverWidth,
+                            coverHeight = coverHeight,
+                            onOpen = onOpen,
+                            onDelete = { pendingDelete = it },
+                        )
+                    }
+                    item { Spacer(Modifier.height(32.dp)) }
+                }
+            }
+        }
+    }
+
+    pendingDelete?.let { book ->
+        AlertDialog(
+            onDismissRequest = { pendingDelete = null },
+            title = { Text(stringResource(R.string.delete_title)) },
+            text = { Text(stringResource(R.string.delete_body)) },
+            confirmButton = {
+                TextButton(onClick = { onDelete(book.id); pendingDelete = null }) {
+                    Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDelete = null }) { Text(stringResource(R.string.cancel)) }
+            },
+        )
+    }
+}
+
+@Composable
+private fun EmptyLibrary(modifier: Modifier = Modifier, onImport: () -> Unit) {
+    Box(modifier = modifier.fillMaxSize().woodLibraryBackground().padding(28.dp), contentAlignment = Alignment.Center) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = Color(0xFFF9E8C5).copy(alpha = 0.96f),
+            shadowElevation = 8.dp,
+        ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(24.dp),
+        ) {
+            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
+                Icon(
+                    Icons.Rounded.AutoStories,
+                    contentDescription = null,
+                    modifier = Modifier.padding(22.dp).size(38.dp),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+            Spacer(Modifier.height(22.dp))
+            Text(stringResource(R.string.empty_library_title), style = MaterialTheme.typography.headlineMedium)
+            Spacer(Modifier.height(10.dp))
+            Text(
+                stringResource(R.string.empty_library_body),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(24.dp))
+            Button(onClick = onImport) {
+                Icon(Icons.Rounded.UploadFile, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.import_book))
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(stringResource(R.string.import_formats), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        }
+    }
+}
+
+@Composable
+private fun BookshelfRow(
+    books: List<BookSummary>,
+    coverWidth: androidx.compose.ui.unit.Dp,
+    coverHeight: androidx.compose.ui.unit.Dp,
+    onOpen: (String) -> Unit,
+    onDelete: (BookSummary) -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(coverHeight + 42.dp)
+            .woodShelfPanel(),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomStart)
+                .padding(start = 16.dp, end = 16.dp, bottom = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            books.forEach { book ->
+                BookCover(
+                    book = book,
+                    onOpen = { onOpen(book.id) },
+                    onDelete = { onDelete(book) },
+                    modifier = Modifier.width(coverWidth).height(coverHeight),
+                )
+            }
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(20.dp)
+                .align(Alignment.BottomCenter)
+                .shadow(8.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color(0xFFF0B35C), Color(0xFF9B531C), Color(0xFF71340F)),
+                    ),
+                ),
+        )
+    }
+}
+
+@Composable
+private fun BookCover(
+    book: BookSummary,
+    onOpen: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val palette = bookCoverPalette(book.title)
+    val coverBitmap by produceState<ImageBitmap?>(null, book.coverImagePath) {
+        value = withContext(Dispatchers.IO) {
+            book.coverImagePath?.let(BitmapFactory::decodeFile)?.asImageBitmap()
+        }
+    }
+    Surface(
+        modifier = modifier
+            .shadow(7.dp, RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp))
+            .clickable(
+                onClickLabel = stringResource(R.string.open_book, book.title),
+                onClick = onOpen,
+            ),
+        shape = RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp),
+        color = palette.first,
+    ) {
+        Box(Modifier.fillMaxSize()) {
+            if (coverBitmap != null) {
+                Image(
+                    bitmap = coverBitmap!!,
+                    contentDescription = stringResource(R.string.book_cover, book.title),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else {
+                Box(
+                Modifier
+                    .fillMaxSize()
+                    .drawBehind {
+                        drawCircle(
+                            color = palette.second.copy(alpha = 0.09f),
+                            radius = size.minDimension * 0.55f,
+                            center = androidx.compose.ui.geometry.Offset(size.width * 0.82f, size.height * 0.68f),
+                        )
+                        drawLine(
+                            color = palette.second.copy(alpha = 0.28f),
+                            start = androidx.compose.ui.geometry.Offset(size.width * 0.12f, 0f),
+                            end = androidx.compose.ui.geometry.Offset(size.width * 0.12f, size.height),
+                            strokeWidth = 2.dp.toPx(),
+                        )
+                    },
+                )
+                Column(
+                modifier = Modifier.fillMaxSize().padding(start = 14.dp, top = 28.dp, end = 10.dp, bottom = 18.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    book.title,
+                    color = palette.second,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = LoraFontFamily,
+                    fontSize = 14.sp,
+                    lineHeight = 17.sp,
+                    maxLines = 5,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(Modifier.weight(1f))
+                Icon(
+                    Icons.Rounded.AutoStories,
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                    tint = palette.second.copy(alpha = 0.78f),
+                )
+                book.author?.let {
+                    Spacer(Modifier.height(5.dp))
+                    Text(
+                        it,
+                        fontSize = 9.sp,
+                        lineHeight = 11.sp,
+                        color = palette.second.copy(alpha = 0.82f),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Spacer(Modifier.height(9.dp))
+                LinearProgressIndicator(
+                    progress = { book.progress },
+                    modifier = Modifier.fillMaxWidth().height(5.dp),
+                    color = palette.second,
+                    trackColor = palette.second.copy(alpha = 0.2f),
+                )
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    stringResource(R.string.cover_progress, (book.progress * 100).roundToInt()),
+                    fontSize = 9.sp,
+                    color = palette.second,
+                )
+                }
+            }
+            IconButton(
+                onClick = onDelete,
+                modifier = Modifier.align(Alignment.TopEnd).size(32.dp),
+            ) {
+                Icon(
+                    Icons.Rounded.DeleteOutline,
+                    stringResource(R.string.delete_book, book.title),
+                    tint = palette.second.copy(alpha = 0.76f),
+                    modifier = Modifier.size(17.dp),
+                )
+            }
+        }
+    }
+}
+
+private fun bookCoverPalette(title: String): Pair<Color, Color> {
+    val palettes = listOf(
+        Color(0xFF174C5B) to Color(0xFFF6E8C8),
+        Color(0xFF7A2731) to Color(0xFFFFE9C6),
+        Color(0xFFE8D8AA) to Color(0xFF3C3528),
+        Color(0xFF26355E) to Color(0xFFF4D06F),
+        Color(0xFF4D6641) to Color(0xFFF4E7C5),
+        Color(0xFF6B4B77) to Color(0xFFFFE9D6),
+    )
+    return palettes[(title.hashCode() and Int.MAX_VALUE) % palettes.size]
+}
+
+private fun Modifier.woodLibraryBackground(): Modifier = drawBehind {
+    drawRect(
+        brush = Brush.verticalGradient(
+            listOf(Color(0xFFD98B32), Color(0xFFB56521), Color(0xFFD18A35)),
+        ),
+    )
+    val grain = 28.dp.toPx()
+    var x = 8.dp.toPx()
+    while (x < size.width) {
+        drawLine(
+            color = Color(0xFF6F3513).copy(alpha = 0.16f),
+            start = androidx.compose.ui.geometry.Offset(x, 0f),
+            end = androidx.compose.ui.geometry.Offset(x + 8.dp.toPx(), size.height),
+            strokeWidth = 1.dp.toPx(),
+        )
+        x += grain
+    }
+}
+
+private fun Modifier.woodShelfPanel(): Modifier = drawBehind {
+    drawRect(
+        brush = Brush.verticalGradient(
+            listOf(Color(0xFFB96825), Color(0xFFD98A33), Color(0xFFAA591D)),
+        ),
+    )
+    repeat(6) { index ->
+        val y = size.height * (index + 1) / 7f
+        drawLine(
+            color = Color(0xFF6E3513).copy(alpha = 0.14f),
+            start = androidx.compose.ui.geometry.Offset(0f, y),
+            end = androidx.compose.ui.geometry.Offset(size.width, y + 5.dp.toPx()),
+            strokeWidth = 1.dp.toPx(),
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ReaderScreen(
+    state: ReaderState,
+    onBack: () -> Unit,
+    onToggleFocus: () -> Unit,
+    onMoveBlock: (Int) -> Unit,
+    onVisibleParagraph: (Int) -> Unit,
+    onPageTheme: (PageTheme) -> Unit,
+    onFontStyle: (ReaderFontStyle) -> Unit,
+    onFontSize: (Int) -> Unit,
+    onFocusDimming: (Int) -> Unit,
+    onShowFocusMascot: (Boolean) -> Unit,
+    onFocusPresentation: (FocusPresentation) -> Unit,
+    onNarratorAvatar: (NarratorAvatar) -> Unit,
+    onImportCustomAvatar: (Uri) -> Unit,
+    onDeleteCustomAvatar: () -> Unit,
+    onReaderControlsExpanded: (Boolean) -> Unit,
+    onAmbientIntensity: (AmbientIntensity) -> Unit,
+    onNarratorGestureLearned: () -> Unit,
+) {
+    ReaderPageTheme(state.settings.pageTheme) {
+        ReaderScreenContent(
+            state = state,
+            onBack = onBack,
+            onToggleFocus = onToggleFocus,
+            onMoveBlock = onMoveBlock,
+            onVisibleParagraph = onVisibleParagraph,
+            onPageTheme = onPageTheme,
+            onFontStyle = onFontStyle,
+            onFontSize = onFontSize,
+            onFocusDimming = onFocusDimming,
+            onShowFocusMascot = onShowFocusMascot,
+            onFocusPresentation = onFocusPresentation,
+            onNarratorAvatar = onNarratorAvatar,
+            onImportCustomAvatar = onImportCustomAvatar,
+            onDeleteCustomAvatar = onDeleteCustomAvatar,
+            onReaderControlsExpanded = onReaderControlsExpanded,
+            onAmbientIntensity = onAmbientIntensity,
+            onNarratorGestureLearned = onNarratorGestureLearned,
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ReaderScreenContent(
+    state: ReaderState,
+    onBack: () -> Unit,
+    onToggleFocus: () -> Unit,
+    onMoveBlock: (Int) -> Unit,
+    onVisibleParagraph: (Int) -> Unit,
+    onPageTheme: (PageTheme) -> Unit,
+    onFontStyle: (ReaderFontStyle) -> Unit,
+    onFontSize: (Int) -> Unit,
+    onFocusDimming: (Int) -> Unit,
+    onShowFocusMascot: (Boolean) -> Unit,
+    onFocusPresentation: (FocusPresentation) -> Unit,
+    onNarratorAvatar: (NarratorAvatar) -> Unit,
+    onImportCustomAvatar: (Uri) -> Unit,
+    onDeleteCustomAvatar: () -> Unit,
+    onReaderControlsExpanded: (Boolean) -> Unit,
+    onAmbientIntensity: (AmbientIntensity) -> Unit,
+    onNarratorGestureLearned: () -> Unit,
+) {
+    BackHandler(onBack = onBack)
+    val readerView = LocalView.current
+    val hapticFeedback = LocalHapticFeedback.current
+    DisposableEffect(readerView, state.focusEnabled) {
+        val previousKeepScreenOn = readerView.keepScreenOn
+        readerView.keepScreenOn = state.focusEnabled
+        onDispose { readerView.keepScreenOn = previousKeepScreenOn }
+    }
+    val currentBlock = state.plan.blocks.getOrNull(state.currentBlockIndex)
+    val initialParagraph = currentBlock?.paragraphIndex ?: 0
+    val listState = rememberLazyListState(initialFirstVisibleItemIndex = initialParagraph)
+    var activeBlockCenterInWindowY by remember(currentBlock?.index) { mutableStateOf<Float?>(null) }
+    var listTopInWindow by remember { mutableFloatStateOf(0f) }
+    var mascotPageTurnKey by rememberSaveable(state.document.summary.id) { mutableIntStateOf(0) }
+    var mascotPageTurnDirection by remember { mutableIntStateOf(1) }
+
+    fun navigateBlock(delta: Int) {
+        val targetIndex = state.currentBlockIndex + delta
+        if (delta == 0 || targetIndex !in state.plan.blocks.indices) return
+        mascotPageTurnDirection = delta
+        mascotPageTurnKey += 1
+        onMoveBlock(delta)
+    }
+
+    LaunchedEffect(state.focusEnabled, currentBlock?.index) {
+        val block = currentBlock ?: return@LaunchedEffect
+        if (!state.focusEnabled) return@LaunchedEffect
+        if (listState.layoutInfo.visibleItemsInfo.none { it.index == block.paragraphIndex }) {
+            listState.scrollToItem(block.paragraphIndex)
+        }
+    }
+    LaunchedEffect(state.focusEnabled, currentBlock?.index, activeBlockCenterInWindowY, listTopInWindow) {
+        if (!state.focusEnabled) return@LaunchedEffect
+        val markerCenterInWindowY = activeBlockCenterInWindowY ?: return@LaunchedEffect
+        val layoutInfo = listState.layoutInfo
+        val targetCenterInListY = FocusNavigation.targetCenterInList(
+            screenHeightPixels = readerView.height,
+            listTopInWindowPixels = listTopInWindow,
+            viewportStartPixels = layoutInfo.viewportStartOffset,
+            viewportEndPixels = layoutInfo.viewportEndOffset,
+        )
+        val targetCenterInWindowY = listTopInWindow + targetCenterInListY
+        val distanceToCenter = markerCenterInWindowY - targetCenterInWindowY
+        if (kotlin.math.abs(distanceToCenter) > 1f) {
+            listState.scrollBy(distanceToCenter)
+        }
+    }
+    LaunchedEffect(state.focusEnabled, listState) {
+        snapshotFlow { listState.firstVisibleItemIndex }
+            .distinctUntilChanged()
+            .filter { !state.focusEnabled }
+            .drop(1)
+            .collect(onVisibleParagraph)
+    }
+
+    Scaffold(
+        topBar = {
+            if (!state.focusEnabled) Column {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text(state.document.summary.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(
+                                when {
+                                    state.focusEnabled -> stringResource(R.string.focus_mode)
+                                    else -> stringResource(R.string.normal_mode)
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back)) }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+                )
+                LinearProgressIndicator(progress = { state.progress }, modifier = Modifier.fillMaxWidth())
+            }
+        },
+        bottomBar = {
+            if (!state.focusEnabled || state.settings.readerControlsExpanded) ReaderControls(
+                state = state,
+                onToggleFocus = onToggleFocus,
+                onMoveBlock = ::navigateBlock,
+                onPageTheme = onPageTheme,
+                onFontStyle = onFontStyle,
+                onFontSize = onFontSize,
+                onFocusDimming = onFocusDimming,
+                onShowFocusMascot = onShowFocusMascot,
+                onFocusPresentation = onFocusPresentation,
+                onNarratorAvatar = onNarratorAvatar,
+                onImportCustomAvatar = onImportCustomAvatar,
+                onDeleteCustomAvatar = onDeleteCustomAvatar,
+                onReaderControlsExpanded = onReaderControlsExpanded,
+                onAmbientIntensity = onAmbientIntensity,
+                mascotPageTurnKey = mascotPageTurnKey,
+                mascotPageTurnDirection = mascotPageTurnDirection,
+            )
+        },
+    ) { padding ->
+        BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(padding)) {
+            val verticalContentPadding = if (state.focusEnabled) {
+                (maxHeight / 2 - 24.dp).coerceAtLeast(24.dp)
+            } else {
+                24.dp
+            }
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .onGloballyPositioned { coordinates ->
+                        listTopInWindow = coordinates.positionInWindow().y
+                    }
+                    .pointerInput(
+                        state.focusEnabled,
+                        state.currentBlockIndex,
+                        state.plan.blocks.size,
+                        state.settings.focusPresentation,
+                    ) {
+                        if (!state.focusEnabled) return@pointerInput
+                        var accumulatedDragY = 0f
+                        detectVerticalDragGestures(
+                            onDragStart = { accumulatedDragY = 0f },
+                            onVerticalDrag = { change, dragAmount ->
+                                change.consume()
+                                accumulatedDragY += dragAmount
+                            },
+                            onDragEnd = {
+                                val threshold = 48.dp.toPx()
+                                val delta = FocusNavigation.blockDelta(accumulatedDragY, threshold)
+                                val targetIndex = state.currentBlockIndex + delta
+                                if (delta != 0 && targetIndex in state.plan.blocks.indices) {
+                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    if (state.settings.focusPresentation == FocusPresentation.OCTI_NARRATOR) {
+                                        onNarratorGestureLearned()
+                                    }
+                                    navigateBlock(delta)
+                                }
+                            },
+                        )
+                    },
+                userScrollEnabled = !state.focusEnabled,
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                    horizontal = 24.dp,
+                    vertical = verticalContentPadding,
+                ),
+                verticalArrangement = Arrangement.spacedBy(18.dp),
+            ) {
+                items(state.plan.paragraphs, key = ReadingParagraph::startCharacterOffset) { paragraph ->
+                    val activeBlock = currentBlock?.takeIf {
+                        state.focusEnabled &&
+                            it.paragraphIndex == paragraph.index
+                    }
+                    ReaderParagraph(
+                        paragraph = paragraph,
+                        activeBlock = activeBlock,
+                        fontStyle = state.settings.fontStyle,
+                        fontSizeSp = state.settings.fontSizeSp,
+                        focusEnabled = state.focusEnabled,
+                        focusDimmingPercent = state.settings.focusDimmingPercent,
+                        onActiveBlockCenter = if (activeBlock == null) null else {
+                            { centerY -> activeBlockCenterInWindowY = centerY }
+                        },
+                    )
+                }
+            }
+            if (
+                state.focusEnabled &&
+                state.settings.focusPresentation == FocusPresentation.OCTI_NARRATOR &&
+                currentBlock != null
+            ) {
+                val currentChapter = state.document.chapters
+                    .lastOrNull { it.startCharacterOffset <= currentBlock.startCharacterOffset }
+                val chapterStart = currentChapter?.startCharacterOffset ?: 0
+                val nextChapterStart = state.document.chapters
+                    .firstOrNull { it.startCharacterOffset > chapterStart }
+                    ?.startCharacterOffset
+                    ?: state.document.text.length
+                val safeChapterStart = chapterStart.coerceIn(0, state.document.text.length)
+                val safeChapterEnd = nextChapterStart.coerceIn(safeChapterStart, state.document.text.length)
+                val ambience = remember(
+                    state.document.summary.id,
+                    currentChapter?.startCharacterOffset,
+                ) {
+                    ReadingAmbienceSelector.select(
+                        title = state.document.summary.title,
+                        chapterTitle = currentChapter?.title,
+                        chapterSample = state.document.text.substring(
+                            safeChapterStart,
+                            safeChapterEnd,
+                        ),
+                    )
+                }
+                OctiNarratorOverlay(
+                    block = currentBlock,
+                    fontStyle = state.settings.fontStyle,
+                    fontSizeSp = state.settings.fontSizeSp,
+                    pageTurnKey = mascotPageTurnKey,
+                    pageTurnDirection = mascotPageTurnDirection,
+                    ambience = ambience,
+                    ambientIntensity = state.settings.ambientIntensity,
+                    narratorAvatar = state.settings.narratorAvatar,
+                    customAvatarPath = state.customNarratorAvatarPath,
+                    customAvatarVersion = state.settings.customNarratorAvatarVersion,
+                    showGestureHint = !state.settings.narratorGestureHintDismissed,
+                )
+            }
+            if (state.focusEnabled && !state.settings.readerControlsExpanded) {
+                FocusFullscreenTapZones(
+                    onBack = onBack,
+                    onExitFocus = onToggleFocus,
+                    onOpenFocusMenu = { onReaderControlsExpanded(true) },
+                )
+            }
+        }
+    }
+
+}
+
+@Composable
+private fun ReaderParagraph(
+    paragraph: ReadingParagraph,
+    activeBlock: ReadingBlock?,
+    fontStyle: ReaderFontStyle,
+    fontSizeSp: Int,
+    focusEnabled: Boolean,
+    focusDimmingPercent: Int,
+    onActiveBlockCenter: ((Float) -> Unit)?,
+) {
+    var textTopInWindow by remember { mutableFloatStateOf(0f) }
+    var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
+    fun reportActiveBlockCenter() {
+        val block = activeBlock ?: return
+        val layoutResult = textLayoutResult ?: return
+        if (paragraph.text.isEmpty()) return
+        val offset = block.localStartOffset.coerceIn(0, paragraph.text.lastIndex)
+        onActiveBlockCenter?.invoke(textTopInWindow + layoutResult.getBoundingBox(offset).center.y)
+    }
+    val text = buildAnnotatedString {
+        append(paragraph.text)
+        if (activeBlock != null && activeBlock.localStartOffset in 0..paragraph.text.length) {
+            addStyle(
+                SpanStyle(
+                    background = MaterialTheme.colorScheme.primaryContainer,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    fontWeight = FontWeight.SemiBold,
+                ),
+                start = activeBlock.localStartOffset,
+                end = activeBlock.localEndOffset.coerceAtMost(paragraph.text.length),
+            )
+        }
+    }
+    Text(
+        text = text,
+        modifier = Modifier.onGloballyPositioned { coordinates ->
+            textTopInWindow = coordinates.positionInWindow().y
+            reportActiveBlockCenter()
+        },
+        style = MaterialTheme.typography.bodyLarge.copy(
+            color = MaterialTheme.colorScheme.onBackground.copy(
+                alpha = if (focusEnabled) {
+                    1f - focusDimmingPercent.coerceIn(0, 80) / 100f
+                } else {
+                    1f
+                },
+            ),
+            fontFamily = readerFontFamily(fontStyle),
+            fontSize = fontSizeSp.sp,
+            lineHeight = (fontSizeSp * 1.6f).sp,
+        ),
+        onTextLayout = { layoutResult ->
+            textLayoutResult = layoutResult
+            reportActiveBlockCenter()
+        },
+    )
+}
+
+@Composable
+private fun FocusReadingMascot(
+    pageTurnKey: Int,
+    direction: Int,
+    mascotSize: Dp = 116.dp,
+    modifier: Modifier = Modifier,
+) {
+    val pageTurn = remember { Animatable(0f) }
+    LaunchedEffect(pageTurnKey) {
+        if (pageTurnKey == 0) return@LaunchedEffect
+        pageTurn.snapTo(0f)
+        pageTurn.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 320, easing = FastOutSlowInEasing),
+        )
+        pageTurn.snapTo(0f)
+    }
+    val movement = 1f - kotlin.math.abs(pageTurn.value * 2f - 1f)
+    Box(
+        modifier = modifier
+            .size(mascotSize)
+            .graphicsLayer { rotationZ = direction * movement * 2.5f },
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(
+            painter = painterResource(R.drawable.octi_reader),
+            contentDescription = stringResource(R.string.focus_mascot_description),
+            modifier = Modifier.fillMaxSize(),
+        )
+        Box(
+            modifier = Modifier
+                .size(width = 30.dp, height = 22.dp)
+                .offset(x = (direction * 5).dp, y = 25.dp)
+                .graphicsLayer {
+                    alpha = movement
+                    rotationY = direction * pageTurn.value * 180f
+                    transformOrigin = TransformOrigin(
+                        pivotFractionX = if (direction > 0) 0f else 1f,
+                        pivotFractionY = 0.5f,
+                    )
+                    cameraDistance = 10f * density
+                }
+                .background(
+                    color = Color(0xFFFFF1C7),
+                    shape = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp),
+                ),
+        )
+    }
+}
+
+@Composable
+private fun OctiNarratorOverlay(
+    block: ReadingBlock,
+    fontStyle: ReaderFontStyle,
+    fontSizeSp: Int,
+    pageTurnKey: Int,
+    pageTurnDirection: Int,
+    ambience: ReadingAmbience,
+    ambientIntensity: AmbientIntensity,
+    narratorAvatar: NarratorAvatar,
+    customAvatarPath: String?,
+    customAvatarVersion: Int,
+    showGestureHint: Boolean,
+) {
+    val narratorFontSizeSp = when {
+        block.wordCount <= 30 -> (fontSizeSp + 3).coerceAtMost(36)
+        block.wordCount <= 55 -> fontSizeSp
+        block.wordCount <= 90 -> (fontSizeSp - 3).coerceAtLeast(14)
+        else -> (fontSizeSp - 5).coerceAtLeast(14)
+    }
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        ReadingAmbientBackdrop(
+            ambience = ambience,
+            intensity = ambientIntensity,
+            modifier = Modifier.fillMaxSize(),
+        )
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(
+                    MaterialTheme.colorScheme.background.copy(
+                        alpha = when (ambientIntensity) {
+                            AmbientIntensity.OFF -> 0.92f
+                            AmbientIntensity.SUBTLE -> 0.62f
+                            AmbientIntensity.IMMERSIVE -> 0.38f
+                        },
+                    ),
+                ),
+        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 20.dp),
+        ) {
+            Surface(
+                shape = RoundedCornerShape(28.dp),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                tonalElevation = 8.dp,
+                shadowElevation = 6.dp,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    text = block.text.trim(),
+                    modifier = Modifier.padding(horizontal = 28.dp, vertical = 26.dp),
+                    style = MaterialTheme.typography.headlineSmall.copy(
+                        fontFamily = readerFontFamily(fontStyle),
+                        fontSize = narratorFontSizeSp.sp,
+                        lineHeight = (narratorFontSizeSp * 1.45f).sp,
+                    ),
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .offset(y = (-1).dp)
+                    .size(22.dp)
+                    .graphicsLayer { rotationZ = 45f }
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+            )
+            FocusNarratorAvatar(
+                avatar = narratorAvatar,
+                customAvatarPath = customAvatarPath,
+                customAvatarVersion = customAvatarVersion,
+                pageTurnKey = pageTurnKey,
+                direction = pageTurnDirection,
+            )
+            AnimatedVisibility(visible = showGestureHint) {
+                Text(
+                    stringResource(R.string.gesture_navigation_hint),
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.72f),
+                    fontSize = 12.sp,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FocusFullscreenTapZones(
+    onBack: () -> Unit,
+    onExitFocus: () -> Unit,
+    onOpenFocusMenu: () -> Unit,
+) {
+    val backDescription = stringResource(R.string.back)
+    val exitDescription = stringResource(R.string.exit_focus)
+    val menuDescription = stringResource(R.string.show_reader_menu)
+    val backInteraction = remember { MutableInteractionSource() }
+    val exitInteraction = remember { MutableInteractionSource() }
+    val menuInteraction = remember { MutableInteractionSource() }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding(),
+    ) {
+        Spacer(
+            Modifier
+                .align(Alignment.TopStart)
+                .size(width = 112.dp, height = 88.dp)
+                .semantics { contentDescription = backDescription }
+                .clickable(
+                    interactionSource = backInteraction,
+                    indication = null,
+                    onClick = onBack,
+                ),
+        )
+        Spacer(
+            Modifier
+                .align(Alignment.TopEnd)
+                .size(width = 112.dp, height = 88.dp)
+                .semantics { contentDescription = exitDescription }
+                .clickable(
+                    interactionSource = exitInteraction,
+                    indication = null,
+                    onClick = onExitFocus,
+                ),
+        )
+        Spacer(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .size(width = 200.dp, height = 96.dp)
+                .semantics { contentDescription = menuDescription }
+                .clickable(
+                    interactionSource = menuInteraction,
+                    indication = null,
+                    onClick = onOpenFocusMenu,
+                ),
+        )
+    }
+}
+
+@Composable
+private fun FocusNarratorAvatar(
+    avatar: NarratorAvatar,
+    customAvatarPath: String?,
+    customAvatarVersion: Int,
+    pageTurnKey: Int,
+    direction: Int,
+) {
+    when (avatar) {
+        NarratorAvatar.OCTI -> FocusReadingMascot(
+            pageTurnKey = pageTurnKey,
+            direction = direction,
+            mascotSize = 196.dp,
+        )
+        NarratorAvatar.LOVECRAFT_ILLUSTRATION -> Image(
+            painter = painterResource(R.drawable.lovecraft_narrator_illustration),
+            contentDescription = stringResource(R.string.lovecraft_illustration_description),
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.size(196.dp),
+        )
+        NarratorAvatar.SCHOPENHAUER_ILLUSTRATION -> Image(
+            painter = painterResource(R.drawable.schopenhauer_narrator_illustration),
+            contentDescription = stringResource(R.string.schopenhauer_illustration_description),
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.size(196.dp),
+        )
+        NarratorAvatar.NIETZSCHE_ILLUSTRATION -> Image(
+            painter = painterResource(R.drawable.nietzsche_narrator_illustration),
+            contentDescription = stringResource(R.string.nietzsche_illustration_description),
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.size(196.dp),
+        )
+        NarratorAvatar.CAMUS_ILLUSTRATION -> Image(
+            painter = painterResource(R.drawable.camus_narrator_illustration),
+            contentDescription = stringResource(R.string.camus_illustration_description),
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.size(196.dp),
+        )
+        NarratorAvatar.CUSTOM_IMAGE -> CustomCircularNarratorAvatar(
+            path = customAvatarPath,
+            version = customAvatarVersion,
+        )
+    }
+}
+
+@Composable
+private fun CustomCircularNarratorAvatar(path: String?, version: Int) {
+    val bitmap by produceState<ImageBitmap?>(initialValue = null, path, version) {
+        value = withContext(Dispatchers.IO) {
+            path?.let { BitmapFactory.decodeFile(it)?.asImageBitmap() }
+        }
+    }
+    Surface(
+        modifier = Modifier.size(168.dp),
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        tonalElevation = 6.dp,
+        shadowElevation = 8.dp,
+    ) {
+        bitmap?.let { customBitmap ->
+            Image(
+                bitmap = customBitmap,
+                contentDescription = stringResource(R.string.custom_avatar_description),
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        } ?: Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Icon(
+                Icons.Rounded.AutoStories,
+                contentDescription = stringResource(R.string.custom_avatar_missing_description),
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(52.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ReadingAmbientBackdrop(
+    ambience: ReadingAmbience,
+    intensity: AmbientIntensity,
+    modifier: Modifier = Modifier,
+) {
+    val (targetStart, targetEnd) = ambientPalette(ambience)
+    val startColor by animateColorAsState(targetStart, tween(1_000), label = "ambientStart")
+    val endColor by animateColorAsState(targetEnd, tween(1_000), label = "ambientEnd")
+    val opacity = when (intensity) {
+        AmbientIntensity.OFF -> 0f
+        AmbientIntensity.SUBTLE -> 0.58f
+        AmbientIntensity.IMMERSIVE -> 0.9f
+    }
+    Canvas(modifier = modifier) {
+        drawRect(
+            brush = Brush.linearGradient(
+                colors = listOf(startColor, endColor),
+                start = androidx.compose.ui.geometry.Offset.Zero,
+                end = androidx.compose.ui.geometry.Offset(size.width, size.height),
+            ),
+            alpha = opacity,
+        )
+        when (ambience) {
+            ReadingAmbience.MYSTERY -> {
+                drawCircle(Color(0xFF111827), size.minDimension * 0.38f, center = center, alpha = opacity * 0.34f)
+                drawCircle(Color(0xFFD8E3EA), size.minDimension * 0.12f, center = center.copy(x = size.width * 0.78f, y = size.height * 0.18f), alpha = opacity * 0.38f)
+            }
+            ReadingAmbience.FANTASY -> {
+                drawCircle(Color(0xFFFFD782), size.minDimension * 0.18f, center = center.copy(x = size.width * 0.22f, y = size.height * 0.2f), alpha = opacity * 0.34f)
+                drawCircle(Color(0xFFB8E0C2), size.minDimension * 0.3f, center = center.copy(x = size.width * 0.78f, y = size.height * 0.82f), alpha = opacity * 0.32f)
+            }
+            ReadingAmbience.SCIENCE_FICTION -> repeat(6) { index ->
+                val y = size.height * (0.12f + index * 0.15f)
+                drawLine(Color(0xFF76E4F7), start = center.copy(x = 0f, y = y), end = center.copy(x = size.width, y = y - size.height * 0.08f), strokeWidth = 2f, alpha = opacity * 0.3f)
+            }
+            ReadingAmbience.ROMANCE -> {
+                drawCircle(Color(0xFFFFCAD4), size.minDimension * 0.32f, center = center.copy(x = size.width * 0.2f, y = size.height * 0.25f), alpha = opacity * 0.42f)
+                drawCircle(Color(0xFFFFE5B4), size.minDimension * 0.28f, center = center.copy(x = size.width * 0.85f, y = size.height * 0.78f), alpha = opacity * 0.38f)
+            }
+            ReadingAmbience.NATURE -> {
+                drawCircle(Color(0xFFB7D7A8), size.minDimension * 0.42f, center = center.copy(x = size.width * 0.18f, y = size.height * 0.8f), alpha = opacity * 0.35f)
+                drawCircle(Color(0xFFB6D7E8), size.minDimension * 0.3f, center = center.copy(x = size.width * 0.82f, y = size.height * 0.18f), alpha = opacity * 0.32f)
+            }
+            ReadingAmbience.KNOWLEDGE -> repeat(5) { index ->
+                val inset = size.minDimension * (0.08f + index * 0.07f)
+                drawCircle(Color(0xFFF4C95D), inset, center = center, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f), alpha = opacity * 0.25f)
+            }
+            ReadingAmbience.NEUTRAL -> {
+                drawCircle(Color.White, size.minDimension * 0.34f, center = center.copy(x = size.width * 0.78f, y = size.height * 0.2f), alpha = opacity * 0.2f)
+            }
+        }
+    }
+}
+
+private fun ambientPalette(ambience: ReadingAmbience): Pair<Color, Color> = when (ambience) {
+    ReadingAmbience.MYSTERY -> Color(0xFF172033) to Color(0xFF44556A)
+    ReadingAmbience.FANTASY -> Color(0xFF315C4A) to Color(0xFF7864A8)
+    ReadingAmbience.SCIENCE_FICTION -> Color(0xFF102A43) to Color(0xFF5C3D99)
+    ReadingAmbience.ROMANCE -> Color(0xFFC66B82) to Color(0xFFF0B67F)
+    ReadingAmbience.NATURE -> Color(0xFF3F704D) to Color(0xFF77A6B6)
+    ReadingAmbience.KNOWLEDGE -> Color(0xFF315B78) to Color(0xFFC49A45)
+    ReadingAmbience.NEUTRAL -> Color(0xFF6D7280) to Color(0xFF9B8065)
+}
+
+@Composable
+private fun ReaderControls(
+    state: ReaderState,
+    onToggleFocus: () -> Unit,
+    onMoveBlock: (Int) -> Unit,
+    onPageTheme: (PageTheme) -> Unit,
+    onFontStyle: (ReaderFontStyle) -> Unit,
+    onFontSize: (Int) -> Unit,
+    onFocusDimming: (Int) -> Unit,
+    onShowFocusMascot: (Boolean) -> Unit,
+    onFocusPresentation: (FocusPresentation) -> Unit,
+    onNarratorAvatar: (NarratorAvatar) -> Unit,
+    onImportCustomAvatar: (Uri) -> Unit,
+    onDeleteCustomAvatar: () -> Unit,
+    onReaderControlsExpanded: (Boolean) -> Unit,
+    onAmbientIntensity: (AmbientIntensity) -> Unit,
+    mascotPageTurnKey: Int,
+    mascotPageTurnDirection: Int,
+) {
+    val customAvatarLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let(onImportCustomAvatar)
+    }
+    var focusDimmingValue by remember(state.settings.focusDimmingPercent) {
+        mutableFloatStateOf(state.settings.focusDimmingPercent.toFloat())
+    }
+    if (!state.settings.readerControlsExpanded) {
+        CollapsedReaderMenuHandle(
+            focusEnabled = state.focusEnabled,
+            showMascot = state.settings.showFocusMascot,
+            narratorMode = state.settings.focusPresentation == FocusPresentation.OCTI_NARRATOR,
+            mascotPageTurnKey = mascotPageTurnKey,
+            mascotPageTurnDirection = mascotPageTurnDirection,
+            onMoveBlock = onMoveBlock,
+            onExpand = { onReaderControlsExpanded(true) },
+        )
+        return
+    }
+    val maxMenuHeight = LocalConfiguration.current.screenHeightDp.dp * 0.62f
+    Surface(tonalElevation = 6.dp) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = maxMenuHeight)
+                .verticalScroll(rememberScrollState())
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.focus_mode), fontWeight = FontWeight.Bold)
+                    Text(
+                        stringResource(R.string.focus_hint),
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                IconButton(onClick = { onReaderControlsExpanded(false) }) {
+                    Icon(
+                        Icons.Rounded.ExpandMore,
+                        stringResource(R.string.hide_reader_menu),
+                    )
+                }
+                Switch(checked = state.focusEnabled, onCheckedChange = { onToggleFocus() })
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                stringResource(R.string.focus_presentation),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FocusPresentation.entries.forEach { presentation ->
+                    val label = when (presentation) {
+                        FocusPresentation.TEXT_MARKER -> stringResource(R.string.focus_presentation_marker)
+                        FocusPresentation.OCTI_NARRATOR -> stringResource(R.string.focus_presentation_narrator)
+                    }
+                    FilterChip(
+                        selected = state.settings.focusPresentation == presentation,
+                        onClick = { onFocusPresentation(presentation) },
+                        label = { Text(label) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+            if (state.settings.focusPresentation == FocusPresentation.OCTI_NARRATOR) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        stringResource(R.string.focus_narrator_hint),
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        stringResource(R.string.narrator_avatar),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        NarratorAvatar.entries.chunked(2).forEach { avatarRow ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                avatarRow.forEach { avatar ->
+                                    val label = when (avatar) {
+                                        NarratorAvatar.OCTI -> stringResource(R.string.narrator_avatar_octi)
+                                        NarratorAvatar.LOVECRAFT_ILLUSTRATION ->
+                                            stringResource(R.string.narrator_avatar_lovecraft)
+                                        NarratorAvatar.SCHOPENHAUER_ILLUSTRATION ->
+                                            stringResource(R.string.narrator_avatar_schopenhauer)
+                                        NarratorAvatar.NIETZSCHE_ILLUSTRATION ->
+                                            stringResource(R.string.narrator_avatar_nietzsche)
+                                        NarratorAvatar.CAMUS_ILLUSTRATION ->
+                                            stringResource(R.string.narrator_avatar_camus)
+                                        NarratorAvatar.CUSTOM_IMAGE ->
+                                            stringResource(R.string.narrator_avatar_custom)
+                                    }
+                                    FilterChip(
+                                        selected = state.settings.narratorAvatar == avatar,
+                                        onClick = {
+                                            if (avatar == NarratorAvatar.CUSTOM_IMAGE &&
+                                                state.customNarratorAvatarPath == null
+                                            ) {
+                                                customAvatarLauncher.launch(
+                                                    arrayOf("image/png", "image/jpeg", "image/webp"),
+                                                )
+                                            } else {
+                                                onNarratorAvatar(avatar)
+                                            }
+                                        },
+                                        label = { Text(label, maxLines = 1) },
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    if (state.settings.narratorAvatar == NarratorAvatar.CUSTOM_IMAGE) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            OutlinedButton(
+                                onClick = {
+                                    customAvatarLauncher.launch(
+                                        arrayOf("image/png", "image/jpeg", "image/webp"),
+                                    )
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Icon(Icons.Rounded.UploadFile, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text(stringResource(R.string.change_custom_avatar))
+                            }
+                            TextButton(onClick = onDeleteCustomAvatar) {
+                                Text(
+                                    stringResource(R.string.delete_custom_avatar),
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            }
+                        }
+                    }
+                    Text(
+                        stringResource(R.string.narrator_avatar_hint),
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        stringResource(R.string.reading_ambience),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        AmbientIntensity.entries.forEach { intensity ->
+                            val label = when (intensity) {
+                                AmbientIntensity.OFF -> stringResource(R.string.reading_ambience_off)
+                                AmbientIntensity.SUBTLE -> stringResource(R.string.reading_ambience_subtle)
+                                AmbientIntensity.IMMERSIVE -> stringResource(R.string.reading_ambience_immersive)
+                            }
+                            FilterChip(
+                                selected = state.settings.ambientIntensity == intensity,
+                                onClick = { onAmbientIntensity(intensity) },
+                                label = { Text(label, maxLines = 1) },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                    Text(
+                        stringResource(R.string.reading_ambience_hint),
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                stringResource(R.string.page_theme),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                PageTheme.entries.forEach { pageTheme ->
+                    val label = when (pageTheme) {
+                        PageTheme.LIGHT -> stringResource(R.string.page_theme_light)
+                        PageTheme.SEPIA -> stringResource(R.string.page_theme_sepia)
+                        PageTheme.DARK -> stringResource(R.string.page_theme_dark)
+                    }
+                    FilterChip(
+                        selected = state.settings.pageTheme == pageTheme,
+                        onClick = { onPageTheme(pageTheme) },
+                        label = { Text(label) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            FontSettings(
+                fontStyle = state.settings.fontStyle,
+                fontSizeSp = state.settings.fontSizeSp,
+                onFontStyle = onFontStyle,
+                onFontSize = onFontSize,
+            )
+            AnimatedVisibility(state.settings.focusPresentation == FocusPresentation.TEXT_MARKER) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Spacer(Modifier.height(4.dp))
+                    HorizontalDivider()
+                    Text(
+                        stringResource(R.string.classic_marker_options),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                stringResource(R.string.focus_dimming),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                stringResource(R.string.focus_dimming_hint),
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Text(
+                            stringResource(R.string.focus_dimming_value, focusDimmingValue.roundToInt()),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                    Slider(
+                        value = focusDimmingValue,
+                        onValueChange = { focusDimmingValue = (it / 5).roundToInt() * 5f },
+                        onValueChangeFinished = { onFocusDimming(focusDimmingValue.roundToInt()) },
+                        valueRange = 0f..80f,
+                        steps = 15,
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                stringResource(R.string.focus_mascot),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                stringResource(R.string.focus_mascot_hint),
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Switch(
+                            checked = state.settings.showFocusMascot,
+                            onCheckedChange = onShowFocusMascot,
+                        )
+                    }
+                }
+            }
+            AnimatedVisibility(state.focusEnabled) {
+                Column {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        stringResource(R.string.gesture_navigation_hint),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp,
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        IconButton(onClick = { onMoveBlock(-1) }) {
+                            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, stringResource(R.string.previous_block))
+                        }
+                        IconButton(onClick = { onMoveBlock(1) }) {
+                            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, stringResource(R.string.next_block))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FontSettings(
+    fontStyle: ReaderFontStyle,
+    fontSizeSp: Int,
+    onFontStyle: (ReaderFontStyle) -> Unit,
+    onFontSize: (Int) -> Unit,
+) {
+    Text(
+        stringResource(R.string.font_style),
+        fontSize = 12.sp,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        ReaderFontStyle.entries.forEach { style ->
+            val label = when (style) {
+                ReaderFontStyle.SERIF -> stringResource(R.string.font_style_serif)
+                ReaderFontStyle.SANS_SERIF -> stringResource(R.string.font_style_sans_serif)
+                ReaderFontStyle.MONOSPACE -> stringResource(R.string.font_style_monospace)
+            }
+            FilterChip(
+                selected = fontStyle == style,
+                onClick = { onFontStyle(style) },
+                label = {
+                    Text(
+                        label,
+                        maxLines = 1,
+                        fontFamily = readerFontFamily(style),
+                        fontWeight = if (fontStyle == style) FontWeight.Bold else FontWeight.Normal,
+                    )
+                },
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+    ) {
+        Text(
+            stringResource(R.string.font_preview),
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            fontFamily = readerFontFamily(fontStyle),
+            fontSize = 18.sp,
+            lineHeight = 24.sp,
+        )
+    }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            stringResource(R.string.font_size),
+            modifier = Modifier.weight(1f),
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        IconButton(
+            onClick = { onFontSize(fontSizeSp - 1) },
+            enabled = fontSizeSp > 14,
+        ) {
+            Icon(Icons.Rounded.Remove, stringResource(R.string.decrease_font_size))
+        }
+        Text(stringResource(R.string.font_size_value, fontSizeSp), fontWeight = FontWeight.SemiBold)
+        IconButton(
+            onClick = { onFontSize(fontSizeSp + 1) },
+            enabled = fontSizeSp < 32,
+        ) {
+            Icon(Icons.Rounded.Add, stringResource(R.string.increase_font_size))
+        }
+    }
+}
+
+private fun readerFontFamily(style: ReaderFontStyle): FontFamily = when (style) {
+    ReaderFontStyle.SERIF -> LoraFontFamily
+    ReaderFontStyle.SANS_SERIF -> RobotoFontFamily
+    ReaderFontStyle.MONOSPACE -> RobotoMonoFontFamily
+}
+
+private val LoraFontFamily = FontFamily(Font(R.font.lora))
+private val RobotoFontFamily = FontFamily(Font(R.font.roboto))
+private val RobotoMonoFontFamily = FontFamily(Font(R.font.roboto_mono))
+
+@Composable
+private fun CollapsedReaderMenuHandle(
+    focusEnabled: Boolean,
+    showMascot: Boolean,
+    narratorMode: Boolean,
+    mascotPageTurnKey: Int,
+    mascotPageTurnDirection: Int,
+    onMoveBlock: (Int) -> Unit,
+    onExpand: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = if (focusEnabled && showMascot && !narratorMode) 116.dp else 52.dp)
+            .navigationBarsPadding()
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+    ) {
+        if (focusEnabled) {
+            Surface(
+                modifier = Modifier.align(Alignment.CenterStart),
+                shape = RoundedCornerShape(50),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                tonalElevation = 6.dp,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { onMoveBlock(-1) }, modifier = Modifier.size(44.dp)) {
+                        Icon(
+                            Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
+                            stringResource(R.string.previous_block),
+                        )
+                    }
+                    IconButton(onClick = { onMoveBlock(1) }, modifier = Modifier.size(44.dp)) {
+                        Icon(
+                            Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                            stringResource(R.string.next_block),
+                        )
+                    }
+                }
+            }
+        }
+        if (focusEnabled && showMascot && !narratorMode) {
+            FocusReadingMascot(
+                pageTurnKey = mascotPageTurnKey,
+                direction = mascotPageTurnDirection,
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
+        Surface(
+            modifier = Modifier.align(Alignment.CenterEnd),
+            shape = RoundedCornerShape(50),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            tonalElevation = 6.dp,
+        ) {
+            IconButton(onClick = onExpand, modifier = Modifier.size(44.dp)) {
+                Icon(
+                    Icons.Rounded.ExpandLess,
+                    stringResource(R.string.show_reader_menu),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SessionResultScreen(summary: ReadingSessionSummary, onFinish: () -> Unit) {
+    BackHandler(onBack = onFinish)
+    Scaffold(
+        topBar = {
+            Surface(color = Color(0xFFF3D293), shadowElevation = 4.dp) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                ) {
+                    Text(
+                        stringResource(R.string.library_brand),
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        stringResource(R.string.session_complete),
+                        color = Color(0xFF76511F),
+                    )
+                }
+            }
+        },
+        bottomBar = {
+            Surface(color = Color(0xFFF3D293), shadowElevation = 8.dp) {
+                Button(
+                    onClick = onFinish,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 24.dp, vertical = 12.dp)
+                        .height(54.dp),
+                ) {
+                    Text(stringResource(R.string.return_library))
+                }
+            }
+        },
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .woodLibraryBackground(),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                start = 18.dp,
+                top = 20.dp,
+                end = 18.dp,
+                bottom = 28.dp,
+            ),
+        ) {
+            item {
+                Surface(
+                    shape = RoundedCornerShape(26.dp),
+                    color = Color(0xFFF9E8C5),
+                    shadowElevation = 10.dp,
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(18.dp),
+                        ) {
+                            SessionBookCover(
+                                title = summary.bookTitle,
+                                coverImagePath = summary.coverImagePath,
+                                progress = summary.progress,
+                                modifier = Modifier.width(110.dp).height(148.dp),
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Surface(shape = CircleShape, color = Color(0xFFDDEBD9)) {
+                                    Icon(
+                                        Icons.Rounded.Check,
+                                        contentDescription = null,
+                                        modifier = Modifier.padding(12.dp).size(26.dp),
+                                        tint = Color(0xFF215A3D),
+                                    )
+                                }
+                                Spacer(Modifier.height(12.dp))
+                                Text(
+                                    stringResource(R.string.session_title),
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF352817),
+                                )
+                                Spacer(Modifier.height(6.dp))
+                                Text(
+                                    summary.bookTitle,
+                                    maxLines = 3,
+                                    overflow = TextOverflow.Ellipsis,
+                                    color = Color(0xFF76511F),
+                                    fontFamily = LoraFontFamily,
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(22.dp))
+                        Text(
+                            stringResource(R.string.session_metrics_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF352817),
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        SessionMetricPair(
+                            firstLabel = stringResource(R.string.metric_time),
+                            firstValue = formatDuration(summary.elapsedMillis),
+                            secondLabel = stringResource(R.string.metric_fragments),
+                            secondValue = stringResource(R.string.fragments_value, summary.fragmentsRead),
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        SessionMetricPair(
+                            firstLabel = stringResource(R.string.metric_words),
+                            firstValue = stringResource(R.string.words_value, summary.wordsRead),
+                            secondLabel = stringResource(R.string.metric_speed),
+                            secondValue = stringResource(R.string.wpm_value, summary.averageWordsPerMinute),
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        SessionMetricPair(
+                            firstLabel = stringResource(R.string.metric_pauses),
+                            firstValue = summary.pauses.toString(),
+                            secondLabel = stringResource(R.string.metric_backwards),
+                            secondValue = summary.backwardsMoves.toString(),
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        SessionProgressMetric(summary.progress)
+                        Spacer(Modifier.height(18.dp))
+                        Text(
+                            stringResource(R.string.session_body),
+                            color = Color(0xFF6C5B43),
+                            fontSize = 13.sp,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SessionBookCover(
+    title: String,
+    coverImagePath: String?,
+    progress: Float,
+    modifier: Modifier = Modifier,
+) {
+    val palette = bookCoverPalette(title)
+    val coverBitmap by produceState<ImageBitmap?>(null, coverImagePath) {
+        value = withContext(Dispatchers.IO) {
+            coverImagePath?.let(BitmapFactory::decodeFile)?.asImageBitmap()
+        }
+    }
+    Surface(
+        modifier = modifier.shadow(6.dp, RoundedCornerShape(3.dp)),
+        shape = RoundedCornerShape(3.dp),
+        color = palette.first,
+    ) {
+        Box(Modifier.fillMaxSize()) {
+            if (coverBitmap != null) {
+                Image(
+                    bitmap = coverBitmap!!,
+                    contentDescription = stringResource(R.string.book_cover, title),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else {
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        title,
+                        color = palette.second,
+                        fontFamily = LoraFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.sp,
+                        lineHeight = 14.sp,
+                        maxLines = 4,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Spacer(Modifier.weight(1f))
+                    Icon(
+                        Icons.Rounded.AutoStories,
+                        contentDescription = null,
+                        tint = palette.second.copy(alpha = 0.82f),
+                    )
+                }
+            }
+            LinearProgressIndicator(
+                progress = { progress.coerceIn(0f, 1f) },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(5.dp),
+                color = if (coverBitmap == null) palette.second else MaterialTheme.colorScheme.primary,
+                trackColor = if (coverBitmap == null) {
+                    palette.second.copy(alpha = 0.2f)
+                } else {
+                    Color.Black.copy(alpha = 0.35f)
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun SessionMetricPair(
+    firstLabel: String,
+    firstValue: String,
+    secondLabel: String,
+    secondValue: String,
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        SessionMetricTile(firstLabel, firstValue, Modifier.weight(1f))
+        SessionMetricTile(secondLabel, secondValue, Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun SessionMetricTile(label: String, value: String, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier.heightIn(min = 86.dp),
+        shape = RoundedCornerShape(18.dp),
+        color = Color(0xFFFFF3DB),
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
+            Text(label, color = Color(0xFF765F40), fontSize = 12.sp)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                value,
+                color = Color(0xFF215A3D),
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleLarge,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SessionProgressMetric(progress: Float) {
+    val percentage = (progress.coerceIn(0f, 1f) * 100).roundToInt()
+    Surface(shape = RoundedCornerShape(18.dp), color = Color(0xFFFFF3DB)) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(stringResource(R.string.metric_progress), color = Color(0xFF765F40), fontSize = 12.sp)
+                Text(
+                    stringResource(R.string.percentage_value, percentage),
+                    color = Color(0xFF215A3D),
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+            Spacer(Modifier.height(9.dp))
+            LinearProgressIndicator(
+                progress = { progress.coerceIn(0f, 1f) },
+                modifier = Modifier.fillMaxWidth().height(8.dp),
+                color = Color(0xFF215A3D),
+                trackColor = Color(0xFFD6C5A4),
+            )
+        }
+    }
+}
+
+@Composable
+private fun formatDuration(millis: Long): String {
+    val totalSeconds = millis / 1_000
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return if (minutes > 0) stringResource(R.string.minutes_short, minutes, seconds)
+    else stringResource(R.string.seconds_short, seconds)
+}
