@@ -19,8 +19,30 @@ if (-not (Test-Path -LiteralPath $adb) -or -not (Test-Path -LiteralPath $emulato
     throw "No se encontraron adb y emulator dentro de ANDROID_HOME."
 }
 
-$existingState = & $adb -s $serial get-state 2>$null
-if ($LASTEXITCODE -eq 0 -and $existingState -eq "device") {
+function Invoke-AdbQuietly {
+    param([string[]]$Arguments)
+
+    $processInfo = [System.Diagnostics.ProcessStartInfo]::new()
+    $processInfo.FileName = $adb
+    $processInfo.Arguments = ($Arguments | ForEach-Object { '"' + $_.Replace('"', '\"') + '"' }) -join " "
+    $processInfo.UseShellExecute = $false
+    $processInfo.RedirectStandardOutput = $true
+    $processInfo.RedirectStandardError = $true
+    $processInfo.CreateNoWindow = $true
+
+    $process = [System.Diagnostics.Process]::Start($processInfo)
+    $standardOutput = $process.StandardOutput.ReadToEnd().Trim()
+    $process.StandardError.ReadToEnd() | Out-Null
+    $process.WaitForExit()
+
+    return [PSCustomObject]@{
+        ExitCode = $process.ExitCode
+        Output = $standardOutput
+    }
+}
+
+$existingState = Invoke-AdbQuietly -Arguments @("-s", $serial, "get-state")
+if ($existingState.ExitCode -eq 0 -and $existingState.Output -eq "device") {
     throw "El puerto $Port ya esta ocupado por otro emulador; no se modificara ese dispositivo."
 }
 
@@ -40,11 +62,11 @@ New-Item -ItemType File -Path $marker -Force | Out-Null
 
 $deadline = [DateTimeOffset]::UtcNow.AddSeconds($TimeoutSeconds)
 while ([DateTimeOffset]::UtcNow -lt $deadline) {
-    $state = & $adb -s $serial get-state 2>$null
-    if ($LASTEXITCODE -eq 0 -and $state -eq "device") {
-        $bootCompleted = (& $adb -s $serial shell getprop sys.boot_completed 2>$null).Trim()
-        if ($bootCompleted -eq "1") {
-            & $adb -s $serial shell input keyevent 82 | Out-Null
+    $state = Invoke-AdbQuietly -Arguments @("-s", $serial, "get-state")
+    if ($state.ExitCode -eq 0 -and $state.Output -eq "device") {
+        $bootCompleted = Invoke-AdbQuietly -Arguments @("-s", $serial, "shell", "getprop", "sys.boot_completed")
+        if ($bootCompleted.ExitCode -eq 0 -and $bootCompleted.Output -eq "1") {
+            Invoke-AdbQuietly -Arguments @("-s", $serial, "shell", "input", "keyevent", "82") | Out-Null
             Write-Output "ANDROID_EMULATOR_SERIAL=$serial"
             exit 0
         }
