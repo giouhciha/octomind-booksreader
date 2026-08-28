@@ -4,6 +4,8 @@ pipeline {
     environment {
         JAVA_HOME = 'C:\\Program Files\\Android\\Android Studio\\jbr'
         ANDROID_HOME = 'C:\\Users\\gio_u\\AppData\\Local\\Android\\Sdk'
+        ANDROID_AVD_HOME = 'C:\\Users\\gio_u\\.android\\avd'
+        ANDROID_SERIAL = 'emulator-5554'
     }
 
     stages {
@@ -21,9 +23,53 @@ pipeline {
             }
         }
 
+        stage('Formato Kotlin') {
+            steps {
+                bat 'gradlew.bat ktlintCheck'
+            }
+        }
+
+        stage('Analisis estatico') {
+            steps {
+                bat 'gradlew.bat detekt'
+            }
+        }
+
+        stage('Secretos') {
+            steps {
+                powershell '.\\scripts\\jenkins\\Invoke-Gitleaks.ps1'
+            }
+        }
+
+        stage('Dependencias vulnerables') {
+            steps {
+                withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_API_KEY')]) {
+                    bat 'gradlew.bat --no-configuration-cache :app:dependencyCheckAnalyze'
+                }
+            }
+        }
+
         stage('Unit Tests') {
             steps {
                 bat 'gradlew.bat testDebugUnitTest'
+            }
+        }
+
+        stage('Iniciar emulador') {
+            steps {
+                powershell '.\\scripts\\jenkins\\Start-AndroidEmulator.ps1'
+            }
+        }
+
+        stage('Pruebas UI') {
+            steps {
+                bat 'gradlew.bat :app:connectedDebugAndroidTest'
+            }
+        }
+
+        stage('Instalacion y apertura') {
+            steps {
+                powershell '.\\scripts\\jenkins\\Verify-AppLaunch.ps1'
             }
         }
     }
@@ -31,6 +77,8 @@ pipeline {
     post {
         always {
             script {
+                powershell(returnStatus: true, script: '.\\scripts\\jenkins\\Stop-AndroidEmulator.ps1')
+
                 if (fileExists('app/build/reports/lint-results-debug.xml')) {
                     recordIssues(
                         enabledForFailure: true,
@@ -45,6 +93,17 @@ pipeline {
                 } else {
                     echo 'No hay resultados unitarios porque la etapa no se ejecuto o fallo antes de generarlos.'
                 }
+
+                if (fileExists('app/build/outputs/androidTest-results/connected/debug')) {
+                    junit testResults: 'app/build/outputs/androidTest-results/connected/debug/TEST-*.xml'
+                } else {
+                    echo 'No hay resultados UI porque la etapa no se ejecuto o fallo antes de generarlos.'
+                }
+
+                archiveArtifacts(
+                    artifacts: 'app/build/reports/**,build/reports/**',
+                    allowEmptyArchive: true
+                )
             }
         }
     }

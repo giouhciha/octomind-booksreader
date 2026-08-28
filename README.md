@@ -263,7 +263,16 @@ El APK de desarrollo se genera en `app/build/outputs/apk/debug/app-debug.apk`.
 ```powershell
 .\gradlew.bat testDebugUnitTest
 .\gradlew.bat lintDebug
+.\gradlew.bat ktlintCheck
+.\gradlew.bat detekt
+.\gradlew.bat --no-configuration-cache :app:dependencyCheckAnalyze
 ```
+
+`dependencyCheckAnalyze` requiere una [clave de la NVD](https://nvd.nist.gov/developers/request-an-api-key) para consultar su base. En Jenkins debe guardarse como una credencial de tipo **Secret text** con el identificador `nvd-api-key`; el pipeline la expone temporalmente como `NVD_API_KEY`. Los hallazgos con CVSS 7 o superior detienen el pipeline. Gitleaks revisa el historial Git mediante `scripts/jenkins/Invoke-Gitleaks.ps1` y valida el checksum del binario fijado antes de ejecutarlo.
+
+Jenkins utiliza el AVD local `Pixel_10_Pro_XL` como `emulator-5554`, sin ventana. Ejecuta la prueba instrumentada con `connectedDebugAndroidTest`, reinstala el APK producido por esa prueba, abre `MainActivity` y confirma que la aplicación quede en primer plano. El emulador se cierra siempre en las acciones finales del pipeline.
+
+Los baselines de Ktlint y Detekt registran únicamente la deuda existente. Una infracción nueva falla la validación; no se debe regenerar un baseline para ocultar un hallazgo sin revisarlo.
 
 La lectura sintética [samples/lectura-demo.txt](samples/lectura-demo.txt) permite recorrer la importación y Octomind Focus sin utilizar contenido protegido.
 

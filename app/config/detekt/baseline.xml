@@ -1,0 +1,194 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ComplexCondition:ReadingPlan.kt:ReadingPlanBuilder$dashRole == null &amp;&amp; pauseKind != PauseKind.NONE &amp;&amp; (readingMode != ReadingMode.SENTENCE || pauseKind == PauseKind.STRONG) &amp;&amp; !isNonTerminalAbbreviation(words, index)</ID>
+    <ID>ComplexCondition:ReadingPlan.kt:ReadingPlanBuilder$terminalCharacter == '.' || terminalCharacter == '!' || terminalCharacter == '?' || terminalCharacter == '…'</ID>
+    <ID>CyclomaticComplexMethod:LocalBookRepository.kt:BookRecord.Companion$fun fromJson: BookRecord</ID>
+    <ID>CyclomaticComplexMethod:OctomindApp.kt:@Composable private fun ReaderControls</ID>
+    <ID>CyclomaticComplexMethod:OctomindApp.kt:@Composable private fun ReaderParagraph</ID>
+    <ID>CyclomaticComplexMethod:OctomindApp.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable private fun ReaderScreenContent</ID>
+    <ID>CyclomaticComplexMethod:OctomindApp.kt:private fun createNarratorQuoteCard: Uri</ID>
+    <ID>CyclomaticComplexMethod:ReadingPlan.kt:ReadingPlanBuilder$private fun String.terminalPauseKind: PauseKind</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable fun OctomindApp</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun BookCover</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun BookshelfRow</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun CollapsedReaderMenuHandle</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun CustomCircularNarratorAvatar</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun EmptyLibrary</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun FocusFullscreenTapZones</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun FocusNarratorAvatar</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun FocusReadingMascot</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun FontSettings</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun LoadingScreen</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun OctiNarratorOverlay</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun OnboardingScreen</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun PreviousReadingCard</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun ReaderControls</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun ReaderParagraph</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun ReadingAmbientBackdrop</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun SessionBookCover</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun SessionMetricPair</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun SessionMetricTile</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun SessionProgressMetric</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun SessionResultScreen</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable private fun LibraryScreen</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable private fun QuotesScreen</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable private fun ReaderScreen</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable private fun ReaderScreenContent</ID>
+    <ID>FunctionNaming:Theme.kt:@Composable fun OctomindTheme</ID>
+    <ID>FunctionNaming:Theme.kt:@Composable fun ReaderPageTheme</ID>
+    <ID>LongMethod:BookParser.kt:EpubBookParser$override fun parse: ParsedBook</ID>
+    <ID>LongMethod:LocalBookRepository.kt:BookRecord.Companion$fun fromJson: BookRecord</ID>
+    <ID>LongMethod:OctomindApp.kt:@Composable fun OctomindApp</ID>
+    <ID>LongMethod:OctomindApp.kt:@Composable private fun BookCover</ID>
+    <ID>LongMethod:OctomindApp.kt:@Composable private fun FontSettings</ID>
+    <ID>LongMethod:OctomindApp.kt:@Composable private fun OctiNarratorOverlay</ID>
+    <ID>LongMethod:OctomindApp.kt:@Composable private fun ReaderControls</ID>
+    <ID>LongMethod:OctomindApp.kt:@Composable private fun ReaderParagraph</ID>
+    <ID>LongMethod:OctomindApp.kt:@Composable private fun SessionResultScreen</ID>
+    <ID>LongMethod:OctomindApp.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable private fun LibraryScreen</ID>
+    <ID>LongMethod:OctomindApp.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable private fun QuotesScreen</ID>
+    <ID>LongMethod:OctomindApp.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable private fun ReaderScreenContent</ID>
+    <ID>LongMethod:OctomindApp.kt:private fun createNarratorQuoteCard: Uri</ID>
+    <ID>LongMethod:ReadingPlan.kt:ReadingPlanBuilder$fun build: ReadingPlan</ID>
+    <ID>MagicNumber:AdaptiveReadingAdvisor.kt:AdaptiveReadingAdvisor$100</ID>
+    <ID>MagicNumber:AdaptiveReadingAdvisor.kt:AdaptiveReadingAdvisor$700</ID>
+    <ID>MagicNumber:BookParser.kt:EpubBookParser$16</ID>
+    <ID>MagicNumber:CustomAvatarRepository.kt:CustomAvatarRepository$100</ID>
+    <ID>MagicNumber:CustomAvatarRepository.kt:CustomAvatarRepository$2_048</ID>
+    <ID>MagicNumber:LocalBookRepository.kt:BookRecord.Companion$6</ID>
+    <ID>MagicNumber:LocalBookRepository.kt:LocalBookRepository$40_000_000L</ID>
+    <ID>MagicNumber:LocalBookRepository.kt:LocalBookRepository$64</ID>
+    <ID>MagicNumber:LocalBookRepository.kt:LocalBookRepository$8_192</ID>
+    <ID>MagicNumber:OctomindApp.kt:0.08f</ID>
+    <ID>MagicNumber:OctomindApp.kt:0.12f</ID>
+    <ID>MagicNumber:OctomindApp.kt:0.18f</ID>
+    <ID>MagicNumber:OctomindApp.kt:0.28f</ID>
+    <ID>MagicNumber:OctomindApp.kt:0.32f</ID>
+    <ID>MagicNumber:OctomindApp.kt:0.34f</ID>
+    <ID>MagicNumber:OctomindApp.kt:0.38f</ID>
+    <ID>MagicNumber:OctomindApp.kt:0.3f</ID>
+    <ID>MagicNumber:OctomindApp.kt:0.42f</ID>
+    <ID>MagicNumber:OctomindApp.kt:0.68f</ID>
+    <ID>MagicNumber:OctomindApp.kt:0.82f</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFF102A43</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFF111827</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFF172033</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFF215A3D</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFF256D4B</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFF2E7D52</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFF315B78</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFF315C4A</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFF352817</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFF3F704D</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFF44556A</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFF5C3D99</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFF6C5B43</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFF6D7280</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFF6E3513</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFF6F3513</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFF71340F</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFF76511F</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFF765F40</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFF76E4F7</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFF77A6B6</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFF7864A8</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFF9B531C</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFF9B8065</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFFAA591D</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFFB56521</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFFB6D7E8</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFFB7D7A8</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFFB8E0C2</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFFB96825</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFFC49A45</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFFC66B82</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFFD18A35</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFFD6C5A4</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFFD8E3EA</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFFD98A33</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFFD98B32</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFFF0B35C</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFFF0B67F</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFFF3D293</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFFF4C95D</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFFF9E8C5</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFFFFCAD4</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFFFFD782</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFFFFE5B4</ID>
+    <ID>MagicNumber:OctomindApp.kt:0xFFFFF3DB</ID>
+    <ID>MagicNumber:OctomindApp.kt:100</ID>
+    <ID>MagicNumber:OctomindApp.kt:104f</ID>
+    <ID>MagicNumber:OctomindApp.kt:10f</ID>
+    <ID>MagicNumber:OctomindApp.kt:12f</ID>
+    <ID>MagicNumber:OctomindApp.kt:171</ID>
+    <ID>MagicNumber:OctomindApp.kt:18f</ID>
+    <ID>MagicNumber:OctomindApp.kt:218</ID>
+    <ID>MagicNumber:OctomindApp.kt:24</ID>
+    <ID>MagicNumber:OctomindApp.kt:242</ID>
+    <ID>MagicNumber:OctomindApp.kt:24f</ID>
+    <ID>MagicNumber:OctomindApp.kt:25f</ID>
+    <ID>MagicNumber:OctomindApp.kt:28f</ID>
+    <ID>MagicNumber:OctomindApp.kt:34f</ID>
+    <ID>MagicNumber:OctomindApp.kt:36f</ID>
+    <ID>MagicNumber:OctomindApp.kt:42f</ID>
+    <ID>MagicNumber:OctomindApp.kt:45f</ID>
+    <ID>MagicNumber:OctomindApp.kt:46</ID>
+    <ID>MagicNumber:OctomindApp.kt:48f</ID>
+    <ID>MagicNumber:OctomindApp.kt:5</ID>
+    <ID>MagicNumber:OctomindApp.kt:50</ID>
+    <ID>MagicNumber:OctomindApp.kt:52f</ID>
+    <ID>MagicNumber:OctomindApp.kt:54f</ID>
+    <ID>MagicNumber:OctomindApp.kt:56f</ID>
+    <ID>MagicNumber:OctomindApp.kt:58</ID>
+    <ID>MagicNumber:OctomindApp.kt:6</ID>
+    <ID>MagicNumber:OctomindApp.kt:72f</ID>
+    <ID>MagicNumber:OctomindApp.kt:76f</ID>
+    <ID>MagicNumber:OctomindApp.kt:80</ID>
+    <ID>MagicNumber:OctomindApp.kt:82f</ID>
+    <ID>MagicNumber:OctomindApp.kt:86f</ID>
+    <ID>MagicNumber:OctomindViewModel.kt:OctomindViewModel$1_000</ID>
+    <ID>MagicNumber:OctomindViewModel.kt:OctomindViewModel$60_000.0</ID>
+    <ID>MagicNumber:OctomindViewModel.kt:OctomindViewModel$750</ID>
+    <ID>MagicNumber:ReaderCalibration.kt:ReaderCalibrationCalculator$100</ID>
+    <ID>MagicNumber:ReaderCalibration.kt:ReaderCalibrationCalculator$700</ID>
+    <ID>MagicNumber:ReadingPlan.kt:PacingCalculator$1200</ID>
+    <ID>MagicNumber:ReadingPlan.kt:PacingCalculator$120L</ID>
+    <ID>MagicNumber:ReadingPlan.kt:PacingCalculator$80</ID>
+    <ID>MagicNumber:ReadingPlan.kt:ReadingPlanBuilder$320L</ID>
+    <ID>MagicNumber:ReadingPlan.kt:ReadingPlanBuilder$8</ID>
+    <ID>MagicNumber:ReadingPlan.kt:ReadingPlanBuilder.PauseKind.DASH$340L</ID>
+    <ID>MagicNumber:ReadingPlan.kt:ReadingPlanBuilder.PauseKind.MEDIUM$220L</ID>
+    <ID>MagicNumber:ReadingPlan.kt:ReadingPlanBuilder.PauseKind.STRONG$420L</ID>
+    <ID>MagicNumber:UserPreferences.kt:UserPreferences$1200</ID>
+    <ID>MagicNumber:UserPreferences.kt:UserPreferences$14</ID>
+    <ID>MagicNumber:UserPreferences.kt:UserPreferences$32</ID>
+    <ID>MagicNumber:UserPreferences.kt:UserPreferences$8</ID>
+    <ID>MagicNumber:UserPreferences.kt:UserPreferences$80</ID>
+    <ID>MaxLineLength:BookParser.kt:EpubBookParser$.</ID>
+    <ID>MaxLineLength:OctomindApp.kt:IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back)) }</ID>
+    <ID>MaxLineLength:OctomindApp.kt:Text(stringResource(R.string.import_formats), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
+    <ID>MaxLineLength:OctomindApp.kt:drawCircle(Color(0xFFB6D7E8), size.minDimension * 0.3f, center = center.copy(x = size.width * 0.82f, y = size.height * 0.18f), alpha = opacity * 0.32f)</ID>
+    <ID>MaxLineLength:OctomindApp.kt:drawCircle(Color(0xFFB7D7A8), size.minDimension * 0.42f, center = center.copy(x = size.width * 0.18f, y = size.height * 0.8f), alpha = opacity * 0.35f)</ID>
+    <ID>MaxLineLength:OctomindApp.kt:drawCircle(Color(0xFFB8E0C2), size.minDimension * 0.3f, center = center.copy(x = size.width * 0.78f, y = size.height * 0.82f), alpha = opacity * 0.32f)</ID>
+    <ID>MaxLineLength:OctomindApp.kt:drawCircle(Color(0xFFD8E3EA), size.minDimension * 0.12f, center = center.copy(x = size.width * 0.78f, y = size.height * 0.18f), alpha = opacity * 0.38f)</ID>
+    <ID>MaxLineLength:OctomindApp.kt:drawCircle(Color(0xFFF4C95D), inset, center = center, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f), alpha = opacity * 0.25f)</ID>
+    <ID>MaxLineLength:OctomindApp.kt:drawCircle(Color(0xFFFFCAD4), size.minDimension * 0.32f, center = center.copy(x = size.width * 0.2f, y = size.height * 0.25f), alpha = opacity * 0.42f)</ID>
+    <ID>MaxLineLength:OctomindApp.kt:drawCircle(Color(0xFFFFD782), size.minDimension * 0.18f, center = center.copy(x = size.width * 0.22f, y = size.height * 0.2f), alpha = opacity * 0.34f)</ID>
+    <ID>MaxLineLength:OctomindApp.kt:drawCircle(Color(0xFFFFE5B4), size.minDimension * 0.28f, center = center.copy(x = size.width * 0.85f, y = size.height * 0.78f), alpha = opacity * 0.38f)</ID>
+    <ID>MaxLineLength:OctomindApp.kt:drawCircle(Color.White, size.minDimension * 0.34f, center = center.copy(x = size.width * 0.78f, y = size.height * 0.2f), alpha = opacity * 0.2f)</ID>
+    <ID>MaxLineLength:OctomindApp.kt:drawLine(Color(0xFF76E4F7), start = center.copy(x = 0f, y = y), end = center.copy(x = size.width, y = y - size.height * 0.08f), strokeWidth = 2f, alpha = opacity * 0.3f)</ID>
+    <ID>ReturnCount:AdaptiveReadingAdvisor.kt:AdaptiveReadingAdvisor$fun suggestedWordsPerMinute: Int?</ID>
+    <ID>ReturnCount:OctomindApp.kt:fun reportActiveBlockCenter</ID>
+    <ID>ReturnCount:OctomindViewModel.kt:OctomindViewModel$fun moveBlock</ID>
+    <ID>ReturnCount:OctomindViewModel.kt:OctomindViewModel$fun setVisibleParagraph</ID>
+    <ID>ReturnCount:ReadingPlan.kt:ReadingPlan$fun blockIndexFor: Int</ID>
+    <ID>ReturnCount:ReadingPlan.kt:ReadingPlanBuilder$private fun String.terminalPauseKind: PauseKind</ID>
+    <ID>ReturnCount:ReadingPlan.kt:ReadingPlanBuilder$private fun findNaturalBoundary: Int</ID>
+    <ID>ReturnCount:ReadingPlan.kt:ReadingPlanBuilder$private fun isNonTerminalAbbreviation: Boolean</ID>
+    <ID>TooManyFunctions:LocalBookRepository.kt:LocalBookRepository</ID>
+    <ID>TooManyFunctions:OctomindApp.kt:com.octomind.booksreader.ui.OctomindApp.kt</ID>
+    <ID>TooManyFunctions:OctomindViewModel.kt:OctomindViewModel : AndroidViewModel</ID>
+  </CurrentIssues>
+</SmellBaseline>

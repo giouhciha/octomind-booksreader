@@ -1,6 +1,14 @@
+import dev.detekt.gradle.Detekt
+import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
+import org.owasp.dependencycheck.gradle.extension.DependencyCheckExtension
+import org.owasp.dependencycheck.reporting.ReportGenerator
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("org.jlleitschuh.gradle.ktlint")
+    id("dev.detekt")
+    id("org.owasp.dependencycheck")
 }
 
 android {
@@ -38,6 +46,39 @@ android {
     }
 }
 
+ktlint {
+    android.set(true)
+    baseline.set(file("config/ktlint/baseline.xml"))
+    reporters {
+        reporter(ReporterType.PLAIN)
+        reporter(ReporterType.CHECKSTYLE)
+    }
+    filter {
+        exclude("**/generated/**")
+    }
+}
+
+detekt {
+    buildUponDefaultConfig = true
+    baseline = file("config/detekt/baseline.xml")
+    parallel = true
+}
+
+tasks.withType<Detekt>().configureEach {
+    reports {
+        html.required.set(true)
+        sarif.required.set(true)
+    }
+}
+
+configure<DependencyCheckExtension> {
+    format = ReportGenerator.Format.ALL.toString()
+    failBuildOnCVSS = 7.0f
+    scanConfigurations = listOf("debugRuntimeClasspath", "releaseRuntimeClasspath")
+    analyzers.assemblyEnabled = false
+    System.getenv("NVD_API_KEY")?.takeIf { it.isNotBlank() }?.let { nvd.apiKey = it }
+}
+
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2026.08.00")
 
@@ -59,5 +100,7 @@ dependencies {
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
+    androidTestImplementation("androidx.test:runner:1.7.0")
 }
