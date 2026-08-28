@@ -11,8 +11,8 @@ android {
         applicationId = "com.octomind.booksreader"
         minSdk = 26
         targetSdk = 37
-        versionCode = 42
-        versionName = "0.31.0"
+        versionCode = 51
+        versionName = "0.40.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

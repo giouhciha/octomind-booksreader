@@ -8,12 +8,14 @@ import androidx.lifecycle.viewModelScope
 import com.octomind.booksreader.OctomindApplication
 import com.octomind.booksreader.domain.BookDocument
 import com.octomind.booksreader.domain.BookSummary
+import com.octomind.booksreader.domain.CompletedReading
 import com.octomind.booksreader.domain.PageTheme
 import com.octomind.booksreader.domain.NarratorAvatar
 import com.octomind.booksreader.domain.ReaderFontStyle
 import com.octomind.booksreader.domain.ReaderSettings
 import com.octomind.booksreader.domain.ReadingPlan
 import com.octomind.booksreader.domain.ReadingPlanBuilder
+import com.octomind.booksreader.domain.ReadingCycleStats
 import com.octomind.booksreader.domain.ReadingMode
 import com.octomind.booksreader.domain.ReadingSessionSummary
 import kotlin.math.roundToInt
@@ -33,7 +35,12 @@ sealed interface AppScreen {
     data object Onboarding : AppScreen
     data object Library : AppScreen
     data class Reader(val state: ReaderState) : AppScreen
-    data class SessionResult(val summary: ReadingSessionSummary) : AppScreen
+    data class SessionResult(
+        val bookId: String,
+        val summary: ReadingSessionSummary,
+        val previousReadings: List<CompletedReading> = emptyList(),
+        val restartAvailable: Boolean = false,
+    ) : AppScreen
 }
 
 data class ReaderState(
@@ -123,6 +130,9 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
             mutableState.update { it.copy(busy = true, message = null) }
             runCatching {
                 val document = repository.loadBook(id)
+                if (document.summary.isCompleted) {
+                    return@runCatching completedBookResult(document.summary)
+                }
                 val settings = preferences.readerSettings.first().copy(
                     readingMode = ReadingMode.SENTENCE,
                     adaptivePacingEnabled = false,
@@ -159,8 +169,13 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
                     blockShownAtMillis = now,
                     playStartedAtMillis = now.takeIf { restoredFocusEnabled },
                 )
-            }.onSuccess { reader ->
-                mutableState.update { it.copy(screen = AppScreen.Reader(reader), busy = false) }
+            }.onSuccess { destination ->
+                val screen = when (destination) {
+                    is ReaderState -> AppScreen.Reader(destination)
+                    is AppScreen.SessionResult -> destination
+                    else -> error("Destino de lectura no compatible")
+                }
+                mutableState.update { it.copy(screen = screen, busy = false) }
             }.onFailure { error ->
                 mutableState.update {
                     it.copy(busy = false, message = error.userMessage("No fue posible abrir el libro"))
@@ -212,6 +227,7 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
     fun pauseForBackground() {
         if (currentReader()?.focusEnabled == true) pauseFocusSession()
         persistProgressImmediately()
+        persistReadingCycleStats()
     }
 
     fun resumeForForeground() {
@@ -223,10 +239,19 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
     fun moveBlock(delta: Int) {
         val reader = currentReader() ?: return
         if (reader.plan.blocks.isEmpty()) return
+        if (delta > 0 && reader.currentBlockIndex == reader.plan.blocks.lastIndex) {
+            completeReading(reader)
+            return
+        }
         val next = (reader.currentBlockIndex + delta).coerceIn(0, reader.plan.blocks.lastIndex)
         if (next == reader.currentBlockIndex) return
 
         moveToBlock(next, backwards = delta < 0)
+    }
+
+    fun completeCurrentBook() {
+        val reader = currentReader() ?: return
+        if (!reader.focusEnabled) completeReading(reader)
     }
 
     fun setVisibleParagraph(paragraphIndex: Int) {
@@ -368,26 +393,50 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
         pauseFocusSession()
         val finalReader = currentReader() ?: reader
         persistProgressImmediately()
-        val elapsed = finalReader.activeDurationMillis.coerceAtLeast(0)
-        val first = finalReader.sessionStartBlockIndex.coerceAtMost(finalReader.furthestBlockIndex)
-        val words = finalReader.plan.blocks
-            .subList(first, (finalReader.furthestBlockIndex + 1).coerceAtMost(finalReader.plan.blocks.size))
-            .sumOf { it.wordCount }
-        val average = if (elapsed < 1_000 || words == 0) 0 else {
-            (words * 60_000.0 / elapsed).roundToInt()
+        val cycleStats = finalReader.aggregateCycleStats()
+        if (!finalReader.completed) {
+            viewModelScope.launch {
+                repository.saveReadingCycleStats(finalReader.document.summary.id, cycleStats)
+            }
         }
+        val average = cycleStats.averageWordsPerMinute()
         val summary = ReadingSessionSummary(
             bookTitle = finalReader.document.summary.title,
             coverImagePath = finalReader.document.summary.coverImagePath,
-            elapsedMillis = elapsed,
-            wordsRead = words,
+            elapsedMillis = cycleStats.activeDurationMillis,
+            wordsRead = cycleStats.wordsRead,
             averageWordsPerMinute = average,
             progress = finalReader.progress,
-            pauses = finalReader.pauses,
-            backwardsMoves = finalReader.backwardsMoves,
-            fragmentsRead = (finalReader.furthestBlockIndex - first + 1).coerceAtLeast(0),
+            pauses = cycleStats.pauses,
+            backwardsMoves = cycleStats.backwardsMoves,
+            fragmentsRead = cycleStats.fragmentsRead,
         )
-        mutableState.update { it.copy(screen = AppScreen.SessionResult(summary)) }
+        mutableState.update {
+            it.copy(
+                screen = AppScreen.SessionResult(
+                    bookId = finalReader.document.summary.id,
+                    summary = summary,
+                    previousReadings = finalReader.document.summary.completedReadings,
+                    restartAvailable = finalReader.completed,
+                ),
+            )
+        }
+    }
+
+    fun restartCompletedBook(bookId: String) {
+        viewModelScope.launch {
+            mutableState.update { it.copy(busy = true, message = null) }
+            runCatching { repository.restartBook(bookId) }
+                .onSuccess { openBook(bookId) }
+                .onFailure { error ->
+                    mutableState.update {
+                        it.copy(
+                            busy = false,
+                            message = error.userMessage("No fue posible reiniciar el libro"),
+                        )
+                    }
+                }
+        }
     }
 
     fun returnToLibrary() {
@@ -462,6 +511,14 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch { preferences.updateReaderSettings(settings) }
     }
 
+    private fun persistReadingCycleStats() {
+        val reader = currentReader()?.takeUnless { it.completed } ?: return
+        val stats = reader.aggregateCycleStats()
+        viewModelScope.launch {
+            repository.saveReadingCycleStats(reader.document.summary.id, stats)
+        }
+    }
+
     private suspend fun reloadLibrary() {
         val books = repository.listBooks()
         mutableState.update { it.copy(books = books, busy = false) }
@@ -477,8 +534,81 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    private fun completeReading(reader: ReaderState) {
+        if (reader.completed || reader.plan.blocks.isEmpty()) return
+        val completedReader = reader.copy(
+            currentBlockIndex = reader.plan.blocks.lastIndex,
+            furthestBlockIndex = reader.plan.blocks.lastIndex,
+            completed = true,
+        )
+        updateReader { completedReader }
+        viewModelScope.launch {
+            repository.completeReading(
+                completedReader.document.summary.id,
+                completedReader.toCompletedReading(System.currentTimeMillis()),
+            )
+        }
+    }
+
     private fun Throwable.userMessage(fallback: String): String =
         message?.takeIf { it.isNotBlank() } ?: fallback
+
+    private fun ReaderState.toCompletedReading(completedAtMillis: Long): CompletedReading {
+        val aggregate = aggregateCycleStats()
+        return CompletedReading(
+            completedAtMillis = completedAtMillis,
+            elapsedMillis = aggregate.activeDurationMillis,
+            wordsRead = aggregate.wordsRead,
+            averageWordsPerMinute = aggregate.averageWordsPerMinute(),
+            pauses = aggregate.pauses,
+            backwardsMoves = aggregate.backwardsMoves,
+            fragmentsRead = aggregate.fragmentsRead,
+        )
+    }
+
+    private fun ReaderState.aggregateCycleStats(): ReadingCycleStats {
+        val first = sessionStartBlockIndex.coerceAtMost(furthestBlockIndex)
+        val sessionWords = plan.blocks
+            .subList(first, (furthestBlockIndex + 1).coerceAtMost(plan.blocks.size))
+            .sumOf { it.wordCount }
+        val sessionElapsed = activeDurationMillis +
+            (playStartedAtMillis?.let { SystemClock.elapsedRealtime() - it } ?: 0L)
+        val previous = document.summary.currentCycleStats
+        return ReadingCycleStats(
+            activeDurationMillis = previous.activeDurationMillis + sessionElapsed.coerceAtLeast(0),
+            wordsRead = previous.wordsRead + sessionWords,
+            pauses = previous.pauses + pauses,
+            backwardsMoves = previous.backwardsMoves + backwardsMoves,
+            fragmentsRead = previous.fragmentsRead +
+                (furthestBlockIndex - first + 1).coerceAtLeast(0),
+        )
+    }
+
+    private fun ReadingCycleStats.averageWordsPerMinute(): Int =
+        if (activeDurationMillis < 1_000 || wordsRead == 0) 0 else {
+            (wordsRead * 60_000.0 / activeDurationMillis).roundToInt()
+        }
+
+    private fun completedBookResult(book: BookSummary): AppScreen.SessionResult {
+        val latest = book.completedReadings.lastOrNull()
+        val summary = ReadingSessionSummary(
+            bookTitle = book.title,
+            coverImagePath = book.coverImagePath,
+            elapsedMillis = latest?.elapsedMillis ?: 0,
+            wordsRead = latest?.wordsRead ?: book.totalWords,
+            averageWordsPerMinute = latest?.averageWordsPerMinute ?: 0,
+            progress = 1f,
+            pauses = latest?.pauses ?: 0,
+            backwardsMoves = latest?.backwardsMoves ?: 0,
+            fragmentsRead = latest?.fragmentsRead ?: 0,
+        )
+        return AppScreen.SessionResult(
+            bookId = book.id,
+            summary = summary,
+            previousReadings = book.completedReadings.dropLast(1).asReversed(),
+            restartAvailable = true,
+        )
+    }
 
     override fun onCleared() {
         progressSaveJob?.cancel()

@@ -22,6 +22,7 @@
     <string name="cancel">Cancelar</string>
     <string name="delete">Eliminar</string>
     <string name="cover_progress">%1$d%% leído</string>
+    <string name="completed_book_description">%1$s, lectura completada</string>
     <string name="back">Volver</string>
     <string name="exit_focus">Salir de Focus</string>
     <string name="book_cover">Portada de %1$s</string>
@@ -56,12 +57,12 @@
     <string name="focus_dimming_value">%1$d %%</string>
     <string name="classic_marker_options">Opciones de «Sobre el texto»</string>
     <string name="focus_mascot">Mostrar a Octi debajo del texto</string>
-    <string name="focus_mascot_hint">Solo modifica el estilo clásico; no activa Octi narrador.</string>
+    <string name="focus_mascot_hint">Solo modifica el estilo clásico; no activa el modo narrador.</string>
     <string name="focus_mascot_description">Octi, el pulpo lector</string>
     <string name="focus_presentation">Estilo de Focus</string>
     <string name="focus_presentation_marker">Sobre el texto</string>
-    <string name="focus_presentation_narrator">Octi narrador</string>
-    <string name="focus_narrator_hint">Octi presenta cada fragmento en un globo de diálogo.</string>
+    <string name="focus_presentation_narrator">Narrador</string>
+    <string name="focus_narrator_hint">El narrador seleccionado presenta cada fragmento en un globo de diálogo.</string>
     <string name="narrator_avatar">Avatar del narrador</string>
     <string name="narrator_avatar_hint">Elige quién te acompaña. Tu selección queda guardada en este dispositivo.</string>
     <string name="narrator_avatar_octi">Octi</string>
@@ -98,7 +99,6 @@
     <string name="pause">Pausar</string>
     <string name="play">Continuar</string>
     <string name="session_complete">Sesión terminada</string>
-    <string name="session_title">Buen ritmo de lectura</string>
     <string name="session_body">Este resumen se calcula localmente y te ayuda a observar tu constancia.</string>
     <string name="session_metrics_title">Tu sesión en números</string>
     <string name="metric_time">Tiempo activo</string>
@@ -115,6 +115,9 @@
     <string name="percentage_value">%1$d%%</string>
     <string name="fragments_value">%1$d</string>
     <string name="return_library">Volver a la biblioteca</string>
+    <string name="restart_book">Leer de nuevo</string>
+    <string name="previous_readings_title">Lecturas anteriores</string>
+    <string name="previous_reading_number">Lectura completada #%1$d</string>
     <string name="loading">Preparando tu lectura…</string>
     <plurals name="book_progress">
         <item quantity="one">%1$d%% leído · %2$d palabra</item>

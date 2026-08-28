@@ -17,12 +17,35 @@ data class BookSummary(
     val calibrationCompleted: Boolean,
     val coverImagePath: String? = null,
     val narratorAvatar: NarratorAvatar = NarratorAvatar.OCTI,
+    val completedReadings: List<CompletedReading> = emptyList(),
+    val currentCycleStats: ReadingCycleStats = ReadingCycleStats(),
 ) {
     val progress: Float
         get() = if (totalCharacters == 0) 0f else {
             (currentCharacterOffset.toFloat() / totalCharacters).coerceIn(0f, 1f)
         }
+
+    val isCompleted: Boolean
+        get() = totalCharacters > 0 && currentCharacterOffset >= totalCharacters
 }
+
+data class CompletedReading(
+    val completedAtMillis: Long,
+    val elapsedMillis: Long,
+    val wordsRead: Int,
+    val averageWordsPerMinute: Int,
+    val pauses: Int,
+    val backwardsMoves: Int,
+    val fragmentsRead: Int,
+)
+
+data class ReadingCycleStats(
+    val activeDurationMillis: Long = 0,
+    val wordsRead: Int = 0,
+    val pauses: Int = 0,
+    val backwardsMoves: Int = 0,
+    val fragmentsRead: Int = 0,
+)
 
 data class BookChapter(
     val title: String,

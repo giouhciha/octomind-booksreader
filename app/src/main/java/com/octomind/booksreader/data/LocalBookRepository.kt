@@ -8,7 +8,9 @@ import com.octomind.booksreader.domain.BookChapter
 import com.octomind.booksreader.domain.BookDocument
 import com.octomind.booksreader.domain.BookFormat
 import com.octomind.booksreader.domain.BookSummary
+import com.octomind.booksreader.domain.CompletedReading
 import com.octomind.booksreader.domain.NarratorAvatar
+import com.octomind.booksreader.domain.ReadingCycleStats
 import java.io.File
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
@@ -63,6 +65,8 @@ class LocalBookRepository(private val context: Context) {
                 chapters = parsed.chapters,
                 coverFileName = coverFile?.name,
                 narratorAvatar = NarratorAvatar.OCTI,
+                completedReadings = emptyList(),
+                currentCycleStats = ReadingCycleStats(),
             )
             synchronized(lock) {
                 val records = readRecords().toMutableList().apply { add(record) }
@@ -100,6 +104,52 @@ class LocalBookRepository(private val context: Context) {
                 records[index] = records[index].copy(
                     currentCharacterOffset = characterOffset.coerceAtLeast(0),
                     lastOpenedAtMillis = System.currentTimeMillis(),
+                )
+                writeRecords(records)
+            }
+        }
+    }
+
+    suspend fun completeReading(id: String, reading: CompletedReading) = withContext(Dispatchers.IO) {
+        synchronized(lock) {
+            val records = readRecords().toMutableList()
+            val index = records.indexOfFirst { it.id == id }
+            if (index >= 0) {
+                val record = records[index]
+                if (record.completedReadings.any { it.completedAtMillis == reading.completedAtMillis }) {
+                    return@synchronized
+                }
+                records[index] = record.copy(
+                    currentCharacterOffset = record.totalCharacters,
+                    lastOpenedAtMillis = System.currentTimeMillis(),
+                    completedReadings = record.completedReadings + reading,
+                    currentCycleStats = ReadingCycleStats(),
+                )
+                writeRecords(records)
+            }
+        }
+    }
+
+    suspend fun saveReadingCycleStats(id: String, stats: ReadingCycleStats) = withContext(Dispatchers.IO) {
+        synchronized(lock) {
+            val records = readRecords().toMutableList()
+            val index = records.indexOfFirst { it.id == id }
+            if (index >= 0 && records[index].currentCharacterOffset < records[index].totalCharacters) {
+                records[index] = records[index].copy(currentCycleStats = stats)
+                writeRecords(records)
+            }
+        }
+    }
+
+    suspend fun restartBook(id: String) = withContext(Dispatchers.IO) {
+        synchronized(lock) {
+            val records = readRecords().toMutableList()
+            val index = records.indexOfFirst { it.id == id }
+            if (index >= 0) {
+                records[index] = records[index].copy(
+                    currentCharacterOffset = 0,
+                    lastOpenedAtMillis = System.currentTimeMillis(),
+                    currentCycleStats = ReadingCycleStats(),
                 )
                 writeRecords(records)
             }
@@ -191,6 +241,8 @@ private data class BookRecord(
     val chapters: List<BookChapter>,
     val coverFileName: String?,
     val narratorAvatar: NarratorAvatar,
+    val completedReadings: List<CompletedReading>,
+    val currentCycleStats: ReadingCycleStats,
 ) {
     fun toSummary(libraryDirectory: File) = BookSummary(
         id = id,
@@ -204,6 +256,8 @@ private data class BookRecord(
         calibrationCompleted = calibrationCompleted,
         coverImagePath = coverFileName?.let { File(libraryDirectory, it).absolutePath },
         narratorAvatar = narratorAvatar,
+        completedReadings = completedReadings,
+        currentCycleStats = currentCycleStats,
     )
 
     fun toJson() = JSONObject().apply {
@@ -219,6 +273,26 @@ private data class BookRecord(
         put("contentFileName", contentFileName)
         put("coverFileName", coverFileName)
         put("narratorAvatar", narratorAvatar.name)
+        put("completedReadings", JSONArray().apply {
+            completedReadings.forEach { reading ->
+                put(JSONObject().apply {
+                    put("completedAtMillis", reading.completedAtMillis)
+                    put("elapsedMillis", reading.elapsedMillis)
+                    put("wordsRead", reading.wordsRead)
+                    put("averageWordsPerMinute", reading.averageWordsPerMinute)
+                    put("pauses", reading.pauses)
+                    put("backwardsMoves", reading.backwardsMoves)
+                    put("fragmentsRead", reading.fragmentsRead)
+                })
+            }
+        })
+        put("currentCycleStats", JSONObject().apply {
+            put("activeDurationMillis", currentCycleStats.activeDurationMillis)
+            put("wordsRead", currentCycleStats.wordsRead)
+            put("pauses", currentCycleStats.pauses)
+            put("backwardsMoves", currentCycleStats.backwardsMoves)
+            put("fragmentsRead", currentCycleStats.fragmentsRead)
+        })
         put("chapters", JSONArray().apply {
             chapters.forEach { chapter ->
                 put(JSONObject().apply {
@@ -232,6 +306,8 @@ private data class BookRecord(
     companion object {
         fun fromJson(json: JSONObject): BookRecord {
             val chapterArray = json.optJSONArray("chapters") ?: JSONArray()
+            val completedReadingsArray = json.optJSONArray("completedReadings") ?: JSONArray()
+            val currentCycleStatsJson = json.optJSONObject("currentCycleStats")
             return BookRecord(
                 id = json.getString("id"),
                 title = json.getString("title"),
@@ -249,6 +325,26 @@ private data class BookRecord(
                 narratorAvatar = runCatching {
                     NarratorAvatar.valueOf(json.optString("narratorAvatar"))
                 }.getOrDefault(NarratorAvatar.OCTI),
+                completedReadings = (0 until completedReadingsArray.length()).map { index ->
+                    completedReadingsArray.getJSONObject(index).let { reading ->
+                        CompletedReading(
+                            completedAtMillis = reading.optLong("completedAtMillis", 0),
+                            elapsedMillis = reading.optLong("elapsedMillis", 0),
+                            wordsRead = reading.optInt("wordsRead", 0),
+                            averageWordsPerMinute = reading.optInt("averageWordsPerMinute", 0),
+                            pauses = reading.optInt("pauses", 0),
+                            backwardsMoves = reading.optInt("backwardsMoves", 0),
+                            fragmentsRead = reading.optInt("fragmentsRead", 0),
+                        )
+                    }
+                },
+                currentCycleStats = ReadingCycleStats(
+                    activeDurationMillis = currentCycleStatsJson?.optLong("activeDurationMillis", 0) ?: 0,
+                    wordsRead = currentCycleStatsJson?.optInt("wordsRead", 0) ?: 0,
+                    pauses = currentCycleStatsJson?.optInt("pauses", 0) ?: 0,
+                    backwardsMoves = currentCycleStatsJson?.optInt("backwardsMoves", 0) ?: 0,
+                    fragmentsRead = currentCycleStatsJson?.optInt("fragmentsRead", 0) ?: 0,
+                ),
                 chapters = (0 until chapterArray.length()).map { index ->
                     chapterArray.getJSONObject(index).let { chapter ->
                         BookChapter(

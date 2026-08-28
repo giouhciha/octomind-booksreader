@@ -130,7 +130,7 @@ class UserPreferences(private val context: Context) {
         val ADAPTIVE_PACING_ENABLED = booleanPreferencesKey("adaptive_pacing_enabled")
         val FOCUS_DIMMING_PERCENT = intPreferencesKey("focus_dimming_percent")
         val SHOW_FOCUS_MASCOT = booleanPreferencesKey("show_focus_mascot")
-        // La clave v2 establece Octi narrador como experiencia inicial para instalaciones
+        // La clave v2 establece Narrador como experiencia inicial para instalaciones
         // que conocieron la primera mascota antes de que existiera el selector de estilo.
         val FOCUS_PRESENTATION = stringPreferencesKey("focus_presentation_v2")
         val NARRATOR_AVATAR = stringPreferencesKey("narrator_avatar")

@@ -132,6 +132,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.octomind.booksreader.R
 import com.octomind.booksreader.domain.BookSummary
+import com.octomind.booksreader.domain.CompletedReading
 import com.octomind.booksreader.domain.AmbientIntensity
 import com.octomind.booksreader.domain.FocusNavigation
 import com.octomind.booksreader.domain.FocusPresentation
@@ -195,6 +196,7 @@ fun OctomindApp(viewModel: OctomindViewModel = viewModel()) {
                 onToggleFocus = viewModel::toggleFocus,
                 onMoveBlock = viewModel::moveBlock,
                 onVisibleParagraph = viewModel::setVisibleParagraph,
+                onReachedBookEnd = viewModel::completeCurrentBook,
                 onPageTheme = viewModel::updatePageTheme,
                 onFontStyle = viewModel::updateFontStyle,
                 onFontSize = viewModel::updateFontSize,
@@ -210,7 +212,10 @@ fun OctomindApp(viewModel: OctomindViewModel = viewModel()) {
             )
             is AppScreen.SessionResult -> SessionResultScreen(
                 summary = screen.summary,
+                previousReadings = screen.previousReadings,
+                restartAvailable = screen.restartAvailable,
                 onFinish = viewModel::returnToLibrary,
+                onRestart = { viewModel.restartCompletedBook(screen.bookId) },
             )
         }
 
@@ -577,6 +582,31 @@ private fun BookCover(
                     modifier = Modifier.size(17.dp),
                 )
             }
+            if (book.isCompleted) {
+                val completedDescription = stringResource(
+                    R.string.completed_book_description,
+                    book.title,
+                )
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(7.dp)
+                        .size(30.dp)
+                        .semantics {
+                            contentDescription = completedDescription
+                        },
+                    shape = CircleShape,
+                    color = Color(0xFF2E7D52),
+                    shadowElevation = 4.dp,
+                ) {
+                    Icon(
+                        Icons.Rounded.Check,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.padding(6.dp),
+                    )
+                }
+            }
         }
     }
 }
@@ -637,6 +667,7 @@ private fun ReaderScreen(
     onToggleFocus: () -> Unit,
     onMoveBlock: (Int) -> Unit,
     onVisibleParagraph: (Int) -> Unit,
+    onReachedBookEnd: () -> Unit,
     onPageTheme: (PageTheme) -> Unit,
     onFontStyle: (ReaderFontStyle) -> Unit,
     onFontSize: (Int) -> Unit,
@@ -657,6 +688,7 @@ private fun ReaderScreen(
             onToggleFocus = onToggleFocus,
             onMoveBlock = onMoveBlock,
             onVisibleParagraph = onVisibleParagraph,
+            onReachedBookEnd = onReachedBookEnd,
             onPageTheme = onPageTheme,
             onFontStyle = onFontStyle,
             onFontSize = onFontSize,
@@ -681,6 +713,7 @@ private fun ReaderScreenContent(
     onToggleFocus: () -> Unit,
     onMoveBlock: (Int) -> Unit,
     onVisibleParagraph: (Int) -> Unit,
+    onReachedBookEnd: () -> Unit,
     onPageTheme: (PageTheme) -> Unit,
     onFontStyle: (ReaderFontStyle) -> Unit,
     onFontSize: (Int) -> Unit,
@@ -712,9 +745,10 @@ private fun ReaderScreenContent(
 
     fun navigateBlock(delta: Int) {
         val targetIndex = state.currentBlockIndex + delta
-        if (delta == 0 || targetIndex !in state.plan.blocks.indices) return
+        val completesBook = delta > 0 && state.currentBlockIndex == state.plan.blocks.lastIndex
+        if (delta == 0 || (targetIndex !in state.plan.blocks.indices && !completesBook)) return
         mascotPageTurnDirection = delta
-        mascotPageTurnKey += 1
+        if (!completesBook) mascotPageTurnKey += 1
         onMoveBlock(delta)
     }
 
@@ -747,6 +781,20 @@ private fun ReaderScreenContent(
             .filter { !state.focusEnabled }
             .drop(1)
             .collect(onVisibleParagraph)
+    }
+    LaunchedEffect(state.focusEnabled, listState) {
+        if (state.focusEnabled) return@LaunchedEffect
+        var userScrolled = false
+        snapshotFlow { listState.isScrollInProgress to listState.canScrollForward }
+            .distinctUntilChanged()
+            .collect { (isScrolling, canScrollForward) ->
+                if (isScrolling) {
+                    userScrolled = true
+                } else if (userScrolled && !canScrollForward) {
+                    userScrolled = false
+                    onReachedBookEnd()
+                }
+            }
     }
 
     Scaffold(
@@ -790,8 +838,6 @@ private fun ReaderScreenContent(
                 onDeleteCustomAvatar = onDeleteCustomAvatar,
                 onReaderControlsExpanded = onReaderControlsExpanded,
                 onAmbientIntensity = onAmbientIntensity,
-                mascotPageTurnKey = mascotPageTurnKey,
-                mascotPageTurnDirection = mascotPageTurnDirection,
             )
         },
     ) { padding ->
@@ -826,7 +872,9 @@ private fun ReaderScreenContent(
                                 val threshold = 48.dp.toPx()
                                 val delta = FocusNavigation.blockDelta(accumulatedDragY, threshold)
                                 val targetIndex = state.currentBlockIndex + delta
-                                if (delta != 0 && targetIndex in state.plan.blocks.indices) {
+                                val completesBook = delta > 0 &&
+                                    state.currentBlockIndex == state.plan.blocks.lastIndex
+                                if (delta != 0 && (targetIndex in state.plan.blocks.indices || completesBook)) {
                                     hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     if (state.settings.focusPresentation == FocusPresentation.OCTI_NARRATOR) {
                                         onNarratorGestureLearned()
@@ -974,50 +1022,17 @@ private fun ReaderParagraph(
 
 @Composable
 private fun FocusReadingMascot(
-    pageTurnKey: Int,
-    direction: Int,
     mascotSize: Dp = 116.dp,
     modifier: Modifier = Modifier,
 ) {
-    val pageTurn = remember { Animatable(0f) }
-    LaunchedEffect(pageTurnKey) {
-        if (pageTurnKey == 0) return@LaunchedEffect
-        pageTurn.snapTo(0f)
-        pageTurn.animateTo(
-            targetValue = 1f,
-            animationSpec = tween(durationMillis = 320, easing = FastOutSlowInEasing),
-        )
-        pageTurn.snapTo(0f)
-    }
-    val movement = 1f - kotlin.math.abs(pageTurn.value * 2f - 1f)
     Box(
-        modifier = modifier
-            .size(mascotSize)
-            .graphicsLayer { rotationZ = direction * movement * 2.5f },
+        modifier = modifier.size(mascotSize),
         contentAlignment = Alignment.Center,
     ) {
         Image(
             painter = painterResource(R.drawable.octi_reader),
             contentDescription = stringResource(R.string.focus_mascot_description),
             modifier = Modifier.fillMaxSize(),
-        )
-        Box(
-            modifier = Modifier
-                .size(width = 30.dp, height = 22.dp)
-                .offset(x = (direction * 5).dp, y = 25.dp)
-                .graphicsLayer {
-                    alpha = movement
-                    rotationY = direction * pageTurn.value * 180f
-                    transformOrigin = TransformOrigin(
-                        pivotFractionX = if (direction > 0) 0f else 1f,
-                        pivotFractionY = 0.5f,
-                    )
-                    cameraDistance = 10f * density
-                }
-                .background(
-                    color = Color(0xFFFFF1C7),
-                    shape = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp),
-                ),
         )
     }
 }
@@ -1036,6 +1051,18 @@ private fun OctiNarratorOverlay(
     customAvatarVersion: Int,
     showGestureHint: Boolean,
 ) {
+    val bubblePageTurn = remember { Animatable(0f) }
+    LaunchedEffect(pageTurnKey) {
+        if (pageTurnKey == 0) {
+            bubblePageTurn.snapTo(0f)
+            return@LaunchedEffect
+        }
+        bubblePageTurn.snapTo(pageTurnDirection.toFloat())
+        bubblePageTurn.animateTo(
+            targetValue = 0f,
+            animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
+        )
+    }
     val narratorFontSizeSp = when {
         block.wordCount <= 30 -> (fontSizeSp + 3).coerceAtMost(36)
         block.wordCount <= 55 -> fontSizeSp
@@ -1074,7 +1101,18 @@ private fun OctiNarratorOverlay(
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                 tonalElevation = 8.dp,
                 shadowElevation = 6.dp,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .graphicsLayer {
+                        rotationY = bubblePageTurn.value * 18f
+                        translationX = bubblePageTurn.value * size.width * 0.08f
+                        alpha = 1f - kotlin.math.abs(bubblePageTurn.value) * 0.18f
+                        transformOrigin = TransformOrigin(
+                            pivotFractionX = if (bubblePageTurn.value >= 0f) 0f else 1f,
+                            pivotFractionY = 0.5f,
+                        )
+                        cameraDistance = 18f * density
+                    },
             ) {
                 Text(
                     text = block.text.trim(),
@@ -1090,15 +1128,16 @@ private fun OctiNarratorOverlay(
                 modifier = Modifier
                     .offset(y = (-1).dp)
                     .size(22.dp)
-                    .graphicsLayer { rotationZ = 45f }
+                    .graphicsLayer {
+                        rotationZ = 45f
+                        alpha = 1f - kotlin.math.abs(bubblePageTurn.value) * 0.18f
+                    }
                     .background(MaterialTheme.colorScheme.primaryContainer),
             )
             FocusNarratorAvatar(
                 avatar = narratorAvatar,
                 customAvatarPath = customAvatarPath,
                 customAvatarVersion = customAvatarVersion,
-                pageTurnKey = pageTurnKey,
-                direction = pageTurnDirection,
             )
             AnimatedVisibility(visible = showGestureHint) {
                 Text(
@@ -1170,13 +1209,9 @@ private fun FocusNarratorAvatar(
     avatar: NarratorAvatar,
     customAvatarPath: String?,
     customAvatarVersion: Int,
-    pageTurnKey: Int,
-    direction: Int,
 ) {
     when (avatar) {
         NarratorAvatar.OCTI -> FocusReadingMascot(
-            pageTurnKey = pageTurnKey,
-            direction = direction,
             mascotSize = 196.dp,
         )
         NarratorAvatar.LOVECRAFT_ILLUSTRATION -> Image(
@@ -1323,8 +1358,6 @@ private fun ReaderControls(
     onDeleteCustomAvatar: () -> Unit,
     onReaderControlsExpanded: (Boolean) -> Unit,
     onAmbientIntensity: (AmbientIntensity) -> Unit,
-    mascotPageTurnKey: Int,
-    mascotPageTurnDirection: Int,
 ) {
     val customAvatarLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let(onImportCustomAvatar)
@@ -1337,8 +1370,6 @@ private fun ReaderControls(
             focusEnabled = state.focusEnabled,
             showMascot = state.settings.showFocusMascot,
             narratorMode = state.settings.focusPresentation == FocusPresentation.OCTI_NARRATOR,
-            mascotPageTurnKey = mascotPageTurnKey,
-            mascotPageTurnDirection = mascotPageTurnDirection,
             onMoveBlock = onMoveBlock,
             onExpand = { onReaderControlsExpanded(true) },
         )
@@ -1708,8 +1739,6 @@ private fun CollapsedReaderMenuHandle(
     focusEnabled: Boolean,
     showMascot: Boolean,
     narratorMode: Boolean,
-    mascotPageTurnKey: Int,
-    mascotPageTurnDirection: Int,
     onMoveBlock: (Int) -> Unit,
     onExpand: () -> Unit,
 ) {
@@ -1745,8 +1774,6 @@ private fun CollapsedReaderMenuHandle(
         }
         if (focusEnabled && showMascot && !narratorMode) {
             FocusReadingMascot(
-                pageTurnKey = mascotPageTurnKey,
-                direction = mascotPageTurnDirection,
                 modifier = Modifier.align(Alignment.Center),
             )
         }
@@ -1767,7 +1794,13 @@ private fun CollapsedReaderMenuHandle(
 }
 
 @Composable
-private fun SessionResultScreen(summary: ReadingSessionSummary, onFinish: () -> Unit) {
+private fun SessionResultScreen(
+    summary: ReadingSessionSummary,
+    previousReadings: List<CompletedReading>,
+    restartAvailable: Boolean,
+    onFinish: () -> Unit,
+    onRestart: () -> Unit,
+) {
     BackHandler(onBack = onFinish)
     Scaffold(
         topBar = {
@@ -1792,15 +1825,27 @@ private fun SessionResultScreen(summary: ReadingSessionSummary, onFinish: () -> 
         },
         bottomBar = {
             Surface(color = Color(0xFFF3D293), shadowElevation = 8.dp) {
-                Button(
-                    onClick = onFinish,
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .navigationBarsPadding()
-                        .padding(horizontal = 24.dp, vertical = 12.dp)
-                        .height(54.dp),
+                        .padding(horizontal = 24.dp, vertical = 12.dp),
                 ) {
-                    Text(stringResource(R.string.return_library))
+                    if (restartAvailable) {
+                        Button(
+                            onClick = onRestart,
+                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                        ) {
+                            Text(stringResource(R.string.restart_book))
+                        }
+                        Spacer(Modifier.height(8.dp))
+                    }
+                    Button(
+                        onClick = onFinish,
+                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                    ) {
+                        Text(stringResource(R.string.return_library))
+                    }
                 }
             }
         },
@@ -1835,27 +1880,13 @@ private fun SessionResultScreen(summary: ReadingSessionSummary, onFinish: () -> 
                                 modifier = Modifier.width(110.dp).height(148.dp),
                             )
                             Column(modifier = Modifier.weight(1f)) {
-                                Surface(shape = CircleShape, color = Color(0xFFDDEBD9)) {
-                                    Icon(
-                                        Icons.Rounded.Check,
-                                        contentDescription = null,
-                                        modifier = Modifier.padding(12.dp).size(26.dp),
-                                        tint = Color(0xFF215A3D),
-                                    )
-                                }
-                                Spacer(Modifier.height(12.dp))
-                                Text(
-                                    stringResource(R.string.session_title),
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF352817),
-                                )
-                                Spacer(Modifier.height(6.dp))
                                 Text(
                                     summary.bookTitle,
-                                    maxLines = 3,
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 5,
                                     overflow = TextOverflow.Ellipsis,
-                                    color = Color(0xFF76511F),
+                                    color = Color(0xFF352817),
                                     fontFamily = LoraFontFamily,
                                 )
                             }
@@ -1898,6 +1929,57 @@ private fun SessionResultScreen(summary: ReadingSessionSummary, onFinish: () -> 
                         )
                     }
                 }
+            }
+            if (previousReadings.isNotEmpty()) {
+                item {
+                    Spacer(Modifier.height(18.dp))
+                    Text(
+                        stringResource(R.string.previous_readings_title),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFF9E8C5),
+                    )
+                    Spacer(Modifier.height(10.dp))
+                }
+                items(previousReadings.withIndex().toList()) { indexedReading ->
+                    PreviousReadingCard(
+                        readingNumber = previousReadings.size - indexedReading.index,
+                        reading = indexedReading.value,
+                    )
+                    Spacer(Modifier.height(10.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PreviousReadingCard(readingNumber: Int, reading: CompletedReading) {
+    Surface(
+        shape = RoundedCornerShape(18.dp),
+        color = Color(0xFFF9E8C5),
+        shadowElevation = 5.dp,
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+            Text(
+                stringResource(R.string.previous_reading_number, readingNumber),
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF352817),
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(formatDuration(reading.elapsedMillis), color = Color(0xFF6C5B43))
+                Text(
+                    stringResource(R.string.words_value, reading.wordsRead),
+                    color = Color(0xFF6C5B43),
+                )
+                Text(
+                    stringResource(R.string.wpm_value, reading.averageWordsPerMinute),
+                    color = Color(0xFF6C5B43),
+                )
             }
         }
     }
