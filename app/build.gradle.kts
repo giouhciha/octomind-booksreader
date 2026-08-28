@@ -75,6 +75,7 @@ configure<DependencyCheckExtension> {
     format = ReportGenerator.Format.ALL.toString()
     failBuildOnCVSS = 7.0f
     scanConfigurations = listOf("debugRuntimeClasspath", "releaseRuntimeClasspath")
+    suppressionFile = file("config/dependency-check/suppressions.xml").absolutePath
     analyzers.assemblyEnabled = false
     System.getenv("NVD_API_KEY")?.takeIf { it.isNotBlank() }?.let { nvd.apiKey = it }
 }
