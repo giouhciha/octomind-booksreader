@@ -51,7 +51,9 @@ if ([string]::IsNullOrWhiteSpace($env:ANDROID_USER_HOME)) {
 $adbIdentityDirectory = $env:ANDROID_USER_HOME
 $adbPrivateKey = Join-Path $adbIdentityDirectory "adbkey"
 New-Item -ItemType Directory -Path $adbIdentityDirectory -Force | Out-Null
-$env:ADB_VENDOR_KEYS = $adbIdentityDirectory
+$env:ANDROID_EMULATOR_HOME = $adbIdentityDirectory
+$env:ANDROID_SDK_HOME = Split-Path -Parent $adbIdentityDirectory
+$env:ADB_VENDOR_KEYS = $adbPrivateKey
 
 if (-not (Test-Path -LiteralPath $adbPrivateKey)) {
     $keyGeneration = Invoke-AdbQuietly -Arguments @("keygen", $adbPrivateKey)
@@ -91,11 +93,6 @@ $emulatorProcess.Id | Set-Content -LiteralPath $marker -Encoding ascii
 
 $deadline = [DateTimeOffset]::UtcNow.AddSeconds($TimeoutSeconds)
 while ([DateTimeOffset]::UtcNow -lt $deadline) {
-    $emulatorProcess.Refresh()
-    if ($emulatorProcess.HasExited) {
-        throw "El proceso del emulador termino con codigo $($emulatorProcess.ExitCode). Revisa $standardOutputLog y $standardErrorLog."
-    }
-
     $state = Invoke-AdbQuietly -Arguments @("-s", $serial, "get-state")
     if ($state.ExitCode -eq 0 -and $state.Output -eq "device") {
         $bootCompleted = Invoke-AdbQuietly -Arguments @("-s", $serial, "shell", "getprop", "sys.boot_completed")
