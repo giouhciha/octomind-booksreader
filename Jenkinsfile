@@ -5,6 +5,9 @@ pipeline {
         JAVA_HOME = 'C:\\Program Files\\Android\\Android Studio\\jbr'
         ANDROID_HOME = 'C:\\Users\\gio_u\\AppData\\Local\\Android\\Sdk'
         ANDROID_AVD_HOME = 'C:\\Users\\gio_u\\.android\\avd'
+        ANDROID_USER_HOME = 'C:\\ProgramData\\Jenkins\\.jenkins\\.android'
+        ADB_VENDOR_KEYS = 'C:\\ProgramData\\Jenkins\\.jenkins\\.android'
+        ANDROID_ADB_SERVER_PORT = '5038'
         ANDROID_SERIAL = 'emulator-5554'
     }
 

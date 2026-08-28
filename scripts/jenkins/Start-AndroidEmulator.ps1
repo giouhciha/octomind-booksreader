@@ -44,6 +44,22 @@ function Invoke-AdbQuietly {
     }
 }
 
+if ([string]::IsNullOrWhiteSpace($env:ANDROID_USER_HOME)) {
+    throw "ANDROID_USER_HOME no esta configurado para la identidad ADB de Jenkins."
+}
+
+$adbIdentityDirectory = $env:ANDROID_USER_HOME
+$adbPrivateKey = Join-Path $adbIdentityDirectory "adbkey"
+New-Item -ItemType Directory -Path $adbIdentityDirectory -Force | Out-Null
+$env:ADB_VENDOR_KEYS = $adbIdentityDirectory
+
+if (-not (Test-Path -LiteralPath $adbPrivateKey)) {
+    $keyGeneration = Invoke-AdbQuietly -Arguments @("keygen", $adbPrivateKey)
+    if ($keyGeneration.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $adbPrivateKey)) {
+        throw "No se pudo generar la identidad ADB exclusiva de Jenkins."
+    }
+}
+
 $existingState = Invoke-AdbQuietly -Arguments @("-s", $serial, "get-state")
 if ($existingState.ExitCode -eq 0 -and $existingState.Output -eq "device") {
     throw "El puerto $Port ya esta ocupado por otro emulador; no se modificara ese dispositivo."

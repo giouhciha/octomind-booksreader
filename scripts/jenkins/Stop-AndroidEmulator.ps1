@@ -35,8 +35,20 @@ if ($emulatorProcessId -gt 0) {
     if ($null -ne $emulatorProcess) {
         $expectedDirectory = (Resolve-Path (Join-Path $env:ANDROID_HOME "emulator")).Path
         if ($emulatorProcess.Path.StartsWith($expectedDirectory, [StringComparison]::OrdinalIgnoreCase)) {
-            Stop-Process -Id $emulatorProcessId -Force -ErrorAction SilentlyContinue
-            $emulatorProcess.WaitForExit(10000) | Out-Null
+            $taskKill = Join-Path $env:SystemRoot "System32\taskkill.exe"
+            $processInfo = [System.Diagnostics.ProcessStartInfo]::new()
+            $processInfo.FileName = $taskKill
+            $processInfo.Arguments = "/PID $emulatorProcessId /T /F"
+            $processInfo.UseShellExecute = $false
+            $processInfo.RedirectStandardOutput = $true
+            $processInfo.RedirectStandardError = $true
+            $processInfo.CreateNoWindow = $true
+
+            $taskKillProcess = [System.Diagnostics.Process]::Start($processInfo)
+            if (-not $taskKillProcess.WaitForExit(10000)) {
+                $taskKillProcess.Kill()
+                $taskKillProcess.WaitForExit()
+            }
         }
     }
 }
