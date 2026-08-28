@@ -19,6 +19,7 @@ data class BookSummary(
     val narratorAvatar: NarratorAvatar = NarratorAvatar.OCTI,
     val completedReadings: List<CompletedReading> = emptyList(),
     val currentCycleStats: ReadingCycleStats = ReadingCycleStats(),
+    val savedQuotes: List<SavedQuote> = emptyList(),
 ) {
     val progress: Float
         get() = if (totalCharacters == 0) 0f else {
@@ -28,6 +29,17 @@ data class BookSummary(
     val isCompleted: Boolean
         get() = totalCharacters > 0 && currentCharacterOffset >= totalCharacters
 }
+
+data class SavedQuote(
+    val id: String,
+    val bookId: String,
+    val bookTitle: String,
+    val chapterTitle: String?,
+    val text: String,
+    val startCharacterOffset: Int,
+    val endCharacterOffset: Int,
+    val createdAtMillis: Long,
+)
 
 data class CompletedReading(
     val completedAtMillis: Long,

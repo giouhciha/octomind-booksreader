@@ -11,6 +11,18 @@
     <string name="library_title">Tu biblioteca</string>
     <string name="library_brand">Octomind</string>
     <string name="library_subtitle">Elige una lectura o importa un libro.</string>
+    <string name="my_quotes">Mis citas</string>
+    <string name="delete_quote">Eliminar cita</string>
+    <string name="open_quote">Abrir cita en el libro</string>
+    <string name="quote_preview">Vista de cita</string>
+    <string name="share_quote">Compartir cita</string>
+    <string name="share_quote_title">¿Cómo quieres compartirla?</string>
+    <string name="share_with_narrator">Con narrador</string>
+    <string name="share_quote_only">Solo la cita</string>
+    <string name="share_quote_privacy">Solo la cita elegida saldrá de este dispositivo al seleccionar una aplicación.</string>
+    <string name="share_quote_chooser">Compartir cita con…</string>
+    <string name="empty_quotes">Todavía no tienes citas</string>
+    <string name="empty_quotes_hint">Mantén presionado el texto para guardar una cita.</string>
     <string name="import_book">Importar libro</string>
     <string name="import_formats">TXT o EPUB · hasta 100 MB</string>
     <string name="empty_library_title">Tu próxima lectura empieza aquí</string>
@@ -28,6 +40,7 @@
     <string name="book_cover">Portada de %1$s</string>
     <string name="focus_mode">Octomind Focus</string>
     <string name="normal_mode">Lectura normal</string>
+    <string name="normal_quote_hint">Mantén presionado para seleccionar una cita</string>
     <string name="reading_mode_label">Cómo se forman los bloques</string>
     <string name="reading_mode_words">Por palabras</string>
     <string name="reading_mode_punctuation">Por puntuación</string>
