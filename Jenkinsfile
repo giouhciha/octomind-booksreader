@@ -10,25 +10,26 @@ pipeline {
 
         stage('Permisos Gradle') {
             steps {
-                sh 'chmod +x gradlew'
+                // En Windows no hace falta chmod, se omite este stage
+                echo 'Windows agent - chmod no aplica'
             }
         }
 
         stage('Lint (Android)') {
             steps {
-                sh './gradlew lint'
+                bat 'gradlew.bat lint'
             }
         }
 
         stage('Ktlint / Detekt') {
             steps {
-                sh './gradlew ktlintCheck detekt'
+                bat 'gradlew.bat ktlintCheck detekt'
             }
         }
 
         stage('Unit Tests') {
             steps {
-                sh './gradlew testDebugUnitTest'
+                bat 'gradlew.bat testDebugUnitTest'
             }
         }
     }
