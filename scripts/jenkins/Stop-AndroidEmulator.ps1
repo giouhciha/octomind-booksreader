@@ -8,10 +8,36 @@ if (-not (Test-Path -LiteralPath $marker)) {
     exit 0
 }
 
+$emulatorProcessId = 0
+[int]::TryParse((Get-Content -LiteralPath $marker -Raw -ErrorAction SilentlyContinue).Trim(), [ref]$emulatorProcessId) | Out-Null
+
 if (-not [string]::IsNullOrWhiteSpace($env:ANDROID_HOME)) {
     $adb = Join-Path $env:ANDROID_HOME "platform-tools\adb.exe"
     if (Test-Path -LiteralPath $adb) {
-        & $adb -s "emulator-$Port" emu kill | Out-Null
+        $processInfo = [System.Diagnostics.ProcessStartInfo]::new()
+        $processInfo.FileName = $adb
+        $processInfo.Arguments = "-s emulator-$Port emu kill"
+        $processInfo.UseShellExecute = $false
+        $processInfo.RedirectStandardOutput = $true
+        $processInfo.RedirectStandardError = $true
+        $processInfo.CreateNoWindow = $true
+
+        $adbProcess = [System.Diagnostics.Process]::Start($processInfo)
+        if (-not $adbProcess.WaitForExit(10000)) {
+            $adbProcess.Kill()
+            $adbProcess.WaitForExit()
+        }
+    }
+}
+
+if ($emulatorProcessId -gt 0) {
+    $emulatorProcess = Get-Process -Id $emulatorProcessId -ErrorAction SilentlyContinue
+    if ($null -ne $emulatorProcess) {
+        $expectedDirectory = (Resolve-Path (Join-Path $env:ANDROID_HOME "emulator")).Path
+        if ($emulatorProcess.Path.StartsWith($expectedDirectory, [StringComparison]::OrdinalIgnoreCase)) {
+            Stop-Process -Id $emulatorProcessId -Force -ErrorAction SilentlyContinue
+            $emulatorProcess.WaitForExit(10000) | Out-Null
+        }
     }
 }
 
