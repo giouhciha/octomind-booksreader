@@ -88,6 +88,7 @@
     <string name="focus_presentation_marker">Sobre el texto</string>
     <string name="focus_presentation_narrator">Narrador</string>
     <string name="focus_narrator_hint">El narrador seleccionado presenta cada fragmento en un globo de diálogo.</string>
+    <string name="narrator_continuation">%1$d de %2$d</string>
     <string name="narrator_avatar">Avatar del narrador</string>
     <string name="narrator_avatar_hint">Elige quién te acompaña. Tu selección queda guardada en este dispositivo.</string>
     <string name="narrator_avatar_octi">Octi</string>

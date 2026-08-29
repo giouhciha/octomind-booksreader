@@ -128,6 +128,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalContext
@@ -137,8 +138,11 @@ import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontFamily
@@ -148,6 +152,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.Constraints
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -161,6 +166,7 @@ import com.octomind.booksreader.domain.AmbientIntensity
 import com.octomind.booksreader.domain.FocusNavigation
 import com.octomind.booksreader.domain.FocusPresentation
 import com.octomind.booksreader.domain.NarratorAvatar
+import com.octomind.booksreader.domain.NarratorPagination
 import com.octomind.booksreader.domain.PageTheme
 import com.octomind.booksreader.domain.ReaderFontStyle
 import com.octomind.booksreader.domain.ReadingBlock
@@ -493,6 +499,11 @@ private fun LibraryScreen(
 private enum class BackupDialog { MENU, CREATE_PASSWORD, RESTORE_PASSWORD }
 
 private const val BACKUP_MIME_TYPE = "application/vnd.octomind.backup"
+private const val NARRATOR_LINE_HEIGHT_MULTIPLIER = 1.45f
+private const val NARRATOR_HORIZONTAL_RESERVED_DP = 104
+private const val NARRATOR_MINIMUM_TEXT_WIDTH_DP = 160
+private const val NARRATOR_VERTICAL_RESERVED_DP = 360
+private const val NARRATOR_MINIMUM_TEXT_HEIGHT_DP = 150
 
 @Composable
 private fun BackupMenuDialog(onDismiss: () -> Unit, onCreate: () -> Unit, onRestore: () -> Unit) {
@@ -1240,6 +1251,9 @@ private fun ReaderScreenContent(
     BackHandler(onBack = onBack)
     val readerView = LocalView.current
     val hapticFeedback = LocalHapticFeedback.current
+    val configuration = LocalConfiguration.current
+    val density = LocalDensity.current
+    val narratorTextMeasurer = rememberTextMeasurer()
     DisposableEffect(readerView, state.focusEnabled) {
         val previousKeepScreenOn = readerView.keepScreenOn
         readerView.keepScreenOn = state.focusEnabled
@@ -1252,6 +1266,40 @@ private fun ReaderScreenContent(
     var listTopInWindow by remember { mutableFloatStateOf(0f) }
     var mascotPageTurnKey by rememberSaveable(state.document.summary.id) { mutableIntStateOf(0) }
     var mascotPageTurnDirection by remember { mutableIntStateOf(1) }
+    var narratorPageIndex by rememberSaveable(state.document.summary.id) { mutableIntStateOf(0) }
+    var narratorBlockIndex by remember(state.document.summary.id) {
+        mutableIntStateOf(currentBlock?.index ?: -1)
+    }
+    val narratorTextStyle = MaterialTheme.typography.headlineSmall.copy(
+        fontFamily = readerFontFamily(state.settings.fontStyle),
+        fontSize = state.settings.fontSizeSp.sp,
+        lineHeight = (state.settings.fontSizeSp * NARRATOR_LINE_HEIGHT_MULTIPLIER).sp,
+    )
+    val narratorTextWidthPixels = with(density) {
+        (configuration.screenWidthDp.dp - NARRATOR_HORIZONTAL_RESERVED_DP.dp)
+            .coerceAtLeast(NARRATOR_MINIMUM_TEXT_WIDTH_DP.dp)
+            .roundToPx()
+    }
+    val narratorTextHeightPixels = with(density) {
+        (configuration.screenHeightDp.dp - NARRATOR_VERTICAL_RESERVED_DP.dp)
+            .coerceAtLeast(NARRATOR_MINIMUM_TEXT_HEIGHT_DP.dp)
+            .roundToPx()
+    }
+    val narratorPages = remember(
+        currentBlock?.index,
+        currentBlock?.text,
+        narratorTextStyle,
+        narratorTextWidthPixels,
+        narratorTextHeightPixels,
+    ) {
+        NarratorPagination.paginate(currentBlock?.text.orEmpty()) { candidate ->
+            narratorTextMeasurer.measure(
+                text = AnnotatedString(candidate),
+                style = narratorTextStyle,
+                constraints = Constraints(maxWidth = narratorTextWidthPixels),
+            ).size.height <= narratorTextHeightPixels
+        }
+    }
 
     fun navigateBlock(delta: Int) {
         val targetIndex = state.currentBlockIndex + delta
@@ -1260,6 +1308,29 @@ private fun ReaderScreenContent(
         mascotPageTurnDirection = delta
         if (!completesBook) mascotPageTurnKey += 1
         onMoveBlock(delta)
+    }
+
+    fun navigateFocus(delta: Int) {
+        if (delta == 0) return
+        if (state.settings.focusPresentation == FocusPresentation.OCTI_NARRATOR) {
+            val targetPage = narratorPageIndex + delta
+            if (targetPage in narratorPages.indices) {
+                narratorPageIndex = targetPage
+                mascotPageTurnDirection = delta
+                mascotPageTurnKey += 1
+                return
+            }
+        }
+        navigateBlock(delta)
+    }
+
+    LaunchedEffect(currentBlock?.index, narratorPages.size) {
+        if (currentBlock?.index != narratorBlockIndex) {
+            narratorPageIndex = if (mascotPageTurnDirection < 0) narratorPages.lastIndex else 0
+            narratorBlockIndex = currentBlock?.index ?: -1
+        } else {
+            narratorPageIndex = narratorPageIndex.coerceIn(0, narratorPages.lastIndex)
+        }
     }
 
     LaunchedEffect(state.focusEnabled, currentBlock?.index) {
@@ -1337,7 +1408,7 @@ private fun ReaderScreenContent(
             if (!state.focusEnabled || state.settings.readerControlsExpanded) ReaderControls(
                 state = state,
                 onToggleFocus = onToggleFocus,
-                onMoveBlock = ::navigateBlock,
+                onMoveBlock = ::navigateFocus,
                 onPageTheme = onPageTheme,
                 onFontStyle = onFontStyle,
                 onFontSize = onFontSize,
@@ -1370,6 +1441,8 @@ private fun ReaderScreenContent(
                         state.currentBlockIndex,
                         state.plan.blocks.size,
                         state.settings.focusPresentation,
+                        narratorPageIndex,
+                        narratorPages.size,
                     ) {
                         if (!state.focusEnabled) return@pointerInput
                         var accumulatedDragY = 0f
@@ -1385,12 +1458,18 @@ private fun ReaderScreenContent(
                                 val targetIndex = state.currentBlockIndex + delta
                                 val completesBook = delta > 0 &&
                                     state.currentBlockIndex == state.plan.blocks.lastIndex
-                                if (delta != 0 && (targetIndex in state.plan.blocks.indices || completesBook)) {
+                                val hasNarratorPage = state.settings.focusPresentation ==
+                                    FocusPresentation.OCTI_NARRATOR &&
+                                    narratorPageIndex + delta in narratorPages.indices
+                                if (
+                                    delta != 0 &&
+                                    (hasNarratorPage || targetIndex in state.plan.blocks.indices || completesBook)
+                                ) {
                                     hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     if (state.settings.focusPresentation == FocusPresentation.OCTI_NARRATOR) {
                                         onNarratorGestureLearned()
                                     }
-                                    navigateBlock(delta)
+                                    navigateFocus(delta)
                                 }
                             },
                         )
@@ -1453,9 +1532,11 @@ private fun ReaderScreenContent(
                     )
                 }
                 OctiNarratorOverlay(
-                    block = currentBlock,
-                    fontStyle = state.settings.fontStyle,
-                    fontSizeSp = state.settings.fontSizeSp,
+                    text = narratorPages.getOrElse(narratorPageIndex) { narratorPages.first() },
+                    blockIndex = currentBlock.index,
+                    continuationIndex = narratorPageIndex,
+                    continuationCount = narratorPages.size,
+                    textStyle = narratorTextStyle,
                     pageTurnKey = mascotPageTurnKey,
                     pageTurnDirection = mascotPageTurnDirection,
                     ambience = ambience,
@@ -1659,9 +1740,11 @@ private fun FocusReadingMascot(
 
 @Composable
 private fun OctiNarratorOverlay(
-    block: ReadingBlock,
-    fontStyle: ReaderFontStyle,
-    fontSizeSp: Int,
+    text: String,
+    blockIndex: Int,
+    continuationIndex: Int,
+    continuationCount: Int,
+    textStyle: TextStyle,
     pageTurnKey: Int,
     pageTurnDirection: Int,
     ambience: ReadingAmbience,
@@ -1683,12 +1766,6 @@ private fun OctiNarratorOverlay(
             targetValue = 0f,
             animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
         )
-    }
-    val narratorFontSizeSp = when {
-        block.wordCount <= 30 -> (fontSizeSp + 3).coerceAtMost(36)
-        block.wordCount <= 55 -> fontSizeSp
-        block.wordCount <= 90 -> (fontSizeSp - 3).coerceAtLeast(14)
-        else -> (fontSizeSp - 5).coerceAtLeast(14)
     }
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -1724,7 +1801,7 @@ private fun OctiNarratorOverlay(
                 shadowElevation = 6.dp,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .pointerInput(block.index) {
+                    .pointerInput(blockIndex, continuationIndex) {
                         detectTapGestures(onLongPress = { onSaveQuote() })
                     }
                     .graphicsLayer {
@@ -1738,15 +1815,25 @@ private fun OctiNarratorOverlay(
                         cameraDistance = 18f * density
                     },
             ) {
-                Text(
-                    text = block.text.trim(),
-                    modifier = Modifier.padding(horizontal = 28.dp, vertical = 26.dp),
-                    style = MaterialTheme.typography.headlineSmall.copy(
-                        fontFamily = readerFontFamily(fontStyle),
-                        fontSize = narratorFontSizeSp.sp,
-                        lineHeight = (narratorFontSizeSp * 1.45f).sp,
-                    ),
-                )
+                Column(modifier = Modifier.padding(horizontal = 28.dp, vertical = 26.dp)) {
+                    Text(
+                        text = text,
+                        style = textStyle,
+                    )
+                    if (continuationCount > 1) {
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            text = stringResource(
+                                R.string.narrator_continuation,
+                                continuationIndex + 1,
+                                continuationCount,
+                            ),
+                            modifier = Modifier.align(Alignment.End),
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.64f),
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                    }
+                }
             }
             Box(
                 modifier = Modifier
