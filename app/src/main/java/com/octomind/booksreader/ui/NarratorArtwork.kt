@@ -24,8 +24,8 @@ import java.io.File
 import kotlin.math.max
 
 private data class NarratorArtworkSpec(
-    @DrawableRes val drawableResource: Int,
-    @StringRes val descriptionResource: Int,
+    @param:DrawableRes val drawableResource: Int,
+    @param:StringRes val descriptionResource: Int,
     val bookTopFraction: Float,
 )
 
@@ -75,8 +75,8 @@ internal fun createBookColoredNarratorBitmap(
     avatar: NarratorAvatar,
     coverImagePath: String?,
     fallbackBookColor: Int,
-): Bitmap? {
-    return narratorArtworkSpec(avatar)
+): Bitmap? =
+    narratorArtworkSpec(avatar)
         ?.let { spec ->
             decodeSampledResource(context, spec.drawableResource, MAX_ARTWORK_EDGE)?.let { artwork ->
                 val coverColor =
@@ -88,7 +88,6 @@ internal fun createBookColoredNarratorBitmap(
                 recolorBook(artwork, coverColor, spec.bookTopFraction).also { artwork.recycle() }
             }
         }
-}
 
 private fun recolorBook(
     source: Bitmap,
@@ -151,15 +150,19 @@ private fun dominantCoverColor(file: File): Int? {
     }
 }
 
-private fun colorScore(bucket: Int, population: Int): Double {
+private fun colorScore(
+    bucket: Int,
+    population: Int,
+): Double {
     if (population == 0) return 0.0
     val color = bucketCenterColor(bucket)
     val hsv = FloatArray(3).also { Color.colorToHSV(color, it) }
-    val usefulBrightness = if (hsv[2] in USEFUL_BRIGHTNESS_RANGE) {
-        FULL_SCORE_WEIGHT
-    } else {
-        MUTED_SCORE_WEIGHT
-    }
+    val usefulBrightness =
+        if (hsv[2] in USEFUL_BRIGHTNESS_RANGE) {
+            FULL_SCORE_WEIGHT
+        } else {
+            MUTED_SCORE_WEIGHT
+        }
     return population * (BASE_SATURATION_SCORE + hsv[1] * SATURATION_SCORE_WEIGHT) * usefulBrightness
 }
 
@@ -181,9 +184,10 @@ private fun decodeSampledResource(
 ): Bitmap? {
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
     BitmapFactory.decodeResource(context.resources, resource, bounds)
-    val options = BitmapFactory.Options().apply {
-        inSampleSize = sampleSize(bounds.outWidth, bounds.outHeight, maximumEdge)
-    }
+    val options =
+        BitmapFactory.Options().apply {
+            inSampleSize = sampleSize(bounds.outWidth, bounds.outHeight, maximumEdge)
+        }
     return BitmapFactory.decodeResource(context.resources, resource, options)
 }
 
@@ -193,9 +197,10 @@ private fun decodeSampledFile(
 ): Bitmap? {
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
     BitmapFactory.decodeFile(file.absolutePath, bounds)
-    val options = BitmapFactory.Options().apply {
-        inSampleSize = sampleSize(bounds.outWidth, bounds.outHeight, maximumEdge)
-    }
+    val options =
+        BitmapFactory.Options().apply {
+            inSampleSize = sampleSize(bounds.outWidth, bounds.outHeight, maximumEdge)
+        }
     return BitmapFactory.decodeFile(file.absolutePath, options)
 }
 
