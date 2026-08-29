@@ -48,6 +48,7 @@ object NarratorPagination {
         words[endExclusive - 1].range.last + 1,
     ).trim()
 
-    private fun String.hasNaturalBoundary(): Boolean =
-        trimEnd('"', '\'', '”', '’', '»', ')', ']', '}').lastOrNull() in naturalBoundaries
+    private fun String.hasNaturalBoundary(): Boolean = trimEnd(
+        '"', '\'', '”', '’', '»', ')', ']', '}',
+    ).lastOrNull() in naturalBoundaries
 }

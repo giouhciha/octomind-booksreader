@@ -26,40 +26,45 @@ data class UserPreferencesSnapshot(
 
 private val Context.userDataStore by preferencesDataStore(name = "reader_preferences")
 
-class UserPreferences(private val context: Context) {
-    val adultConfirmed: Flow<Boolean> = context.userDataStore.data.map { preferences ->
-        preferences[ADULT_CONFIRMED] ?: false
-    }
+class UserPreferences(
+    private val context: Context,
+) {
+    val adultConfirmed: Flow<Boolean> =
+        context.userDataStore.data.map { preferences ->
+            preferences[ADULT_CONFIRMED] ?: false
+        }
 
-    val readerSettings: Flow<ReaderSettings> = context.userDataStore.data.map { preferences ->
-        ReaderSettings(
-            wordsPerMinute = preferences[WORDS_PER_MINUTE] ?: 260,
-            wordsPerBlock = preferences[WORDS_PER_BLOCK] ?: 4,
-            readingMode = enumPreference(preferences[READING_MODE], ReadingMode.FIXED_WORDS),
-            pageTheme = enumPreference(preferences[PAGE_THEME], PageTheme.LIGHT),
-            fontStyle = enumPreference(preferences[FONT_STYLE], ReaderFontStyle.SERIF),
-            fontSizeSp = (preferences[FONT_SIZE_SP] ?: 19).coerceIn(14, 32),
-            adaptivePacingEnabled = preferences[ADAPTIVE_PACING_ENABLED] ?: true,
-            focusDimmingPercent = (preferences[FOCUS_DIMMING_PERCENT] ?: 45).coerceIn(0, 80),
-            showFocusMascot = preferences[SHOW_FOCUS_MASCOT] ?: true,
-            focusPresentation = enumPreference(
-                preferences[FOCUS_PRESENTATION],
-                FocusPresentation.OCTI_NARRATOR,
-            ),
-            narratorAvatar = enumPreference(
-                preferences[NARRATOR_AVATAR],
-                NarratorAvatar.OCTI,
-            ),
-            customNarratorAvatarVersion = preferences[CUSTOM_NARRATOR_AVATAR_VERSION] ?: 0,
-            ambientIntensity = enumPreference(
-                preferences[AMBIENT_INTENSITY],
-                AmbientIntensity.SUBTLE,
-            ),
-            focusEnabled = preferences[FOCUS_ENABLED] ?: false,
-            readerControlsExpanded = preferences[READER_CONTROLS_EXPANDED] ?: true,
-            narratorGestureHintDismissed = preferences[NARRATOR_GESTURE_HINT_DISMISSED] ?: false,
-        )
-    }
+    val readerSettings: Flow<ReaderSettings> =
+        context.userDataStore.data.map { preferences ->
+            ReaderSettings(
+                wordsPerMinute = preferences[WORDS_PER_MINUTE] ?: 260,
+                wordsPerBlock = preferences[WORDS_PER_BLOCK] ?: 4,
+                readingMode = enumPreference(preferences[READING_MODE], ReadingMode.FIXED_WORDS),
+                pageTheme = enumPreference(preferences[PAGE_THEME], PageTheme.LIGHT),
+                fontStyle = enumPreference(preferences[FONT_STYLE], ReaderFontStyle.SERIF),
+                fontSizeSp = (preferences[FONT_SIZE_SP] ?: 19).coerceIn(14, 32),
+                adaptivePacingEnabled = preferences[ADAPTIVE_PACING_ENABLED] ?: true,
+                focusDimmingPercent = (preferences[FOCUS_DIMMING_PERCENT] ?: 45).coerceIn(0, 80),
+                showFocusMascot = preferences[SHOW_FOCUS_MASCOT] ?: true,
+                focusPresentation =
+                    enumPreference(
+                        preferences[FOCUS_PRESENTATION],
+                        FocusPresentation.OCTI_NARRATOR,
+                    ),
+                narratorAvatar = enumPreference(
+                    preferences[NARRATOR_AVATAR],
+                    NarratorAvatar.OCTI,
+                ),
+                customNarratorAvatarVersion = preferences[CUSTOM_NARRATOR_AVATAR_VERSION] ?: 0,
+                ambientIntensity = enumPreference(
+                    preferences[AMBIENT_INTENSITY],
+                    AmbientIntensity.SUBTLE,
+                ),
+                focusEnabled = preferences[FOCUS_ENABLED] ?: false,
+                readerControlsExpanded = preferences[READER_CONTROLS_EXPANDED] ?: true,
+                narratorGestureHintDismissed = preferences[NARRATOR_GESTURE_HINT_DISMISSED] ?: false,
+            )
+        }
 
     val readerProfile: Flow<ReaderProfile> = context.userDataStore.data.map { preferences ->
         ReaderProfile(
