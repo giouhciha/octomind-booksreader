@@ -11,6 +11,7 @@ import com.octomind.booksreader.domain.BookSummary
 import com.octomind.booksreader.domain.CompletedReading
 import com.octomind.booksreader.domain.NarratorAvatar
 import com.octomind.booksreader.domain.ReadingCycleStats
+import com.octomind.booksreader.domain.SavedQuote
 import java.io.File
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
@@ -67,6 +68,7 @@ class LocalBookRepository(private val context: Context) {
                 narratorAvatar = NarratorAvatar.OCTI,
                 completedReadings = emptyList(),
                 currentCycleStats = ReadingCycleStats(),
+                savedQuotes = emptyList(),
             )
             synchronized(lock) {
                 val records = readRecords().toMutableList().apply { add(record) }
@@ -167,6 +169,58 @@ class LocalBookRepository(private val context: Context) {
         }
     }
 
+    suspend fun listQuotes(): List<SavedQuote> = withContext(Dispatchers.IO) {
+        synchronized(lock) {
+            readRecords().flatMap(BookRecord::savedQuotes).sortedByDescending(SavedQuote::createdAtMillis)
+        }
+    }
+
+    suspend fun saveQuote(
+        bookId: String,
+        chapterTitle: String?,
+        text: String,
+        startCharacterOffset: Int,
+        endCharacterOffset: Int,
+    ): Boolean = withContext(Dispatchers.IO) {
+        synchronized(lock) {
+            val records = readRecords().toMutableList()
+            val index = records.indexOfFirst { it.id == bookId }
+            if (index < 0) return@synchronized false
+            val record = records[index]
+            if (record.savedQuotes.any {
+                    it.startCharacterOffset == startCharacterOffset &&
+                        it.endCharacterOffset == endCharacterOffset
+                }
+            ) return@synchronized false
+            val quote = SavedQuote(
+                id = UUID.randomUUID().toString(),
+                bookId = record.id,
+                bookTitle = record.title,
+                chapterTitle = chapterTitle,
+                text = text.trim(),
+                startCharacterOffset = startCharacterOffset,
+                endCharacterOffset = endCharacterOffset,
+                createdAtMillis = System.currentTimeMillis(),
+            )
+            records[index] = record.copy(savedQuotes = record.savedQuotes + quote)
+            writeRecords(records)
+            true
+        }
+    }
+
+    suspend fun deleteQuote(bookId: String, quoteId: String) = withContext(Dispatchers.IO) {
+        synchronized(lock) {
+            val records = readRecords().toMutableList()
+            val index = records.indexOfFirst { it.id == bookId }
+            if (index >= 0) {
+                records[index] = records[index].copy(
+                    savedQuotes = records[index].savedQuotes.filterNot { it.id == quoteId },
+                )
+                writeRecords(records)
+            }
+        }
+    }
+
     suspend fun replaceNarratorAvatarForAll(from: NarratorAvatar, to: NarratorAvatar) =
         withContext(Dispatchers.IO) {
             synchronized(lock) {
@@ -243,6 +297,7 @@ private data class BookRecord(
     val narratorAvatar: NarratorAvatar,
     val completedReadings: List<CompletedReading>,
     val currentCycleStats: ReadingCycleStats,
+    val savedQuotes: List<SavedQuote>,
 ) {
     fun toSummary(libraryDirectory: File) = BookSummary(
         id = id,
@@ -258,6 +313,7 @@ private data class BookRecord(
         narratorAvatar = narratorAvatar,
         completedReadings = completedReadings,
         currentCycleStats = currentCycleStats,
+        savedQuotes = savedQuotes,
     )
 
     fun toJson() = JSONObject().apply {
@@ -293,6 +349,20 @@ private data class BookRecord(
             put("backwardsMoves", currentCycleStats.backwardsMoves)
             put("fragmentsRead", currentCycleStats.fragmentsRead)
         })
+        put("savedQuotes", JSONArray().apply {
+            savedQuotes.forEach { quote ->
+                put(JSONObject().apply {
+                    put("id", quote.id)
+                    put("bookId", quote.bookId)
+                    put("bookTitle", quote.bookTitle)
+                    put("chapterTitle", quote.chapterTitle)
+                    put("text", quote.text)
+                    put("startCharacterOffset", quote.startCharacterOffset)
+                    put("endCharacterOffset", quote.endCharacterOffset)
+                    put("createdAtMillis", quote.createdAtMillis)
+                })
+            }
+        })
         put("chapters", JSONArray().apply {
             chapters.forEach { chapter ->
                 put(JSONObject().apply {
@@ -308,6 +378,7 @@ private data class BookRecord(
             val chapterArray = json.optJSONArray("chapters") ?: JSONArray()
             val completedReadingsArray = json.optJSONArray("completedReadings") ?: JSONArray()
             val currentCycleStatsJson = json.optJSONObject("currentCycleStats")
+            val savedQuotesArray = json.optJSONArray("savedQuotes") ?: JSONArray()
             return BookRecord(
                 id = json.getString("id"),
                 title = json.getString("title"),
@@ -345,6 +416,21 @@ private data class BookRecord(
                     backwardsMoves = currentCycleStatsJson?.optInt("backwardsMoves", 0) ?: 0,
                     fragmentsRead = currentCycleStatsJson?.optInt("fragmentsRead", 0) ?: 0,
                 ),
+                savedQuotes = (0 until savedQuotesArray.length()).map { index ->
+                    savedQuotesArray.getJSONObject(index).let { quote ->
+                        SavedQuote(
+                            id = quote.getString("id"),
+                            bookId = quote.optString("bookId", json.getString("id")),
+                            bookTitle = quote.optString("bookTitle", json.getString("title")),
+                            chapterTitle = quote.optString("chapterTitle")
+                                .takeIf { it.isNotBlank() && it != "null" },
+                            text = quote.getString("text"),
+                            startCharacterOffset = quote.getInt("startCharacterOffset"),
+                            endCharacterOffset = quote.getInt("endCharacterOffset"),
+                            createdAtMillis = quote.optLong("createdAtMillis", 0),
+                        )
+                    }
+                },
                 chapters = (0 until chapterArray.length()).map { index ->
                     chapterArray.getJSONObject(index).let { chapter ->
                         BookChapter(

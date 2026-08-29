@@ -6,6 +6,8 @@ Octomind combina una guía visual de lectura, evaluaciones adaptativas y un tuto
 
 > Estado del proyecto: primera fase funcional. Existe una aplicación Android local con importación TXT/EPUB, biblioteca, reanudación exacta, temas de página, calibración personal y Octomind Focus.
 
+La cabecera de la biblioteca ofrece un **Respaldo** manual. El usuario puede guardar en su Google Drive personal —mediante el selector seguro de archivos de Android— un paquete que contiene perfil, preferencias, libros, portadas, progreso, citas, sesiones e imagen personalizada. El paquete completo se cifra con una contraseña que Octomind no almacena. Restaurar valida primero su versión, rutas y límites y después reemplaza la biblioteca local; esta fase todavía no realiza sincronización automática ni combina bibliotecas.
+
 El home presenta la biblioteca como una estantería adaptable. En teléfonos organiza hasta tres cubiertas por repisa y en pantallas de al menos 600 dp utiliza cinco. Los EPUB muestran la portada declarada en sus metadatos cuando es una imagen válida; si no existe, no es compatible o no supera la validación local, el libro conserva la cubierta tipográfica determinista actual. En Focus, avanzar después del último fragmento termina el libro; en lectura normal, llegar mediante desplazamiento al fondo hace lo mismo. La portada muestra entonces una marca verde de lectura completada. Al tocarla se abre su resumen; **Leer de nuevo** inicia otro ciclo desde cero bajo la misma portada y conserva localmente las métricas de lecturas anteriores. No se consulta ningún servicio externo.
 
 ## Objetivo
@@ -63,9 +65,15 @@ El resumen de sesión comparte la identidad de la biblioteca: fondo y cabecera d
 
 Focus ofrece dos presentaciones persistentes. **Narrador**, la opción inicial, atenúa el libro y presenta la oración actual completa en un globo de diálogo mediante el avatar elegido. **Sobre el texto** conserva el marcador integrado en la página y reúne su intensidad y mascota compacta en una sección propia. Ambos estilos usan exactamente las mismas oraciones, gestos, posición estable y estadísticas de sesión.
 
+El Narrador conserva siempre el tamaño y el interlineado elegidos por el lector. Cuando una oración o párrafo excede el área legible, lo distribuye en tarjetas de continuación calculadas con el ancho, alto, fuente y tamaño reales de la pantalla. Prefiere cortar después de puntuación natural y muestra un indicador discreto como `1 de 3`. Avanzar entre continuaciones no adelanta el progreso ni cuenta otra oración; el bloque lógico cambia únicamente al abandonar su última tarjeta. Los gestos y controles accesibles permiten recorrerlas en ambos sentidos.
+
 El modo Narrador incorpora una **ambientación local** por capítulo. El título, el encabezado del capítulo y una muestra limitada de su texto se clasifican en el dispositivo como misterio, fantasía, ciencia ficción, romance, naturaleza, conocimiento o neutral. Compose dibuja degradados y formas abstractas sin enviar el libro a un servicio externo. El lector puede desactivar el fondo o elegir intensidad sutil o inmersiva; la preferencia queda guardada.
 
-El lector puede elegir el **avatar del narrador** entre Octi, ilustraciones originales de H. P. Lovecraft, Arthur Schopenhauer, Friedrich Nietzsche y Albert Camus leyendo, o **Mi imagen** desde los ajustes de Focus. La asignación se guarda por libro: dos libros pueden compartir narrador o conservar elecciones diferentes, y cada uno restaura la suya al abrirse. La opción personalizada acepta PNG, JPG y WebP de hasta 10 MB, normaliza el archivo a PNG privado y lo presenta siempre dentro de un círculo. La foto nunca sale del dispositivo y puede reemplazarse o eliminarse desde el mismo menú. Eliminarla devuelve de forma segura a Octi todos los libros que la utilizaban. El avatar no modifica la navegación, el progreso ni las estadísticas.
+El lector puede elegir el **avatar del narrador** entre Octi, ilustraciones originales de H. P. Lovecraft, Arthur Schopenhauer, Friedrich Nietzsche, Albert Camus, Stranger, Lila, Achu! y frank-n-furter leyendo, o **Mi imagen** desde los ajustes de Focus. La asignación se guarda por libro: dos libros pueden compartir narrador o conservar elecciones diferentes, y cada uno restaura la suya al abrirse. La opción personalizada acepta PNG, JPG y WebP de hasta 10 MB, normaliza el archivo a PNG privado y lo presenta siempre dentro de un círculo. La foto no sale del almacenamiento privado salvo cuando el usuario crea expresamente un respaldo cifrado; puede reemplazarse o eliminarse desde el mismo menú. Eliminarla devuelve de forma segura a Octi todos los libros que la utilizaban. El avatar no modifica la navegación, el progreso ni las estadísticas.
+
+En los narradores incluidos, la cubierta del libro que sostienen adopta localmente el color dominante de la portada que se está leyendo. El tratamiento se limita a la región turquesa de la ilustración y conserva luces, sombras, páginas y detalles; no altera rostro, ropa ni fondo. Si el libro no tiene una portada válida, reutiliza la paleta tipográfica determinista de la biblioteca. **Mi imagen** permanece sin modificaciones. La tarjeta visual de una cita utiliza la misma personalización.
+
+La cabecera de la biblioteca incluye **Mis citas**, una colección local agrupada por libro. En lectura normal, una pulsación prolongada selecciona la palabra inicial; sin soltar, el lector arrastra para ampliar el rango y al levantar el dedo guarda exactamente ese texto. Durante el arrastre, Android muestra una lupa que sigue el punto de selección en dispositivos compatibles. La selección se limita al párrafo actual para conservar un rango estable. En cualquiera de los estilos Focus, mantener presionado el fragmento o globo guarda el bloque completo. Cada cita conserva el texto, capítulo y rango estable de caracteres, evita duplicados exactos y puede eliminarse desde la colección. Tocarla abre una vista del libro en su ubicación exacta; explorar esa vista o regresar a la colección no modifica el progreso ni las estadísticas actuales. El botón de compartir permite enviar la cita como texto o generar localmente una tarjeta PNG con el narrador asignado, un globo, el libro, capítulo y firma discreta de Octomind. La imagen personalizada también se admite y el archivo compartible se limita al directorio privado de caché antes de delegar el destino a la hoja nativa de Android.
 
 La indicación de gestos situada debajo de Octi permanece hasta que el lector completa su primer desplazamiento vertical válido. Ese aprendizaje se guarda localmente y la leyenda no vuelve a aparecer al reabrir el libro; los movimientos que no alcanzan el umbral y los botones accesibles no la descartan.
 
@@ -261,7 +269,16 @@ El APK de desarrollo se genera en `app/build/outputs/apk/debug/app-debug.apk`.
 ```powershell
 .\gradlew.bat testDebugUnitTest
 .\gradlew.bat lintDebug
+.\gradlew.bat ktlintCheck
+.\gradlew.bat detekt
+.\gradlew.bat --no-configuration-cache :app:dependencyCheckAnalyze
 ```
+
+`dependencyCheckAnalyze` requiere una [clave de la NVD](https://nvd.nist.gov/developers/request-an-api-key) para consultar su base. En Jenkins debe guardarse como una credencial de tipo **Secret text** con el identificador `nvd-api-key`; el pipeline la expone temporalmente como `NVD_API_KEY`. Los hallazgos con CVSS 7 o superior detienen el pipeline. Gitleaks revisa el historial Git mediante `scripts/jenkins/Invoke-Gitleaks.ps1` y valida el checksum del binario fijado antes de ejecutarlo.
+
+Jenkins no utiliza emulador. Después de lint, formato, análisis estático, seguridad y pruebas unitarias, construye y archiva un APK debug identificable. La versión base se define en `app/build.gradle.kts`; cada build de Jenkins agrega su número, por ejemplo `0.51.0.123`, y produce `app/build/outputs/jenkins/octomind-booksreader-0.51.0.123.apk`. El mismo valor queda grabado como `versionName`, mientras `versionCode` se calcula de forma monotónica para permitir actualizaciones entre compilaciones.
+
+Los baselines de Ktlint y Detekt registran únicamente la deuda existente. Una infracción nueva falla la validación; no se debe regenerar un baseline para ocultar un hallazgo sin revisarlo.
 
 La lectura sintética [samples/lectura-demo.txt](samples/lectura-demo.txt) permite recorrer la importación y Octomind Focus sin utilizar contenido protegido.
 

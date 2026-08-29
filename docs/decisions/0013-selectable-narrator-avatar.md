@@ -6,7 +6,7 @@ El globo de Focus utiliza a Octi como acompañante visual. Para permitir que cad
 
 ## Decisión
 
-Se incorpora `NarratorAvatar` con las opciones `OCTI`, `LOVECRAFT_ILLUSTRATION`, `SCHOPENHAUER_ILLUSTRATION`, `NIETZSCHE_ILLUSTRATION`, `CAMUS_ILLUSTRATION` y `CUSTOM_IMAGE`. El selector aparece únicamente dentro de la presentación de narrador. La elección se guarda en el registro local de cada libro y se restaura al abrirlo, de modo que los libros pueden compartir avatar o mantener elecciones distintas. Los registros anteriores y valores desconocidos vuelven de forma segura a Octi. DataStore conserva el resto de preferencias generales del lector.
+Se incorpora `NarratorAvatar` con las opciones `OCTI`, `LOVECRAFT_ILLUSTRATION`, `SCHOPENHAUER_ILLUSTRATION`, `NIETZSCHE_ILLUSTRATION`, `CAMUS_ILLUSTRATION`, `STRANGER_ILLUSTRATION`, `LILA_ILLUSTRATION`, `ACHU_ILLUSTRATION`, `FRANK_N_FURTER_ILLUSTRATION` y `CUSTOM_IMAGE`. El selector aparece únicamente dentro de la presentación de narrador. La elección se guarda en el registro local de cada libro y se restaura al abrirlo, de modo que los libros pueden compartir avatar o mantener elecciones distintas. Los registros anteriores y valores desconocidos vuelven de forma segura a Octi. DataStore conserva el resto de preferencias generales del lector.
 
 Los avatares comparten el mismo globo, oración, gesto, ambientación, progreso y métricas. El retrato y la ilustración se empaquetan como recursos locales y nunca se transmiten. Octi conserva su animación de pase de página; el retrato y la ilustración permanecen estáticos.
 

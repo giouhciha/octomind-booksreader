@@ -15,44 +15,56 @@ import com.octomind.booksreader.domain.ReaderProfile
 import com.octomind.booksreader.domain.ReaderSettings
 import com.octomind.booksreader.domain.ReadingMode
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+
+data class UserPreferencesSnapshot(
+    val adultConfirmed: Boolean,
+    val readerSettings: ReaderSettings,
+    val readerProfile: ReaderProfile,
+)
 
 private val Context.userDataStore by preferencesDataStore(name = "reader_preferences")
 
-class UserPreferences(private val context: Context) {
-    val adultConfirmed: Flow<Boolean> = context.userDataStore.data.map { preferences ->
-        preferences[ADULT_CONFIRMED] ?: false
-    }
+class UserPreferences(
+    private val context: Context,
+) {
+    val adultConfirmed: Flow<Boolean> =
+        context.userDataStore.data.map { preferences ->
+            preferences[ADULT_CONFIRMED] ?: false
+        }
 
-    val readerSettings: Flow<ReaderSettings> = context.userDataStore.data.map { preferences ->
-        ReaderSettings(
-            wordsPerMinute = preferences[WORDS_PER_MINUTE] ?: 260,
-            wordsPerBlock = preferences[WORDS_PER_BLOCK] ?: 4,
-            readingMode = enumPreference(preferences[READING_MODE], ReadingMode.FIXED_WORDS),
-            pageTheme = enumPreference(preferences[PAGE_THEME], PageTheme.LIGHT),
-            fontStyle = enumPreference(preferences[FONT_STYLE], ReaderFontStyle.SERIF),
-            fontSizeSp = (preferences[FONT_SIZE_SP] ?: 19).coerceIn(14, 32),
-            adaptivePacingEnabled = preferences[ADAPTIVE_PACING_ENABLED] ?: true,
-            focusDimmingPercent = (preferences[FOCUS_DIMMING_PERCENT] ?: 45).coerceIn(0, 80),
-            showFocusMascot = preferences[SHOW_FOCUS_MASCOT] ?: true,
-            focusPresentation = enumPreference(
-                preferences[FOCUS_PRESENTATION],
-                FocusPresentation.OCTI_NARRATOR,
-            ),
-            narratorAvatar = enumPreference(
-                preferences[NARRATOR_AVATAR],
-                NarratorAvatar.OCTI,
-            ),
-            customNarratorAvatarVersion = preferences[CUSTOM_NARRATOR_AVATAR_VERSION] ?: 0,
-            ambientIntensity = enumPreference(
-                preferences[AMBIENT_INTENSITY],
-                AmbientIntensity.SUBTLE,
-            ),
-            focusEnabled = preferences[FOCUS_ENABLED] ?: false,
-            readerControlsExpanded = preferences[READER_CONTROLS_EXPANDED] ?: true,
-            narratorGestureHintDismissed = preferences[NARRATOR_GESTURE_HINT_DISMISSED] ?: false,
-        )
-    }
+    val readerSettings: Flow<ReaderSettings> =
+        context.userDataStore.data.map { preferences ->
+            ReaderSettings(
+                wordsPerMinute = preferences[WORDS_PER_MINUTE] ?: 260,
+                wordsPerBlock = preferences[WORDS_PER_BLOCK] ?: 4,
+                readingMode = enumPreference(preferences[READING_MODE], ReadingMode.FIXED_WORDS),
+                pageTheme = enumPreference(preferences[PAGE_THEME], PageTheme.LIGHT),
+                fontStyle = enumPreference(preferences[FONT_STYLE], ReaderFontStyle.SERIF),
+                fontSizeSp = (preferences[FONT_SIZE_SP] ?: 19).coerceIn(14, 32),
+                adaptivePacingEnabled = preferences[ADAPTIVE_PACING_ENABLED] ?: true,
+                focusDimmingPercent = (preferences[FOCUS_DIMMING_PERCENT] ?: 45).coerceIn(0, 80),
+                showFocusMascot = preferences[SHOW_FOCUS_MASCOT] ?: true,
+                focusPresentation =
+                    enumPreference(
+                        preferences[FOCUS_PRESENTATION],
+                        FocusPresentation.OCTI_NARRATOR,
+                    ),
+                narratorAvatar = enumPreference(
+                    preferences[NARRATOR_AVATAR],
+                    NarratorAvatar.OCTI,
+                ),
+                customNarratorAvatarVersion = preferences[CUSTOM_NARRATOR_AVATAR_VERSION] ?: 0,
+                ambientIntensity = enumPreference(
+                    preferences[AMBIENT_INTENSITY],
+                    AmbientIntensity.SUBTLE,
+                ),
+                focusEnabled = preferences[FOCUS_ENABLED] ?: false,
+                readerControlsExpanded = preferences[READER_CONTROLS_EXPANDED] ?: true,
+                narratorGestureHintDismissed = preferences[NARRATOR_GESTURE_HINT_DISMISSED] ?: false,
+            )
+        }
 
     val readerProfile: Flow<ReaderProfile> = context.userDataStore.data.map { preferences ->
         ReaderProfile(
@@ -64,6 +76,25 @@ class UserPreferences(private val context: Context) {
 
     suspend fun confirmAdult() {
         context.userDataStore.edit { it[ADULT_CONFIRMED] = true }
+    }
+
+    suspend fun snapshot(): UserPreferencesSnapshot = UserPreferencesSnapshot(
+        adultConfirmed = adultConfirmed.first(),
+        readerSettings = readerSettings.first(),
+        readerProfile = readerProfile.first(),
+    )
+
+    suspend fun restore(snapshot: UserPreferencesSnapshot) {
+        updateReaderSettings(snapshot.readerSettings)
+        context.userDataStore.edit { preferences ->
+            preferences[ADULT_CONFIRMED] = snapshot.adultConfirmed
+            preferences[PROFILE_BASELINE_WPM] = snapshot.readerProfile.baselineWordsPerMinute
+                .coerceIn(MINIMUM_PROFILE_WORDS_PER_MINUTE, MAXIMUM_PROFILE_WORDS_PER_MINUTE)
+            preferences[PROFILE_SAMPLE_COUNT] = snapshot.readerProfile.calibrationSampleCount
+                .coerceAtLeast(0)
+            preferences[PROFILE_CALIBRATIONS] = snapshot.readerProfile.completedCalibrations
+                .coerceAtLeast(0)
+        }
     }
 
     suspend fun updateReaderSettings(settings: ReaderSettings) {
@@ -117,6 +148,8 @@ class UserPreferences(private val context: Context) {
     }
 
     private companion object {
+        const val MINIMUM_PROFILE_WORDS_PER_MINUTE = 100
+        const val MAXIMUM_PROFILE_WORDS_PER_MINUTE = 700
         inline fun <reified T : Enum<T>> enumPreference(value: String?, fallback: T): T =
             runCatching { enumValueOf<T>(value.orEmpty()) }.getOrDefault(fallback)
 

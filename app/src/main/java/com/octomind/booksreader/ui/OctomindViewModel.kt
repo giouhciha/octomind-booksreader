@@ -18,6 +18,7 @@ import com.octomind.booksreader.domain.ReadingPlanBuilder
 import com.octomind.booksreader.domain.ReadingCycleStats
 import com.octomind.booksreader.domain.ReadingMode
 import com.octomind.booksreader.domain.ReadingSessionSummary
+import com.octomind.booksreader.domain.SavedQuote
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -34,6 +35,7 @@ sealed interface AppScreen {
     data object Starting : AppScreen
     data object Onboarding : AppScreen
     data object Library : AppScreen
+    data object Quotes : AppScreen
     data class Reader(val state: ReaderState) : AppScreen
     data class SessionResult(
         val bookId: String,
@@ -62,6 +64,9 @@ data class ReaderState(
     val recentBackwardMoveTimestamps: List<Long> = emptyList(),
     val manualAdvanceRatios: List<Double> = emptyList(),
     val adaptationCooldownBlocks: Int = 0,
+    val quotePreview: Boolean = false,
+    val previewQuoteStartOffset: Int? = null,
+    val previewQuoteEndOffset: Int? = null,
 ) {
     val currentCharacterOffset: Int
         get() = if (completed) document.text.length
@@ -76,6 +81,8 @@ data class ReaderState(
 data class OctomindUiState(
     val screen: AppScreen = AppScreen.Starting,
     val books: List<BookSummary> = emptyList(),
+    val quotes: List<SavedQuote> = emptyList(),
+    val customNarratorAvatarPath: String? = null,
     val busy: Boolean = false,
     val message: String? = null,
 )
@@ -188,6 +195,142 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             repository.deleteBook(id)
             reloadLibrary()
+        }
+    }
+
+    fun createBackup(uri: Uri, password: CharArray) {
+        viewModelScope.launch {
+            mutableState.update { it.copy(busy = true, message = null) }
+            runCatching { app.backupRepository.create(uri, password) }
+                .onSuccess {
+                    mutableState.update { it.copy(busy = false, message = "Respaldo creado correctamente") }
+                }
+                .onFailure { error ->
+                    mutableState.update {
+                        it.copy(busy = false, message = error.userMessage("No fue posible crear el respaldo"))
+                    }
+                }
+        }
+    }
+
+    fun restoreBackup(uri: Uri, password: CharArray) {
+        viewModelScope.launch {
+            mutableState.update { it.copy(busy = true, message = null) }
+            runCatching { app.backupRepository.restore(uri, password) }
+                .onSuccess {
+                    reloadLibrary()
+                    mutableState.update {
+                        it.copy(screen = AppScreen.Library, message = "Respaldo restaurado correctamente")
+                    }
+                }
+                .onFailure { error ->
+                    mutableState.update {
+                        it.copy(busy = false, message = error.userMessage("No fue posible restaurar el respaldo"))
+                    }
+                }
+        }
+    }
+
+    fun showQuotes() {
+        viewModelScope.launch {
+            val quotes = repository.listQuotes()
+            mutableState.update { it.copy(screen = AppScreen.Quotes, quotes = quotes) }
+        }
+    }
+
+    fun closeQuotes() {
+        mutableState.update { it.copy(screen = AppScreen.Library) }
+    }
+
+    fun saveCurrentQuote() {
+        val reader = currentReader() ?: return
+        val block = reader.plan.blocks.getOrNull(reader.currentBlockIndex) ?: return
+        saveQuoteRange(
+            reader = reader,
+            text = block.text,
+            startCharacterOffset = block.startCharacterOffset,
+            endCharacterOffset = block.endCharacterOffset,
+        )
+    }
+
+    fun saveSelectedQuote(text: String, startCharacterOffset: Int, endCharacterOffset: Int) {
+        val reader = currentReader()?.takeUnless { it.focusEnabled || it.quotePreview } ?: return
+        if (text.isBlank() || startCharacterOffset >= endCharacterOffset) return
+        saveQuoteRange(reader, text, startCharacterOffset, endCharacterOffset)
+    }
+
+    private fun saveQuoteRange(
+        reader: ReaderState,
+        text: String,
+        startCharacterOffset: Int,
+        endCharacterOffset: Int,
+    ) {
+        val chapter = reader.document.chapters
+            .lastOrNull { it.startCharacterOffset <= startCharacterOffset }
+            ?.title
+        viewModelScope.launch {
+            val saved = repository.saveQuote(
+                bookId = reader.document.summary.id,
+                chapterTitle = chapter,
+                text = text,
+                startCharacterOffset = startCharacterOffset,
+                endCharacterOffset = endCharacterOffset,
+            )
+            mutableState.update {
+                it.copy(message = if (saved) "Cita guardada" else "Esta cita ya estaba guardada")
+            }
+        }
+    }
+
+    fun deleteQuote(quote: SavedQuote) {
+        viewModelScope.launch {
+            repository.deleteQuote(quote.bookId, quote.id)
+            mutableState.update { it.copy(quotes = repository.listQuotes()) }
+        }
+    }
+
+    fun openQuote(quote: SavedQuote) {
+        viewModelScope.launch {
+            mutableState.update { it.copy(busy = true, message = null) }
+            runCatching {
+                val document = repository.loadBook(quote.bookId)
+                val settings = preferences.readerSettings.first().copy(
+                    readingMode = ReadingMode.SENTENCE,
+                    adaptivePacingEnabled = false,
+                    focusEnabled = false,
+                    readerControlsExpanded = false,
+                    narratorAvatar = document.summary.narratorAvatar,
+                )
+                val plan = withContext(Dispatchers.Default) {
+                    ReadingPlanBuilder.build(
+                        text = document.text,
+                        wordsPerBlock = settings.wordsPerBlock,
+                        readingMode = settings.readingMode,
+                    )
+                }
+                require(plan.blocks.isNotEmpty()) { "El libro no contiene palabras legibles" }
+                val blockIndex = plan.blockIndexFor(quote.startCharacterOffset)
+                ReaderState(
+                    document = document,
+                    plan = plan,
+                    settings = settings,
+                    customNarratorAvatarPath = app.customAvatarRepository.avatarFile
+                        .takeIf { it.isFile }
+                        ?.absolutePath,
+                    currentBlockIndex = blockIndex,
+                    focusEnabled = false,
+                    blockShownAtMillis = SystemClock.elapsedRealtime(),
+                    quotePreview = true,
+                    previewQuoteStartOffset = quote.startCharacterOffset,
+                    previewQuoteEndOffset = quote.endCharacterOffset,
+                )
+            }.onSuccess { reader ->
+                mutableState.update { it.copy(screen = AppScreen.Reader(reader), busy = false) }
+            }.onFailure { error ->
+                mutableState.update {
+                    it.copy(busy = false, message = error.userMessage("No fue posible abrir la cita"))
+                }
+            }
         }
     }
 
@@ -390,6 +533,10 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
 
     fun finishReader() {
         val reader = currentReader() ?: return
+        if (reader.quotePreview) {
+            showQuotes()
+            return
+        }
         pauseFocusSession()
         val finalReader = currentReader() ?: reader
         persistProgressImmediately()
@@ -485,6 +632,7 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun scheduleProgressSave() {
+        if (currentReader()?.quotePreview == true) return
         progressSaveJob?.cancel()
         progressSaveJob = viewModelScope.launch {
             delay(750)
@@ -495,6 +643,7 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
     private fun persistProgressImmediately() {
         progressSaveJob?.cancel()
         val reader = currentReader() ?: return
+        if (reader.quotePreview) return
         val bookId = reader.document.summary.id
         val characterOffset = reader.currentCharacterOffset
         progressSaveJob = viewModelScope.launch {
@@ -504,6 +653,7 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
 
     private suspend fun persistProgress() {
         val reader = currentReader() ?: return
+        if (reader.quotePreview) return
         repository.saveProgress(reader.document.summary.id, reader.currentCharacterOffset)
     }
 
@@ -512,7 +662,7 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun persistReadingCycleStats() {
-        val reader = currentReader()?.takeUnless { it.completed } ?: return
+        val reader = currentReader()?.takeUnless { it.completed || it.quotePreview } ?: return
         val stats = reader.aggregateCycleStats()
         viewModelScope.launch {
             repository.saveReadingCycleStats(reader.document.summary.id, stats)
@@ -521,7 +671,16 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
 
     private suspend fun reloadLibrary() {
         val books = repository.listBooks()
-        mutableState.update { it.copy(books = books, busy = false) }
+        val customAvatarPath = app.customAvatarRepository.avatarFile
+            .takeIf { it.isFile }
+            ?.absolutePath
+        mutableState.update {
+            it.copy(
+                books = books,
+                customNarratorAvatarPath = customAvatarPath,
+                busy = false,
+            )
+        }
     }
 
     private fun currentReader(): ReaderState? =
@@ -535,7 +694,7 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun completeReading(reader: ReaderState) {
-        if (reader.completed || reader.plan.blocks.isEmpty()) return
+        if (reader.completed || reader.quotePreview || reader.plan.blocks.isEmpty()) return
         val completedReader = reader.copy(
             currentBlockIndex = reader.plan.blocks.lastIndex,
             furthestBlockIndex = reader.plan.blocks.lastIndex,
