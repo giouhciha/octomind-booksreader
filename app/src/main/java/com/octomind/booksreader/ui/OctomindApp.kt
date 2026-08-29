@@ -122,6 +122,7 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
@@ -739,8 +740,8 @@ private fun QuotesScreen(
     }
 
     pendingShare?.let { quote ->
-        val avatar = books.firstOrNull { it.id == quote.bookId }?.narratorAvatar
-            ?: NarratorAvatar.OCTI
+        val sharedBook = books.firstOrNull { it.id == quote.bookId }
+        val avatar = sharedBook?.narratorAvatar ?: NarratorAvatar.OCTI
         val narratorName = when (avatar) {
             NarratorAvatar.OCTI -> stringResource(R.string.narrator_avatar_octi)
             NarratorAvatar.LOVECRAFT_ILLUSTRATION -> stringResource(R.string.narrator_avatar_lovecraft)
@@ -769,6 +770,8 @@ private fun QuotesScreen(
                                     avatar = avatar,
                                     customAvatarPath = customAvatarPath,
                                     narratorName = narratorName,
+                                    coverImagePath = sharedBook?.coverImagePath,
+                                    fallbackBookColor = bookCoverPalette(quote.bookTitle).first.toArgb(),
                                 )
                             }
                             shareQuoteImage(context, uri)
@@ -813,6 +816,8 @@ private fun createNarratorQuoteCard(
     avatar: NarratorAvatar,
     customAvatarPath: String?,
     narratorName: String,
+    coverImagePath: String?,
+    fallbackBookColor: Int,
 ): Uri {
     val cardWidth = 1_200
     val bubbleLeft = 410f
@@ -875,26 +880,16 @@ private fun createNarratorQuoteCard(
         canvas.drawText(chapter.take(58), bubbleLeft + 48f, bubbleBottom - 34f, metadataPaint)
     }
 
-    val avatarBitmap = when (avatar) {
-        NarratorAvatar.OCTI -> BitmapFactory.decodeResource(context.resources, R.drawable.octi_reader)
-        NarratorAvatar.LOVECRAFT_ILLUSTRATION ->
-            BitmapFactory.decodeResource(context.resources, R.drawable.lovecraft_narrator_illustration)
-        NarratorAvatar.SCHOPENHAUER_ILLUSTRATION ->
-            BitmapFactory.decodeResource(context.resources, R.drawable.schopenhauer_narrator_illustration)
-        NarratorAvatar.NIETZSCHE_ILLUSTRATION ->
-            BitmapFactory.decodeResource(context.resources, R.drawable.nietzsche_narrator_illustration)
-        NarratorAvatar.CAMUS_ILLUSTRATION ->
-            BitmapFactory.decodeResource(context.resources, R.drawable.camus_narrator_illustration)
-        NarratorAvatar.STRANGER_ILLUSTRATION ->
-            BitmapFactory.decodeResource(context.resources, R.drawable.stranger_narrator_illustration)
-        NarratorAvatar.LILA_ILLUSTRATION ->
-            BitmapFactory.decodeResource(context.resources, R.drawable.lila_narrator_illustration)
-        NarratorAvatar.ACHU_ILLUSTRATION ->
-            BitmapFactory.decodeResource(context.resources, R.drawable.achu_narrator_illustration)
-        NarratorAvatar.FRANK_N_FURTER_ILLUSTRATION ->
-            BitmapFactory.decodeResource(context.resources, R.drawable.frank_n_furter_narrator_illustration)
-        NarratorAvatar.CUSTOM_IMAGE -> customAvatarPath?.let(BitmapFactory::decodeFile)
+    val avatarBitmap = if (avatar == NarratorAvatar.CUSTOM_IMAGE) {
+        customAvatarPath?.let(BitmapFactory::decodeFile)
             ?: BitmapFactory.decodeResource(context.resources, R.drawable.octi_reader)
+    } else {
+        createBookColoredNarratorBitmap(
+            context = context,
+            avatar = avatar,
+            coverImagePath = coverImagePath,
+            fallbackBookColor = fallbackBookColor,
+        ) ?: BitmapFactory.decodeResource(context.resources, R.drawable.octi_reader)
     }
     val avatarRect = RectF(92f, cardHeight - 430f, 372f, cardHeight - 150f)
     canvas.save()
@@ -1544,6 +1539,8 @@ private fun ReaderScreenContent(
                     narratorAvatar = state.settings.narratorAvatar,
                     customAvatarPath = state.customNarratorAvatarPath,
                     customAvatarVersion = state.settings.customNarratorAvatarVersion,
+                    coverImagePath = state.document.summary.coverImagePath,
+                    fallbackBookColor = bookCoverPalette(state.document.summary.title).first.toArgb(),
                     showGestureHint = !state.settings.narratorGestureHintDismissed,
                     onSaveQuote = onSaveQuote,
                 )
@@ -1752,6 +1749,8 @@ private fun OctiNarratorOverlay(
     narratorAvatar: NarratorAvatar,
     customAvatarPath: String?,
     customAvatarVersion: Int,
+    coverImagePath: String?,
+    fallbackBookColor: Int,
     showGestureHint: Boolean,
     onSaveQuote: () -> Unit,
 ) {
@@ -1849,6 +1848,8 @@ private fun OctiNarratorOverlay(
                 avatar = narratorAvatar,
                 customAvatarPath = customAvatarPath,
                 customAvatarVersion = customAvatarVersion,
+                coverImagePath = coverImagePath,
+                fallbackBookColor = fallbackBookColor,
             )
             AnimatedVisibility(visible = showGestureHint) {
                 Text(
@@ -1920,62 +1921,20 @@ private fun FocusNarratorAvatar(
     avatar: NarratorAvatar,
     customAvatarPath: String?,
     customAvatarVersion: Int,
+    coverImagePath: String?,
+    fallbackBookColor: Int,
 ) {
-    when (avatar) {
-        NarratorAvatar.OCTI -> FocusReadingMascot(
-            mascotSize = 196.dp,
-        )
-        NarratorAvatar.LOVECRAFT_ILLUSTRATION -> Image(
-            painter = painterResource(R.drawable.lovecraft_narrator_illustration),
-            contentDescription = stringResource(R.string.lovecraft_illustration_description),
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.size(196.dp),
-        )
-        NarratorAvatar.SCHOPENHAUER_ILLUSTRATION -> Image(
-            painter = painterResource(R.drawable.schopenhauer_narrator_illustration),
-            contentDescription = stringResource(R.string.schopenhauer_illustration_description),
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.size(196.dp),
-        )
-        NarratorAvatar.NIETZSCHE_ILLUSTRATION -> Image(
-            painter = painterResource(R.drawable.nietzsche_narrator_illustration),
-            contentDescription = stringResource(R.string.nietzsche_illustration_description),
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.size(196.dp),
-        )
-        NarratorAvatar.CAMUS_ILLUSTRATION -> Image(
-            painter = painterResource(R.drawable.camus_narrator_illustration),
-            contentDescription = stringResource(R.string.camus_illustration_description),
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.size(196.dp),
-        )
-        NarratorAvatar.STRANGER_ILLUSTRATION -> Image(
-            painter = painterResource(R.drawable.stranger_narrator_illustration),
-            contentDescription = stringResource(R.string.stranger_illustration_description),
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.size(196.dp),
-        )
-        NarratorAvatar.LILA_ILLUSTRATION -> Image(
-            painter = painterResource(R.drawable.lila_narrator_illustration),
-            contentDescription = stringResource(R.string.lila_illustration_description),
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.size(196.dp),
-        )
-        NarratorAvatar.ACHU_ILLUSTRATION -> Image(
-            painter = painterResource(R.drawable.achu_narrator_illustration),
-            contentDescription = stringResource(R.string.achu_illustration_description),
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.size(196.dp),
-        )
-        NarratorAvatar.FRANK_N_FURTER_ILLUSTRATION -> Image(
-            painter = painterResource(R.drawable.frank_n_furter_narrator_illustration),
-            contentDescription = stringResource(R.string.frank_n_furter_illustration_description),
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.size(196.dp),
-        )
-        NarratorAvatar.CUSTOM_IMAGE -> CustomCircularNarratorAvatar(
+    if (avatar == NarratorAvatar.CUSTOM_IMAGE) {
+        CustomCircularNarratorAvatar(
             path = customAvatarPath,
             version = customAvatarVersion,
+        )
+    } else {
+        BookColoredNarratorArtwork(
+            avatar = avatar,
+            coverImagePath = coverImagePath,
+            fallbackBookColor = fallbackBookColor,
+            modifier = Modifier.size(196.dp),
         )
     }
 }
