@@ -11,6 +11,15 @@ plugins {
     id("org.owasp.dependencycheck")
 }
 
+val baseVersionCode = 58
+val baseVersionName = "0.47.0"
+val ciBuildNumber = providers.gradleProperty("ciBuildNumber").orNull?.toIntOrNull()
+require(ciBuildNumber == null || ciBuildNumber in 1..99_999) {
+    "ciBuildNumber debe ser un entero entre 1 y 99999."
+}
+val effectiveVersionCode = ciBuildNumber?.let { baseVersionCode * 100_000 + it } ?: baseVersionCode
+val effectiveVersionName = ciBuildNumber?.let { "$baseVersionName.$it" } ?: baseVersionName
+
 android {
     namespace = "com.octomind.booksreader"
     compileSdk = 37
@@ -19,8 +28,8 @@ android {
         applicationId = "com.octomind.booksreader"
         minSdk = 26
         targetSdk = 37
-        versionCode = 58
-        versionName = "0.47.0"
+        versionCode = effectiveVersionCode
+        versionName = effectiveVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -44,6 +53,13 @@ android {
             )
         }
     }
+}
+
+tasks.register<Sync>("stageDebugApk") {
+    dependsOn("assembleDebug")
+    from(layout.buildDirectory.file("outputs/apk/debug/app-debug.apk"))
+    into(layout.buildDirectory.dir("outputs/jenkins"))
+    rename("app-debug\\.apk", "octomind-booksreader-$effectiveVersionName.apk")
 }
 
 ktlint {

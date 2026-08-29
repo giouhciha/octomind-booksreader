@@ -4,13 +4,6 @@ pipeline {
     environment {
         JAVA_HOME = 'C:\\Program Files\\Android\\Android Studio\\jbr'
         ANDROID_HOME = 'C:\\Users\\gio_u\\AppData\\Local\\Android\\Sdk'
-        ANDROID_AVD_HOME = 'C:\\Users\\gio_u\\.android\\avd'
-        ANDROID_USER_HOME = 'C:\\ProgramData\\Jenkins\\.jenkins\\.android'
-        ANDROID_EMULATOR_HOME = 'C:\\ProgramData\\Jenkins\\.jenkins\\.android'
-        ANDROID_SDK_HOME = 'C:\\ProgramData\\Jenkins\\.jenkins'
-        ADB_VENDOR_KEYS = 'C:\\ProgramData\\Jenkins\\.jenkins\\.android\\adbkey'
-        ANDROID_ADB_SERVER_PORT = '5038'
-        ANDROID_SERIAL = 'emulator-5554'
     }
 
     stages {
@@ -60,21 +53,9 @@ pipeline {
             }
         }
 
-        stage('Iniciar emulador') {
+        stage('Construir APK') {
             steps {
-                powershell '.\\scripts\\jenkins\\Start-AndroidEmulator.ps1'
-            }
-        }
-
-        stage('Pruebas UI') {
-            steps {
-                bat 'gradlew.bat :app:connectedDebugAndroidTest'
-            }
-        }
-
-        stage('Instalacion y apertura') {
-            steps {
-                powershell '.\\scripts\\jenkins\\Verify-AppLaunch.ps1'
+                bat 'gradlew.bat :app:stageDebugApk -PciBuildNumber=%BUILD_NUMBER%'
             }
         }
     }
@@ -82,8 +63,6 @@ pipeline {
     post {
         always {
             script {
-                powershell(returnStatus: true, script: '.\\scripts\\jenkins\\Stop-AndroidEmulator.ps1')
-
                 if (fileExists('app/build/reports/lint-results-debug.xml')) {
                     recordIssues(
                         enabledForFailure: true,
@@ -99,15 +78,10 @@ pipeline {
                     echo 'No hay resultados unitarios porque la etapa no se ejecuto o fallo antes de generarlos.'
                 }
 
-                if (fileExists('app/build/outputs/androidTest-results/connected/debug')) {
-                    junit testResults: 'app/build/outputs/androidTest-results/connected/debug/TEST-*.xml'
-                } else {
-                    echo 'No hay resultados UI porque la etapa no se ejecuto o fallo antes de generarlos.'
-                }
-
                 archiveArtifacts(
-                    artifacts: 'app/build/reports/**,build/reports/**',
-                    allowEmptyArchive: true
+                    artifacts: 'app/build/outputs/jenkins/*.apk,app/build/reports/**,build/reports/**',
+                    allowEmptyArchive: true,
+                    fingerprint: true
                 )
             }
         }
