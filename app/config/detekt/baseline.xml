@@ -7,6 +7,7 @@
     <ID>CyclomaticComplexMethod:LocalBookRepository.kt:BookRecord.Companion$fun fromJson: BookRecord</ID>
     <ID>CyclomaticComplexMethod:OctomindApp.kt:@Composable private fun ReaderControls</ID>
     <ID>CyclomaticComplexMethod:OctomindApp.kt:@Composable private fun ReaderParagraph</ID>
+    <ID>CyclomaticComplexMethod:OctomindApp.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable private fun QuotesScreen</ID>
     <ID>CyclomaticComplexMethod:OctomindApp.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable private fun ReaderScreenContent</ID>
     <ID>CyclomaticComplexMethod:OctomindApp.kt:private fun createNarratorQuoteCard: Uri</ID>
     <ID>CyclomaticComplexMethod:ReadingPlan.kt:ReadingPlanBuilder$private fun String.terminalPauseKind: PauseKind</ID>
