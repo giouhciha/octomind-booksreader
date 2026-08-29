@@ -16,9 +16,10 @@ class NarratorPaginationTest {
     fun longTextUsesNaturalBoundaryWithoutLosingWords() {
         val text = "Uno dos tres cuatro, cinco seis siete ocho nueve diez once doce."
 
-        val pages = NarratorPagination.paginate(text) { candidate ->
-            candidate.split(Regex("\\s+")).size <= 6
-        }
+        val pages =
+            NarratorPagination.paginate(text) { candidate ->
+                candidate.split(Regex("\\s+")).size <= 6
+            }
 
         assertEquals("Uno dos tres cuatro,", pages.first())
         assertTrue(pages.all { it.split(Regex("\\s+")).size <= 6 })

@@ -1,10 +1,10 @@
 package com.octomind.booksreader.data
 
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.fail
 import org.junit.Test
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 
 class EncryptedBackupCodecTest {
     @Test
