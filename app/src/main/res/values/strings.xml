@@ -83,6 +83,9 @@
     <string name="narrator_avatar_schopenhauer">Schopenhauer</string>
     <string name="narrator_avatar_nietzsche">Nietzsche</string>
     <string name="narrator_avatar_camus">Camus</string>
+    <string name="narrator_avatar_stranger">Stranger</string>
+    <string name="narrator_avatar_lila">Lila</string>
+    <string name="narrator_avatar_achu">Achu!</string>
     <string name="narrator_avatar_custom">Mi imagen</string>
     <string name="change_custom_avatar">Elegir otra imagen</string>
     <string name="delete_custom_avatar">Eliminar mi imagen</string>
@@ -92,6 +95,9 @@
     <string name="schopenhauer_illustration_description">Ilustración de Arthur Schopenhauer leyendo</string>
     <string name="nietzsche_illustration_description">Ilustración de Friedrich Nietzsche leyendo</string>
     <string name="camus_illustration_description">Ilustración de Albert Camus leyendo</string>
+    <string name="stranger_illustration_description">Ilustración de Stranger leyendo</string>
+    <string name="lila_illustration_description">Ilustración de Lila, una gata, leyendo</string>
+    <string name="achu_illustration_description">Ilustración de Achu!, un gato, leyendo</string>
     <string name="focus_dialog_description">Fragmento narrado por Octi</string>
     <string name="reading_ambience">Ambientación</string>
     <string name="reading_ambience_hint">Se elige localmente según el libro y cambia por capítulo.</string>

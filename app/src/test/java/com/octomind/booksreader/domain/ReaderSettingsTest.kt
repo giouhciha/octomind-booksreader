@@ -1,7 +1,7 @@
 package com.octomind.booksreader.domain
 
-import org.junit.Assert.assertTrue
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ReaderSettingsTest {
@@ -25,5 +25,35 @@ class ReaderSettingsTest {
         )
 
         assertEquals(NarratorAvatar.OCTI, book.narratorAvatar)
+    }
+
+    @Test
+    fun `Stranger narrator keeps its stable persisted name`() {
+        val storedValue = NarratorAvatar.STRANGER_ILLUSTRATION.name
+
+        assertEquals(
+            NarratorAvatar.STRANGER_ILLUSTRATION,
+            NarratorAvatar.valueOf(storedValue),
+        )
+    }
+
+    @Test
+    fun `Lila narrator keeps its stable persisted name`() {
+        val storedValue = NarratorAvatar.LILA_ILLUSTRATION.name
+
+        assertEquals(
+            NarratorAvatar.LILA_ILLUSTRATION,
+            NarratorAvatar.valueOf(storedValue),
+        )
+    }
+
+    @Test
+    fun `Achu narrator keeps its stable persisted name`() {
+        val storedValue = NarratorAvatar.ACHU_ILLUSTRATION.name
+
+        assertEquals(
+            NarratorAvatar.ACHU_ILLUSTRATION,
+            NarratorAvatar.valueOf(storedValue),
+        )
     }
 }

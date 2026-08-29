@@ -599,6 +599,9 @@ private fun QuotesScreen(
             NarratorAvatar.SCHOPENHAUER_ILLUSTRATION -> stringResource(R.string.narrator_avatar_schopenhauer)
             NarratorAvatar.NIETZSCHE_ILLUSTRATION -> stringResource(R.string.narrator_avatar_nietzsche)
             NarratorAvatar.CAMUS_ILLUSTRATION -> stringResource(R.string.narrator_avatar_camus)
+            NarratorAvatar.STRANGER_ILLUSTRATION -> stringResource(R.string.narrator_avatar_stranger)
+            NarratorAvatar.LILA_ILLUSTRATION -> stringResource(R.string.narrator_avatar_lila)
+            NarratorAvatar.ACHU_ILLUSTRATION -> stringResource(R.string.narrator_avatar_achu)
             NarratorAvatar.CUSTOM_IMAGE -> stringResource(R.string.narrator_avatar_custom)
         }
         AlertDialog(
@@ -732,6 +735,12 @@ private fun createNarratorQuoteCard(
             BitmapFactory.decodeResource(context.resources, R.drawable.nietzsche_narrator_illustration)
         NarratorAvatar.CAMUS_ILLUSTRATION ->
             BitmapFactory.decodeResource(context.resources, R.drawable.camus_narrator_illustration)
+        NarratorAvatar.STRANGER_ILLUSTRATION ->
+            BitmapFactory.decodeResource(context.resources, R.drawable.stranger_narrator_illustration)
+        NarratorAvatar.LILA_ILLUSTRATION ->
+            BitmapFactory.decodeResource(context.resources, R.drawable.lila_narrator_illustration)
+        NarratorAvatar.ACHU_ILLUSTRATION ->
+            BitmapFactory.decodeResource(context.resources, R.drawable.achu_narrator_illustration)
         NarratorAvatar.CUSTOM_IMAGE -> customAvatarPath?.let(BitmapFactory::decodeFile)
             ?: BitmapFactory.decodeResource(context.resources, R.drawable.octi_reader)
     }
@@ -1712,6 +1721,24 @@ private fun FocusNarratorAvatar(
             contentScale = ContentScale.Fit,
             modifier = Modifier.size(196.dp),
         )
+        NarratorAvatar.STRANGER_ILLUSTRATION -> Image(
+            painter = painterResource(R.drawable.stranger_narrator_illustration),
+            contentDescription = stringResource(R.string.stranger_illustration_description),
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.size(196.dp),
+        )
+        NarratorAvatar.LILA_ILLUSTRATION -> Image(
+            painter = painterResource(R.drawable.lila_narrator_illustration),
+            contentDescription = stringResource(R.string.lila_illustration_description),
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.size(196.dp),
+        )
+        NarratorAvatar.ACHU_ILLUSTRATION -> Image(
+            painter = painterResource(R.drawable.achu_narrator_illustration),
+            contentDescription = stringResource(R.string.achu_illustration_description),
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.size(196.dp),
+        )
         NarratorAvatar.CUSTOM_IMAGE -> CustomCircularNarratorAvatar(
             path = customAvatarPath,
             version = customAvatarVersion,
@@ -1929,6 +1956,12 @@ private fun ReaderControls(
                                             stringResource(R.string.narrator_avatar_nietzsche)
                                         NarratorAvatar.CAMUS_ILLUSTRATION ->
                                             stringResource(R.string.narrator_avatar_camus)
+                                        NarratorAvatar.STRANGER_ILLUSTRATION ->
+                                            stringResource(R.string.narrator_avatar_stranger)
+                                        NarratorAvatar.LILA_ILLUSTRATION ->
+                                            stringResource(R.string.narrator_avatar_lila)
+                                        NarratorAvatar.ACHU_ILLUSTRATION ->
+                                            stringResource(R.string.narrator_avatar_achu)
                                         NarratorAvatar.CUSTOM_IMAGE ->
                                             stringResource(R.string.narrator_avatar_custom)
                                     }
