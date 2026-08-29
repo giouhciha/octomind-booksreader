@@ -56,4 +56,14 @@ class ReaderSettingsTest {
             NarratorAvatar.valueOf(storedValue),
         )
     }
+
+    @Test
+    fun `Frank N Furter narrator keeps its stable persisted name`() {
+        val storedValue = NarratorAvatar.FRANK_N_FURTER_ILLUSTRATION.name
+
+        assertEquals(
+            NarratorAvatar.FRANK_N_FURTER_ILLUSTRATION,
+            NarratorAvatar.valueOf(storedValue),
+        )
+    }
 }

@@ -86,6 +86,7 @@
     <string name="narrator_avatar_stranger">Stranger</string>
     <string name="narrator_avatar_lila">Lila</string>
     <string name="narrator_avatar_achu">Achu!</string>
+    <string name="narrator_avatar_frank_n_furter">frank-n-furter</string>
     <string name="narrator_avatar_custom">Mi imagen</string>
     <string name="change_custom_avatar">Elegir otra imagen</string>
     <string name="delete_custom_avatar">Eliminar mi imagen</string>
@@ -98,6 +99,7 @@
     <string name="stranger_illustration_description">Ilustración de Stranger leyendo</string>
     <string name="lila_illustration_description">Ilustración de Lila, una gata, leyendo</string>
     <string name="achu_illustration_description">Ilustración de Achu!, un gato, leyendo</string>
+    <string name="frank_n_furter_illustration_description">Ilustración de Frank-N-Furter leyendo</string>
     <string name="focus_dialog_description">Fragmento narrado por Octi</string>
     <string name="reading_ambience">Ambientación</string>
     <string name="reading_ambience_hint">Se elige localmente según el libro y cambia por capítulo.</string>

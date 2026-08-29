@@ -602,6 +602,8 @@ private fun QuotesScreen(
             NarratorAvatar.STRANGER_ILLUSTRATION -> stringResource(R.string.narrator_avatar_stranger)
             NarratorAvatar.LILA_ILLUSTRATION -> stringResource(R.string.narrator_avatar_lila)
             NarratorAvatar.ACHU_ILLUSTRATION -> stringResource(R.string.narrator_avatar_achu)
+            NarratorAvatar.FRANK_N_FURTER_ILLUSTRATION ->
+                stringResource(R.string.narrator_avatar_frank_n_furter)
             NarratorAvatar.CUSTOM_IMAGE -> stringResource(R.string.narrator_avatar_custom)
         }
         AlertDialog(
@@ -741,6 +743,8 @@ private fun createNarratorQuoteCard(
             BitmapFactory.decodeResource(context.resources, R.drawable.lila_narrator_illustration)
         NarratorAvatar.ACHU_ILLUSTRATION ->
             BitmapFactory.decodeResource(context.resources, R.drawable.achu_narrator_illustration)
+        NarratorAvatar.FRANK_N_FURTER_ILLUSTRATION ->
+            BitmapFactory.decodeResource(context.resources, R.drawable.frank_n_furter_narrator_illustration)
         NarratorAvatar.CUSTOM_IMAGE -> customAvatarPath?.let(BitmapFactory::decodeFile)
             ?: BitmapFactory.decodeResource(context.resources, R.drawable.octi_reader)
     }
@@ -1739,6 +1743,12 @@ private fun FocusNarratorAvatar(
             contentScale = ContentScale.Fit,
             modifier = Modifier.size(196.dp),
         )
+        NarratorAvatar.FRANK_N_FURTER_ILLUSTRATION -> Image(
+            painter = painterResource(R.drawable.frank_n_furter_narrator_illustration),
+            contentDescription = stringResource(R.string.frank_n_furter_illustration_description),
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.size(196.dp),
+        )
         NarratorAvatar.CUSTOM_IMAGE -> CustomCircularNarratorAvatar(
             path = customAvatarPath,
             version = customAvatarVersion,
@@ -1962,6 +1972,8 @@ private fun ReaderControls(
                                             stringResource(R.string.narrator_avatar_lila)
                                         NarratorAvatar.ACHU_ILLUSTRATION ->
                                             stringResource(R.string.narrator_avatar_achu)
+                                        NarratorAvatar.FRANK_N_FURTER_ILLUSTRATION ->
+                                            stringResource(R.string.narrator_avatar_frank_n_furter)
                                         NarratorAvatar.CUSTOM_IMAGE ->
                                             stringResource(R.string.narrator_avatar_custom)
                                     }
