@@ -63,6 +63,7 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.AutoStories
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Bookmark
+import androidx.compose.material.icons.rounded.CloudSync
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
@@ -85,6 +86,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SnackbarHost
@@ -141,6 +143,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -176,6 +179,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlin.math.roundToInt
 
 @Composable
@@ -214,6 +220,8 @@ fun OctomindApp(viewModel: OctomindViewModel = viewModel()) {
                 onOpen = viewModel::openBook,
                 onDelete = viewModel::deleteBook,
                 onShowQuotes = viewModel::showQuotes,
+                onCreateBackup = viewModel::createBackup,
+                onRestoreBackup = viewModel::restoreBackup,
             )
             AppScreen.Quotes -> QuotesScreen(
                 quotes = state.quotes,
@@ -342,10 +350,28 @@ private fun LibraryScreen(
     onOpen: (String) -> Unit,
     onDelete: (String) -> Unit,
     onShowQuotes: () -> Unit,
+    onCreateBackup: (Uri, CharArray) -> Unit,
+    onRestoreBackup: (Uri, CharArray) -> Unit,
 ) {
     var pendingDelete by remember { mutableStateOf<BookSummary?>(null) }
+    var backupDialog by rememberSaveable { mutableStateOf<BackupDialog?>(null) }
+    var pendingPassword by remember { mutableStateOf<CharArray?>(null) }
+    var pendingRestoreUri by rememberSaveable { mutableStateOf<Uri?>(null) }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let(onImport)
+    }
+    val createBackupLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument(BACKUP_MIME_TYPE),
+    ) { uri ->
+        val password = pendingPassword
+        pendingPassword = null
+        if (uri != null && password != null) onCreateBackup(uri, password) else password?.fill('\u0000')
+    }
+    val restoreBackupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            pendingRestoreUri = uri
+            backupDialog = BackupDialog.RESTORE_PASSWORD
+        }
     }
 
     Scaffold(
@@ -362,6 +388,9 @@ private fun LibraryScreen(
                     }
                 },
                 actions = {
+                    FilledIconButton(onClick = { backupDialog = BackupDialog.MENU }, enabled = !busy) {
+                        Icon(Icons.Rounded.CloudSync, stringResource(R.string.backup))
+                    }
                     FilledIconButton(onClick = onShowQuotes) {
                         Icon(Icons.Rounded.Bookmark, stringResource(R.string.my_quotes))
                     }
@@ -426,6 +455,114 @@ private fun LibraryScreen(
             },
         )
     }
+    when (backupDialog) {
+        BackupDialog.MENU -> BackupMenuDialog(
+            onDismiss = { backupDialog = null },
+            onCreate = { backupDialog = BackupDialog.CREATE_PASSWORD },
+            onRestore = {
+                backupDialog = null
+                restoreBackupLauncher.launch(arrayOf(BACKUP_MIME_TYPE, "application/octet-stream"))
+            },
+        )
+        BackupDialog.CREATE_PASSWORD -> BackupPasswordDialog(
+            restoring = false,
+            onDismiss = { backupDialog = null },
+            onConfirm = { password ->
+                pendingPassword = password.toCharArray()
+                backupDialog = null
+                val date = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+                createBackupLauncher.launch("octomind-$date.octomind")
+            },
+        )
+        BackupDialog.RESTORE_PASSWORD -> BackupPasswordDialog(
+            restoring = true,
+            onDismiss = {
+                pendingRestoreUri = null
+                backupDialog = null
+            },
+            onConfirm = { password ->
+                pendingRestoreUri?.let { onRestoreBackup(it, password.toCharArray()) }
+                pendingRestoreUri = null
+                backupDialog = null
+            },
+        )
+        null -> Unit
+    }
+}
+
+private enum class BackupDialog { MENU, CREATE_PASSWORD, RESTORE_PASSWORD }
+
+private const val BACKUP_MIME_TYPE = "application/vnd.octomind.backup"
+
+@Composable
+private fun BackupMenuDialog(onDismiss: () -> Unit, onCreate: () -> Unit, onRestore: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.backup_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(R.string.backup_body))
+                Button(onClick = onCreate, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.create_backup))
+                }
+                OutlinedButton(onClick = onRestore, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.restore_backup))
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
+}
+
+@Composable
+private fun BackupPasswordDialog(
+    restoring: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit,
+) {
+    var password by remember { mutableStateOf("") }
+    var confirmation by remember { mutableStateOf("") }
+    val valid = password.length >= 8 && (restoring || password == confirmation)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(stringResource(if (restoring) R.string.restore_backup else R.string.protect_backup))
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    stringResource(
+                        if (restoring) R.string.restore_backup_warning else R.string.backup_password_hint,
+                    ),
+                )
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text(stringResource(R.string.backup_password)) },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                if (!restoring) {
+                    OutlinedTextField(
+                        value = confirmation,
+                        onValueChange = { confirmation = it },
+                        label = { Text(stringResource(R.string.confirm_backup_password)) },
+                        visualTransformation = PasswordVisualTransformation(),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onConfirm(password) }, enabled = valid) {
+                Text(stringResource(if (restoring) R.string.restore else R.string.continue_action))
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
 }
 
 @Composable

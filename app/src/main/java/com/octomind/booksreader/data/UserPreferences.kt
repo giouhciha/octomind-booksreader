@@ -15,7 +15,14 @@ import com.octomind.booksreader.domain.ReaderProfile
 import com.octomind.booksreader.domain.ReaderSettings
 import com.octomind.booksreader.domain.ReadingMode
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+
+data class UserPreferencesSnapshot(
+    val adultConfirmed: Boolean,
+    val readerSettings: ReaderSettings,
+    val readerProfile: ReaderProfile,
+)
 
 private val Context.userDataStore by preferencesDataStore(name = "reader_preferences")
 
@@ -64,6 +71,25 @@ class UserPreferences(private val context: Context) {
 
     suspend fun confirmAdult() {
         context.userDataStore.edit { it[ADULT_CONFIRMED] = true }
+    }
+
+    suspend fun snapshot(): UserPreferencesSnapshot = UserPreferencesSnapshot(
+        adultConfirmed = adultConfirmed.first(),
+        readerSettings = readerSettings.first(),
+        readerProfile = readerProfile.first(),
+    )
+
+    suspend fun restore(snapshot: UserPreferencesSnapshot) {
+        updateReaderSettings(snapshot.readerSettings)
+        context.userDataStore.edit { preferences ->
+            preferences[ADULT_CONFIRMED] = snapshot.adultConfirmed
+            preferences[PROFILE_BASELINE_WPM] = snapshot.readerProfile.baselineWordsPerMinute
+                .coerceIn(100, 700)
+            preferences[PROFILE_SAMPLE_COUNT] = snapshot.readerProfile.calibrationSampleCount
+                .coerceAtLeast(0)
+            preferences[PROFILE_CALIBRATIONS] = snapshot.readerProfile.completedCalibrations
+                .coerceAtLeast(0)
+        }
     }
 
     suspend fun updateReaderSettings(settings: ReaderSettings) {

@@ -198,6 +198,39 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun createBackup(uri: Uri, password: CharArray) {
+        viewModelScope.launch {
+            mutableState.update { it.copy(busy = true, message = null) }
+            runCatching { app.backupRepository.create(uri, password) }
+                .onSuccess {
+                    mutableState.update { it.copy(busy = false, message = "Respaldo creado correctamente") }
+                }
+                .onFailure { error ->
+                    mutableState.update {
+                        it.copy(busy = false, message = error.userMessage("No fue posible crear el respaldo"))
+                    }
+                }
+        }
+    }
+
+    fun restoreBackup(uri: Uri, password: CharArray) {
+        viewModelScope.launch {
+            mutableState.update { it.copy(busy = true, message = null) }
+            runCatching { app.backupRepository.restore(uri, password) }
+                .onSuccess {
+                    reloadLibrary()
+                    mutableState.update {
+                        it.copy(screen = AppScreen.Library, message = "Respaldo restaurado correctamente")
+                    }
+                }
+                .onFailure { error ->
+                    mutableState.update {
+                        it.copy(busy = false, message = error.userMessage("No fue posible restaurar el respaldo"))
+                    }
+                }
+        }
+    }
+
     fun showQuotes() {
         viewModelScope.launch {
             val quotes = repository.listQuotes()
