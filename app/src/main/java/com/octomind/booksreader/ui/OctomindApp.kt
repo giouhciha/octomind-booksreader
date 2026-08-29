@@ -1461,10 +1461,10 @@ private fun ReaderScreenContent(
                                 val hasNarratorPage = state.settings.focusPresentation ==
                                     FocusPresentation.OCTI_NARRATOR &&
                                     narratorPageIndex + delta in narratorPages.indices
-                                if (
-                                    delta != 0 &&
-                                    (hasNarratorPage || targetIndex in state.plan.blocks.indices || completesBook)
-                                ) {
+                                val canNavigate = hasNarratorPage ||
+                                    targetIndex in state.plan.blocks.indices ||
+                                    completesBook
+                                if (delta != 0 && canNavigate) {
                                     hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     if (state.settings.focusPresentation == FocusPresentation.OCTI_NARRATOR) {
                                         onNarratorGestureLearned()

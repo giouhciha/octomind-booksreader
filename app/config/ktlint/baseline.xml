@@ -18,36 +18,36 @@
         <error line="67" column="25" source="standard:function-signature" />
         <error line="67" column="45" source="standard:function-signature" />
         <error line="67" column="62" source="standard:function-signature" />
-        <error line="101" column="32" source="standard:if-else-wrapping" />
-        <error line="101" column="32" source="standard:multiline-if-else" />
-        <error line="106" column="41" source="standard:function-signature" />
-        <error line="106" column="55" source="standard:function-signature" />
-        <error line="106" column="69" source="standard:function-signature" />
-        <error line="121" column="30" source="standard:function-signature" />
-        <error line="121" column="52" source="standard:function-signature" />
-        <error line="121" column="69" source="standard:function-signature" />
-        <error line="121" column="83" source="standard:function-signature" />
-        <error line="131" column="27" source="standard:function-signature" />
-        <error line="131" column="49" source="standard:function-signature" />
-        <error line="131" column="63" source="standard:function-signature" />
-        <error line="131" column="76" source="standard:function-signature" />
-        <error line="137" column="28" source="standard:function-signature" />
-        <error line="137" column="40" source="standard:function-signature" />
-        <error line="137" column="52" source="standard:function-signature" />
-        <error line="145" column="34" source="standard:multiline-expression-wrapping" />
-        <error line="145" column="34" source="standard:function-signature" />
-        <error line="161" column="48" source="standard:multiline-expression-wrapping" />
-        <error line="161" column="48" source="standard:function-signature" />
-        <error line="166" column="39" source="standard:multiline-expression-wrapping" />
-        <error line="166" column="39" source="standard:function-signature" />
-        <error line="184" column="38" source="standard:multiline-expression-wrapping" />
-        <error line="184" column="38" source="standard:function-signature" />
-        <error line="194" column="26" source="standard:multiline-expression-wrapping" />
-        <error line="212" column="25" source="standard:multiline-expression-wrapping" />
-        <error line="220" column="58" source="standard:function-signature" />
-        <error line="220" column="72" source="standard:function-signature" />
-        <error line="220" column="83" source="standard:function-signature" />
-        <error line="220" column="89" source="standard:function-signature" />
+        <error line="114" column="32" source="standard:if-else-wrapping" />
+        <error line="114" column="32" source="standard:multiline-if-else" />
+        <error line="119" column="41" source="standard:function-signature" />
+        <error line="119" column="55" source="standard:function-signature" />
+        <error line="119" column="69" source="standard:function-signature" />
+        <error line="134" column="30" source="standard:function-signature" />
+        <error line="134" column="52" source="standard:function-signature" />
+        <error line="134" column="69" source="standard:function-signature" />
+        <error line="134" column="83" source="standard:function-signature" />
+        <error line="144" column="27" source="standard:function-signature" />
+        <error line="144" column="49" source="standard:function-signature" />
+        <error line="144" column="63" source="standard:function-signature" />
+        <error line="144" column="76" source="standard:function-signature" />
+        <error line="150" column="28" source="standard:function-signature" />
+        <error line="150" column="40" source="standard:function-signature" />
+        <error line="150" column="52" source="standard:function-signature" />
+        <error line="158" column="34" source="standard:multiline-expression-wrapping" />
+        <error line="158" column="34" source="standard:function-signature" />
+        <error line="174" column="48" source="standard:multiline-expression-wrapping" />
+        <error line="174" column="48" source="standard:function-signature" />
+        <error line="179" column="39" source="standard:multiline-expression-wrapping" />
+        <error line="179" column="39" source="standard:function-signature" />
+        <error line="197" column="38" source="standard:multiline-expression-wrapping" />
+        <error line="197" column="38" source="standard:function-signature" />
+        <error line="207" column="26" source="standard:multiline-expression-wrapping" />
+        <error line="225" column="25" source="standard:multiline-expression-wrapping" />
+        <error line="233" column="58" source="standard:function-signature" />
+        <error line="233" column="72" source="standard:function-signature" />
+        <error line="233" column="83" source="standard:function-signature" />
+        <error line="233" column="89" source="standard:function-signature" />
     </file>
     <file name="src/main/java/com/octomind/booksreader/data/BookParser.kt">
         <error line="3" column="1" source="standard:import-ordering" />
@@ -114,21 +114,21 @@
         <error line="56" column="51" source="standard:function-signature" />
     </file>
     <file name="src/main/java/com/octomind/booksreader/data/EncryptedBackupCodec.kt">
-        <error line="26" column="17" source="standard:function-signature" />
-        <error line="26" column="38" source="standard:function-signature" />
-        <error line="26" column="60" source="standard:function-signature" />
-        <error line="26" column="98" source="standard:function-signature" />
-        <error line="38" column="26" source="standard:multiline-expression-wrapping" />
-        <error line="49" column="17" source="standard:function-signature" />
-        <error line="49" column="38" source="standard:function-signature" />
-        <error line="49" column="58" source="standard:function-signature" />
-        <error line="49" column="94" source="standard:function-signature" />
-        <error line="59" column="26" source="standard:multiline-expression-wrapping" />
-        <error line="74" column="27" source="standard:function-signature" />
-        <error line="74" column="48" source="standard:function-signature" />
-        <error line="74" column="63" source="standard:function-signature" />
-        <error line="77" column="25" source="standard:multiline-expression-wrapping" />
-        <error line="77" column="41" source="standard:chain-method-continuation" />
+        <error line="27" column="17" source="standard:function-signature" />
+        <error line="27" column="38" source="standard:function-signature" />
+        <error line="27" column="60" source="standard:function-signature" />
+        <error line="27" column="98" source="standard:function-signature" />
+        <error line="39" column="26" source="standard:multiline-expression-wrapping" />
+        <error line="50" column="17" source="standard:function-signature" />
+        <error line="50" column="38" source="standard:function-signature" />
+        <error line="50" column="58" source="standard:function-signature" />
+        <error line="50" column="94" source="standard:function-signature" />
+        <error line="60" column="26" source="standard:multiline-expression-wrapping" />
+        <error line="75" column="27" source="standard:function-signature" />
+        <error line="75" column="48" source="standard:function-signature" />
+        <error line="75" column="63" source="standard:function-signature" />
+        <error line="78" column="25" source="standard:multiline-expression-wrapping" />
+        <error line="78" column="41" source="standard:chain-method-continuation" />
     </file>
     <file name="src/main/java/com/octomind/booksreader/data/LocalBookRepository.kt">
         <error line="3" column="1" source="standard:import-ordering" />
@@ -245,11 +245,12 @@
         <error line="132" column="18" source="standard:wrapping" />
         <error line="133" column="72" source="standard:wrapping" />
         <error line="141" column="30" source="standard:multiline-expression-wrapping" />
-        <error line="151" column="57" source="standard:function-signature" />
-        <error line="151" column="73" source="standard:function-signature" />
-        <error line="151" column="84" source="standard:function-signature" />
-        <error line="151" column="90" source="standard:function-signature" />
-        <error line="164" column="9" source="standard:spacing-between-declarations-with-comments" />
+        <error line="153" column="9" source="standard:blank-line-before-declaration" />
+        <error line="153" column="57" source="standard:function-signature" />
+        <error line="153" column="73" source="standard:function-signature" />
+        <error line="153" column="84" source="standard:function-signature" />
+        <error line="153" column="90" source="standard:function-signature" />
+        <error line="166" column="9" source="standard:spacing-between-declarations-with-comments" />
     </file>
     <file name="src/main/java/com/octomind/booksreader/domain/AdaptiveReadingAdvisor.kt">
         <error line="14" column="29" source="standard:function-signature" />
@@ -630,6 +631,7 @@
         <error line="1439" column="21" source="standard:chain-method-continuation" />
         <error line="1459" column="53" source="standard:multiline-expression-wrapping" />
         <error line="1461" column="55" source="standard:multiline-expression-wrapping" />
+        <error line="1464" column="51" source="standard:multiline-expression-wrapping" />
         <error line="1478" column="34" source="standard:multiline-expression-wrapping" />
         <error line="1485" column="39" source="standard:multiline-expression-wrapping" />
         <error line="1496" column="47" source="standard:multiline-expression-wrapping" />

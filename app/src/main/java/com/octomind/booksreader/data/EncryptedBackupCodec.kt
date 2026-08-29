@@ -22,9 +22,10 @@ internal object EncryptedBackupCodec {
     private const val SALT_BYTES = 16
     private const val IV_BYTES = 12
     private const val GCM_TAG_BITS = 128
+    private const val MINIMUM_PASSWORD_LENGTH = 8
 
     fun encrypt(password: CharArray, output: OutputStream, writePlaintext: (OutputStream) -> Unit) {
-        require(password.size >= 8) { "La contraseña debe tener al menos 8 caracteres" }
+        require(password.size >= MINIMUM_PASSWORD_LENGTH) { "La contraseña debe tener al menos 8 caracteres" }
         val salt = ByteArray(SALT_BYTES).also(SecureRandom()::nextBytes)
         val iv = ByteArray(IV_BYTES).also(SecureRandom()::nextBytes)
         val key = deriveKey(password, salt)

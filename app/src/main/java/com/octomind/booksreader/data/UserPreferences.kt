@@ -89,7 +89,7 @@ class UserPreferences(
         context.userDataStore.edit { preferences ->
             preferences[ADULT_CONFIRMED] = snapshot.adultConfirmed
             preferences[PROFILE_BASELINE_WPM] = snapshot.readerProfile.baselineWordsPerMinute
-                .coerceIn(100, 700)
+                .coerceIn(MINIMUM_PROFILE_WORDS_PER_MINUTE, MAXIMUM_PROFILE_WORDS_PER_MINUTE)
             preferences[PROFILE_SAMPLE_COUNT] = snapshot.readerProfile.calibrationSampleCount
                 .coerceAtLeast(0)
             preferences[PROFILE_CALIBRATIONS] = snapshot.readerProfile.completedCalibrations
@@ -148,6 +148,8 @@ class UserPreferences(
     }
 
     private companion object {
+        const val MINIMUM_PROFILE_WORDS_PER_MINUTE = 100
+        const val MAXIMUM_PROFILE_WORDS_PER_MINUTE = 700
         inline fun <reified T : Enum<T>> enumPreference(value: String?, fallback: T): T =
             runCatching { enumValueOf<T>(value.orEmpty()) }.getOrDefault(fallback)
 

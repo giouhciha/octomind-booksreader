@@ -12,6 +12,8 @@
     <ID>CyclomaticComplexMethod:OctomindApp.kt:private fun createNarratorQuoteCard: Uri</ID>
     <ID>CyclomaticComplexMethod:ReadingPlan.kt:ReadingPlanBuilder$private fun String.terminalPauseKind: PauseKind</ID>
     <ID>FunctionNaming:OctomindApp.kt:@Composable fun OctomindApp</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun BackupMenuDialog</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun BackupPasswordDialog</ID>
     <ID>FunctionNaming:OctomindApp.kt:@Composable private fun BookCover</ID>
     <ID>FunctionNaming:OctomindApp.kt:@Composable private fun BookshelfRow</ID>
     <ID>FunctionNaming:OctomindApp.kt:@Composable private fun CollapsedReaderMenuHandle</ID>
@@ -39,6 +41,7 @@
     <ID>FunctionNaming:OctomindApp.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable private fun ReaderScreenContent</ID>
     <ID>FunctionNaming:Theme.kt:@Composable fun OctomindTheme</ID>
     <ID>FunctionNaming:Theme.kt:@Composable fun ReaderPageTheme</ID>
+    <ID>LargeClass:OctomindViewModel.kt:OctomindViewModel : AndroidViewModel</ID>
     <ID>LongMethod:BookParser.kt:EpubBookParser$override fun parse: ParsedBook</ID>
     <ID>LongMethod:LocalBookRepository.kt:BookRecord.Companion$fun fromJson: BookRecord</ID>
     <ID>LongMethod:OctomindApp.kt:@Composable fun OctomindApp</ID>

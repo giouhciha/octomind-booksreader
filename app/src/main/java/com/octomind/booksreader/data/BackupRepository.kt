@@ -73,25 +73,38 @@ class BackupRepository(
                 entryCount += 1
                 require(entryCount <= MAX_ENTRIES) { "El respaldo contiene demasiados archivos" }
                 val target = safeTarget(destination, entry.name)
-                if (entry.isDirectory) {
-                    target.mkdirs()
-                } else {
-                    target.parentFile?.mkdirs()
-                    target.outputStream().use { output ->
-                        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-                        var read = zip.read(buffer)
-                        while (read >= 0) {
-                            totalBytes += read
-                            require(totalBytes <= MAX_RESTORED_BYTES) { "El respaldo supera el tamaño permitido" }
-                            output.write(buffer, 0, read)
-                            read = zip.read(buffer)
-                        }
-                    }
-                }
+                totalBytes += extractEntry(zip, entry.isDirectory, target, totalBytes)
                 zip.closeEntry()
                 entry = zip.nextEntry
             }
         }
+    }
+
+    private fun extractEntry(
+        zip: ZipInputStream,
+        isDirectory: Boolean,
+        target: File,
+        bytesAlreadyRestored: Long,
+    ): Long {
+        if (isDirectory) {
+            target.mkdirs()
+            return 0
+        }
+        target.parentFile?.mkdirs()
+        var entryBytes = 0L
+        target.outputStream().use { output ->
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            var read = zip.read(buffer)
+            while (read >= 0) {
+                entryBytes += read
+                require(bytesAlreadyRestored + entryBytes <= MAX_RESTORED_BYTES) {
+                    "El respaldo supera el tamaño permitido"
+                }
+                output.write(buffer, 0, read)
+                read = zip.read(buffer)
+            }
+        }
+        return entryBytes
     }
 
     private fun validateLibrary(directory: File) {
@@ -111,7 +124,7 @@ class BackupRepository(
         try {
             if (restored.exists()) check(restored.renameTo(current)) { "No fue posible restaurar $name" }
             previous.deleteRecursively()
-        } catch (error: Throwable) {
+        } catch (error: IllegalStateException) {
             current.deleteRecursively()
             if (previous.exists()) previous.renameTo(current)
             throw error
@@ -192,14 +205,14 @@ private fun JSONObject.toPreferencesSnapshot(): UserPreferencesSnapshot {
     return UserPreferencesSnapshot(
         adultConfirmed = optBoolean("adultConfirmed", true),
         readerSettings = ReaderSettings(
-            wordsPerMinute = settings.optInt("wordsPerMinute", 260),
-            wordsPerBlock = settings.optInt("wordsPerBlock", 4),
+            wordsPerMinute = settings.optInt("wordsPerMinute", DEFAULT_WORDS_PER_MINUTE),
+            wordsPerBlock = settings.optInt("wordsPerBlock", DEFAULT_WORDS_PER_BLOCK),
             readingMode = settings.enum("readingMode", ReadingMode.FIXED_WORDS),
             pageTheme = settings.enum("pageTheme", PageTheme.LIGHT),
             fontStyle = settings.enum("fontStyle", ReaderFontStyle.SERIF),
-            fontSizeSp = settings.optInt("fontSizeSp", 19),
+            fontSizeSp = settings.optInt("fontSizeSp", DEFAULT_FONT_SIZE_SP),
             adaptivePacingEnabled = settings.optBoolean("adaptivePacingEnabled", true),
-            focusDimmingPercent = settings.optInt("focusDimmingPercent", 45),
+            focusDimmingPercent = settings.optInt("focusDimmingPercent", DEFAULT_FOCUS_DIMMING_PERCENT),
             showFocusMascot = settings.optBoolean("showFocusMascot", true),
             focusPresentation = settings.enum("focusPresentation", FocusPresentation.OCTI_NARRATOR),
             narratorAvatar = settings.enum("narratorAvatar", NarratorAvatar.OCTI),
@@ -210,7 +223,7 @@ private fun JSONObject.toPreferencesSnapshot(): UserPreferencesSnapshot {
             narratorGestureHintDismissed = settings.optBoolean("narratorGestureHintDismissed", false),
         ),
         readerProfile = ReaderProfile(
-            baselineWordsPerMinute = profile.optInt("baselineWordsPerMinute", 260),
+            baselineWordsPerMinute = profile.optInt("baselineWordsPerMinute", DEFAULT_WORDS_PER_MINUTE),
             calibrationSampleCount = profile.optInt("calibrationSampleCount", 0),
             completedCalibrations = profile.optInt("completedCalibrations", 0),
         ),
@@ -219,3 +232,8 @@ private fun JSONObject.toPreferencesSnapshot(): UserPreferencesSnapshot {
 
 private inline fun <reified T : Enum<T>> JSONObject.enum(name: String, fallback: T): T =
     runCatching { enumValueOf<T>(optString(name)) }.getOrDefault(fallback)
+
+private const val DEFAULT_WORDS_PER_MINUTE = 260
+private const val DEFAULT_WORDS_PER_BLOCK = 4
+private const val DEFAULT_FONT_SIZE_SP = 19
+private const val DEFAULT_FOCUS_DIMMING_PERCENT = 45
