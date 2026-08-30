@@ -48,61 +48,70 @@ internal fun OnboardingScreen(onConfirm: () -> Unit) {
         modifier = Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 28.dp, vertical = 24.dp),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
-        Column {
-            Surface(
-                color = MaterialTheme.colorScheme.primaryContainer,
-                shape = RoundedCornerShape(ONBOARDING_BADGE_CORNER_PERCENT),
-            ) {
-                Text(
-                    text = stringResource(R.string.onboarding_badge),
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp,
-                    letterSpacing = 1.2.sp,
-                )
-            }
-            Spacer(Modifier.height(30.dp))
-            Text(stringResource(R.string.onboarding_title), style = MaterialTheme.typography.headlineLarge)
-            Spacer(Modifier.height(16.dp))
+        OnboardingIntroduction()
+        AdultConfirmation(onConfirm)
+    }
+}
+
+@Composable
+private fun OnboardingIntroduction() {
+    Column {
+        Surface(
+            color = MaterialTheme.colorScheme.primaryContainer,
+            shape = RoundedCornerShape(ONBOARDING_BADGE_CORNER_PERCENT),
+        ) {
             Text(
-                stringResource(R.string.onboarding_body),
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.Normal,
+                text = stringResource(R.string.onboarding_badge),
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp,
+                letterSpacing = 1.2.sp,
             )
         }
+        Spacer(Modifier.height(30.dp))
+        Text(stringResource(R.string.onboarding_title), style = MaterialTheme.typography.headlineLarge)
+        Spacer(Modifier.height(16.dp))
+        Text(
+            stringResource(R.string.onboarding_body),
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = FontWeight.Normal,
+        )
+    }
+}
 
-        Column {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                shape = RoundedCornerShape(22.dp),
-            ) {
-                Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.Top) {
-                    Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                    Spacer(Modifier.width(14.dp))
-                    Column {
-                        Text(stringResource(R.string.adult_only_title), fontWeight = FontWeight.Bold)
-                        Spacer(Modifier.height(6.dp))
-                        Text(
-                            stringResource(R.string.adult_only_body),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+@Composable
+private fun AdultConfirmation(onConfirm: () -> Unit) {
+    Column {
+        Card(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            shape = RoundedCornerShape(22.dp),
+        ) {
+            Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.Top) {
+                Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.width(14.dp))
+                Column {
+                    Text(stringResource(R.string.adult_only_title), fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        stringResource(R.string.adult_only_body),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
-            Spacer(Modifier.height(18.dp))
-            Button(onClick = onConfirm, modifier = Modifier.fillMaxWidth().height(56.dp)) {
-                Text(stringResource(R.string.confirm_adult))
-            }
-            Spacer(Modifier.height(12.dp))
-            Text(
-                stringResource(R.string.privacy_note),
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 13.sp,
-            )
         }
+        Spacer(Modifier.height(18.dp))
+        Button(onClick = onConfirm, modifier = Modifier.fillMaxWidth().height(56.dp)) {
+            Text(stringResource(R.string.confirm_adult))
+        }
+        Spacer(Modifier.height(12.dp))
+        Text(
+            stringResource(R.string.privacy_note),
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 13.sp,
+        )
     }
 }
 
