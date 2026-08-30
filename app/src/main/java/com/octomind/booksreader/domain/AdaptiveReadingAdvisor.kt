@@ -10,6 +10,8 @@ object AdaptiveReadingAdvisor {
     const val ADJUSTMENT_COOLDOWN_BLOCKS = 10
     private const val FAST_READING_RATIO = 0.80
     private const val MAXIMUM_SPEED_INCREASE = 1.05
+    private const val MINIMUM_WORDS_PER_MINUTE = 100
+    private const val MAXIMUM_WORDS_PER_MINUTE = 700
 
     fun recentBackwardMoves(
         timestamps: List<Long>,
@@ -38,7 +40,7 @@ object AdaptiveReadingAdvisor {
         val maximumIncrease = (currentWordsPerMinute * MAXIMUM_SPEED_INCREASE).roundToInt()
         return observedPace
             .coerceAtMost(maximumIncrease)
-            .coerceIn(100, 700)
+            .coerceIn(MINIMUM_WORDS_PER_MINUTE, MAXIMUM_WORDS_PER_MINUTE)
             .takeIf { it > currentWordsPerMinute }
     }
 }

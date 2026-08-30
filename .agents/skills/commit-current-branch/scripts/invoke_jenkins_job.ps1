@@ -6,6 +6,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$ProgressPreference = "SilentlyContinue"
 
 if ([string]::IsNullOrWhiteSpace($env:JENKINS_USER) -or
     [string]::IsNullOrWhiteSpace($env:JENKINS_API_TOKEN)) {
@@ -31,7 +32,7 @@ try {
     Write-Host "Jenkins no entrego un crumb CSRF; se intentara con el token de API."
 }
 
-$triggerResponse = Invoke-WebRequest `
+$triggerResponse = Invoke-RestMethod `
     -Uri "$jobUrl/build?delay=0sec" `
     -Headers $headers `
     -Method Post `

@@ -11,31 +11,31 @@
         <error line="541" column="13" source="standard:function-naming" />
         <error line="566" column="13" source="standard:function-naming" />
         <error line="616" column="13" source="standard:function-naming" />
-        <error line="660" column="13" source="standard:function-naming" />
-        <error line="1001" column="13" source="standard:function-naming" />
-        <error line="1050" column="13" source="standard:function-naming" />
-        <error line="1258" column="13" source="standard:function-naming" />
-        <error line="1334" column="13" source="standard:function-naming" />
-        <error line="1756" column="13" source="standard:function-naming" />
-        <error line="1973" column="13" source="standard:function-naming" />
-        <error line="1990" column="13" source="standard:function-naming" />
-        <error line="2120" column="13" source="standard:function-naming" />
-        <error line="2175" column="13" source="standard:function-naming" />
-        <error line="2198" column="13" source="standard:function-naming" />
-        <error line="2234" column="13" source="standard:function-naming" />
-        <error line="2382" column="13" source="standard:function-naming" />
-        <error line="2422" column="13" source="standard:function-naming" />
-        <error line="2456" column="13" source="standard:function-naming" />
-        <error line="2486" column="13" source="standard:function-naming" />
-        <error line="2528" column="13" source="standard:function-naming" />
-        <error line="2863" column="13" source="standard:function-naming" />
-        <error line="2950" column="13" source="standard:function-naming" />
-        <error line="3010" column="13" source="standard:function-naming" />
-        <error line="3174" column="13" source="standard:function-naming" />
-        <error line="3209" column="13" source="standard:function-naming" />
-        <error line="3278" column="13" source="standard:function-naming" />
-        <error line="3291" column="13" source="standard:function-naming" />
-        <error line="3315" column="13" source="standard:function-naming" />
+        <error line="664" column="13" source="standard:function-naming" />
+        <error line="1005" column="13" source="standard:function-naming" />
+        <error line="1054" column="13" source="standard:function-naming" />
+        <error line="1262" column="13" source="standard:function-naming" />
+        <error line="1338" column="13" source="standard:function-naming" />
+        <error line="1768" column="13" source="standard:function-naming" />
+        <error line="1984" column="13" source="standard:function-naming" />
+        <error line="2001" column="13" source="standard:function-naming" />
+        <error line="2131" column="13" source="standard:function-naming" />
+        <error line="2186" column="13" source="standard:function-naming" />
+        <error line="2209" column="13" source="standard:function-naming" />
+        <error line="2245" column="13" source="standard:function-naming" />
+        <error line="2393" column="13" source="standard:function-naming" />
+        <error line="2433" column="13" source="standard:function-naming" />
+        <error line="2467" column="13" source="standard:function-naming" />
+        <error line="2497" column="13" source="standard:function-naming" />
+        <error line="2539" column="13" source="standard:function-naming" />
+        <error line="2874" column="13" source="standard:function-naming" />
+        <error line="2961" column="13" source="standard:function-naming" />
+        <error line="3021" column="13" source="standard:function-naming" />
+        <error line="3185" column="13" source="standard:function-naming" />
+        <error line="3220" column="13" source="standard:function-naming" />
+        <error line="3289" column="13" source="standard:function-naming" />
+        <error line="3302" column="13" source="standard:function-naming" />
+        <error line="3326" column="13" source="standard:function-naming" />
     </file>
     <file name="src/main/java/com/octomind/booksreader/ui/PdfOriginalReader.kt">
         <error line="58" column="14" source="standard:function-naming" />

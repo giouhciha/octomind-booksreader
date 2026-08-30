@@ -2,7 +2,6 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>ComplexCondition:OctomindApp.kt:normalized.startsWith("capítulo ") || normalized.startsWith("parte ") || normalized.startsWith("sección ") || normalized in setOf("prólogo", "introducción", "epílogo", "referencias")</ID>
     <ID>ComplexCondition:ReadingPlan.kt:ReadingPlanBuilder$dashRole == null &amp;&amp; pauseKind != PauseKind.NONE &amp;&amp; (readingMode != ReadingMode.SENTENCE || pauseKind == PauseKind.STRONG) &amp;&amp; !isNonTerminalAbbreviation(words, index)</ID>
     <ID>ComplexCondition:ReadingPlan.kt:ReadingPlanBuilder$terminalCharacter == '.' || terminalCharacter == '!' || terminalCharacter == '?' || terminalCharacter == '…'</ID>
     <ID>CyclomaticComplexMethod:BookParser.kt:internal fun normalizePdfPageText: String</ID>
@@ -75,12 +74,9 @@
     <ID>LongMethod:PdfOriginalReader.kt:@Composable private fun PdfPage</ID>
     <ID>LongMethod:PdfOriginalReader.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable internal fun PdfOriginalReader</ID>
     <ID>LongMethod:ReadingPlan.kt:ReadingPlanBuilder$fun build: ReadingPlan</ID>
-    <ID>MagicNumber:AdaptiveReadingAdvisor.kt:AdaptiveReadingAdvisor$100</ID>
-    <ID>MagicNumber:AdaptiveReadingAdvisor.kt:AdaptiveReadingAdvisor$700</ID>
     <ID>MagicNumber:BookParser.kt:120</ID>
     <ID>MagicNumber:BookParser.kt:EpubBookParser$16</ID>
     <ID>MagicNumber:CustomAvatarRepository.kt:CustomAvatarRepository$100</ID>
-    <ID>MagicNumber:CustomAvatarRepository.kt:CustomAvatarRepository$2_048</ID>
     <ID>MagicNumber:LocalBookRepository.kt:BookRecord.Companion$6</ID>
     <ID>MagicNumber:LocalBookRepository.kt:LocalBookRepository$40_000_000L</ID>
     <ID>MagicNumber:LocalBookRepository.kt:LocalBookRepository$64</ID>
@@ -175,26 +171,17 @@
     <ID>MagicNumber:OctomindViewModel.kt:OctomindViewModel$1_000</ID>
     <ID>MagicNumber:OctomindViewModel.kt:OctomindViewModel$60_000.0</ID>
     <ID>MagicNumber:OctomindViewModel.kt:OctomindViewModel$750</ID>
-    <ID>MagicNumber:ReaderCalibration.kt:ReaderCalibrationCalculator$100</ID>
-    <ID>MagicNumber:ReaderCalibration.kt:ReaderCalibrationCalculator$700</ID>
-    <ID>MagicNumber:ReadingPlan.kt:PacingCalculator$1200</ID>
-    <ID>MagicNumber:ReadingPlan.kt:PacingCalculator$120L</ID>
-    <ID>MagicNumber:ReadingPlan.kt:PacingCalculator$80</ID>
-    <ID>MagicNumber:ReadingPlan.kt:ReadingPlanBuilder$320L</ID>
-    <ID>MagicNumber:ReadingPlan.kt:ReadingPlanBuilder$8</ID>
     <ID>MagicNumber:ReadingPlan.kt:ReadingPlanBuilder.PauseKind.DASH$340L</ID>
     <ID>MagicNumber:ReadingPlan.kt:ReadingPlanBuilder.PauseKind.MEDIUM$220L</ID>
     <ID>MagicNumber:ReadingPlan.kt:ReadingPlanBuilder.PauseKind.STRONG$420L</ID>
-    <ID>MagicNumber:UserPreferences.kt:UserPreferences$1200</ID>
-    <ID>MagicNumber:UserPreferences.kt:UserPreferences$14</ID>
-    <ID>MagicNumber:UserPreferences.kt:UserPreferences$32</ID>
-    <ID>MagicNumber:UserPreferences.kt:UserPreferences$8</ID>
-    <ID>MagicNumber:UserPreferences.kt:UserPreferences$80</ID>
     <ID>MaxLineLength:BookParser.kt:EpubBookParser$.</ID>
     <ID>MaxLineLength:BookParser.kt:PdfBookParser$val renderScale = (COVER_LONGEST_EDGE_PIXELS / longestEdge).coerceIn(MINIMUM_COVER_SCALE, MAXIMUM_COVER_SCALE)</ID>
-    <ID>MaxLineLength:OctomindApp.kt:IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back)) }</ID>
-    <ID>MaxLineLength:OctomindApp.kt:Text(stringResource(R.string.import_formats), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:OctomindApp.kt:colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)</ID>
+    <ID>MaxLineLength:ReadingPlan.kt:PacingCalculator$require(wordsPerMinute in MINIMUM_READING_SPEED..MAXIMUM_READING_SPEED) { "La velocidad debe estar entre $MINIMUM_READING_SPEED y $MAXIMUM_READING_SPEED PPM" }</ID>
+    <ID>MaxLineLength:ReadingPlan.kt:ReadingPlanBuilder$require(wordsPerBlock in MIN_WORDS_PER_BLOCK..MAX_WORDS_PER_BLOCK) { "El bloque debe contener entre $MIN_WORDS_PER_BLOCK y $MAX_WORDS_PER_BLOCK palabras" }</ID>
+    <ID>MaxLineLength:UserPreferences.kt:UserPreferences$focusDimmingPercent = (preferences[FOCUS_DIMMING_PERCENT] ?: 45).coerceIn(MINIMUM_FOCUS_DIMMING_PERCENT, MAXIMUM_FOCUS_DIMMING_PERCENT)</ID>
+    <ID>MaxLineLength:UserPreferences.kt:UserPreferences$preferences[FOCUS_DIMMING_PERCENT] = settings.focusDimmingPercent.coerceIn(MINIMUM_FOCUS_DIMMING_PERCENT, MAXIMUM_FOCUS_DIMMING_PERCENT)</ID>
+    <ID>MaxLineLength:UserPreferences.kt:UserPreferences$preferences[WORDS_PER_BLOCK] = settings.wordsPerBlock.coerceIn(MINIMUM_WORDS_PER_BLOCK, MAXIMUM_WORDS_PER_BLOCK)</ID>
+    <ID>MaxLineLength:UserPreferences.kt:UserPreferences$preferences[WORDS_PER_MINUTE] = settings.wordsPerMinute.coerceIn(MINIMUM_WORDS_PER_MINUTE, MAXIMUM_WORDS_PER_MINUTE)</ID>
     <ID>ReturnCount:AdaptiveReadingAdvisor.kt:AdaptiveReadingAdvisor$fun suggestedWordsPerMinute: Int?</ID>
     <ID>ReturnCount:LocalBookRepository.kt:LocalBookRepository$private fun refreshPdfNormalization: BookRecord</ID>
     <ID>ReturnCount:OctomindApp.kt:fun reportActiveBlockCenter</ID>

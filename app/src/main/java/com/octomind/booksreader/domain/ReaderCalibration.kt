@@ -18,6 +18,10 @@ object ReaderCalibrationCalculator {
     const val TARGET_SAMPLE_COUNT = 30
     const val MIN_TAP_INTERVAL_MILLIS = 150L
     const val MAX_TAP_INTERVAL_MILLIS = 10_000L
+    private const val MINIMUM_ESTIMATE_WPM = 80.0
+    private const val MAXIMUM_ESTIMATE_WPM = 1_200.0
+    private const val MINIMUM_RESULT_WPM = 100
+    private const val MAXIMUM_RESULT_WPM = 700
 
     fun accepts(elapsedMillis: Long): Boolean = elapsedMillis in MIN_TAP_INTERVAL_MILLIS..MAX_TAP_INTERVAL_MILLIS
 
@@ -33,10 +37,10 @@ object ReaderCalibrationCalculator {
                         (sample.elapsedMillis - sample.linguisticPauseMillis)
                             .coerceAtLeast(MIN_TAP_INTERVAL_MILLIS)
                     val estimate = 60_000.0 * sample.wordCount / readingMillis
-                    estimate.takeIf { it in 80.0..1_200.0 }
+                    estimate.takeIf { it in MINIMUM_ESTIMATE_WPM..MAXIMUM_ESTIMATE_WPM }
                 }.sorted()
 
-        if (estimates.isEmpty()) return fallbackWordsPerMinute.coerceIn(100, 700)
+        if (estimates.isEmpty()) return fallbackWordsPerMinute.coerceIn(MINIMUM_RESULT_WPM, MAXIMUM_RESULT_WPM)
         val middle = estimates.size / 2
         val median =
             if (estimates.size % 2 == 0) {
@@ -44,6 +48,6 @@ object ReaderCalibrationCalculator {
             } else {
                 estimates[middle]
             }
-        return median.roundToInt().coerceIn(100, 700)
+        return median.roundToInt().coerceIn(MINIMUM_RESULT_WPM, MAXIMUM_RESULT_WPM)
     }
 }

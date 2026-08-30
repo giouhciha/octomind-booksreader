@@ -41,6 +41,10 @@ data class ReadingPlan(
 }
 
 object ReadingPlanBuilder {
+    private const val MIN_WORDS_PER_BLOCK = 1
+    private const val MAX_WORDS_PER_BLOCK = 8
+    private const val PARAGRAPH_END_PAUSE_MILLIS = 320L
+
     private val wordPattern = Regex("\\S+")
     private val paragraphSeparator = Regex("\\n\\s*\\n+")
     private val closingMarks = setOf('"', '\'', '”', '’', '»', ')', ']', '}')
@@ -99,7 +103,9 @@ object ReadingPlanBuilder {
         wordsPerBlock: Int,
         readingMode: ReadingMode = ReadingMode.FIXED_WORDS,
     ): ReadingPlan {
-        require(wordsPerBlock in 1..8) { "El bloque debe contener entre 1 y 8 palabras" }
+        require(wordsPerBlock in MIN_WORDS_PER_BLOCK..MAX_WORDS_PER_BLOCK) {
+            "El bloque debe contener entre $MIN_WORDS_PER_BLOCK y $MAX_WORDS_PER_BLOCK palabras"
+        }
 
         val paragraphs = mutableListOf<ReadingParagraph>()
         val blocks = mutableListOf<ReadingBlock>()
@@ -372,17 +378,25 @@ object ReadingPlanBuilder {
                 nextWordStartsDash -> PauseKind.DASH
                 else -> PauseKind.NONE
             }
-        return pauseKind.durationMillis + if (isParagraphEnd) 320L else 0L
+        return pauseKind.durationMillis + if (isParagraphEnd) PARAGRAPH_END_PAUSE_MILLIS else 0L
     }
 }
 
 object PacingCalculator {
+    private const val MINIMUM_READING_SPEED = 80
+    private const val MAXIMUM_READING_SPEED = 1200
+    private const val MINIMUM_BLOCK_READING_MILLIS = 120L
+
     fun durationMillis(
         block: ReadingBlock,
         wordsPerMinute: Int,
     ): Long {
-        require(wordsPerMinute in 80..1200) { "La velocidad debe estar entre 80 y 1200 PPM" }
+        require(
+            wordsPerMinute in MINIMUM_READING_SPEED..MAXIMUM_READING_SPEED,
+        ) {
+            "La velocidad debe estar entre $MINIMUM_READING_SPEED y $MAXIMUM_READING_SPEED PPM"
+        }
         val readingMillis = 60_000.0 * block.wordCount / wordsPerMinute
-        return (readingMillis + block.pauseAfterMillis).roundToLong().coerceAtLeast(120L)
+        return (readingMillis + block.pauseAfterMillis).roundToLong().coerceAtLeast(MINIMUM_BLOCK_READING_MILLIS)
     }
 }

@@ -13,6 +13,10 @@ class CustomAvatarRepository(
     private val avatarDirectory = File(context.filesDir, "narrator_avatars")
     val avatarFile: File = File(avatarDirectory, "custom_avatar.png")
 
+    private companion object {
+        const val MAXIMUM_AVATAR_DIMENSION = 2_048
+    }
+
     fun import(uri: Uri) {
         val resolver = context.contentResolver
         val mimeType = resolver.getType(uri)
@@ -63,7 +67,7 @@ class CustomAvatarRepository(
         height: Int,
     ): Int {
         var sample = 1
-        while (width / sample > 2_048 || height / sample > 2_048) sample *= 2
+        while (width / sample > MAXIMUM_AVATAR_DIMENSION || height / sample > MAXIMUM_AVATAR_DIMENSION) sample *= 2
         return sample
     }
 }

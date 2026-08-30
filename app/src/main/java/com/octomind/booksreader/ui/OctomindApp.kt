@@ -649,7 +649,11 @@ private fun EmptyLibrary(
                     Text(stringResource(R.string.import_book))
                 }
                 Spacer(Modifier.height(8.dp))
-                Text(stringResource(R.string.import_formats), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    stringResource(R.string.import_formats),
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }
@@ -1541,7 +1545,12 @@ private fun ReaderScreenContent(
                             }
                         },
                         navigationIcon = {
-                            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back)) }
+                            IconButton(onClick = onBack) {
+                                Icon(
+                                    Icons.AutoMirrored.Rounded.ArrowBack,
+                                    stringResource(R.string.back),
+                                )
+                            }
                         },
                         actions = {
                             if (state.document.originalFilePath != null) {
@@ -1550,7 +1559,10 @@ private fun ReaderScreenContent(
                                 }
                             }
                         },
-                        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+                        colors =
+                            TopAppBarDefaults.topAppBarColors(
+                                containerColor = MaterialTheme.colorScheme.background,
+                            ),
                     )
                     LinearProgressIndicator(progress = { state.progress }, modifier = Modifier.fillMaxWidth())
                 }
@@ -1955,15 +1967,14 @@ private enum class ReadingParagraphEmphasis {
 
 private fun readingParagraphEmphasis(text: String): ReadingParagraphEmphasis {
     val normalized = text.trim().lowercase()
-    if (normalized in setOf("índice", "contenido", "contenidos", "tabla de contenidos")) {
+    val titleKeywords = setOf("índice", "contenido", "contenidos", "tabla de contenidos")
+    val sectionPrefixes = listOf("capítulo ", "parte ", "sección ")
+    val sectionKeywords = setOf("prólogo", "introducción", "epílogo", "referencias")
+
+    if (normalized in titleKeywords) {
         return ReadingParagraphEmphasis.TITLE
     }
-    if (
-        normalized.startsWith("capítulo ") ||
-        normalized.startsWith("parte ") ||
-        normalized.startsWith("sección ") ||
-        normalized in setOf("prólogo", "introducción", "epílogo", "referencias")
-    ) {
+    if (sectionPrefixes.any { normalized.startsWith(it) } || normalized in sectionKeywords) {
         return ReadingParagraphEmphasis.SECTION
     }
     return ReadingParagraphEmphasis.BODY

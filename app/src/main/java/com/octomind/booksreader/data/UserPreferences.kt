@@ -43,9 +43,13 @@ class UserPreferences(
                 readingMode = enumPreference(preferences[READING_MODE], ReadingMode.FIXED_WORDS),
                 pageTheme = enumPreference(preferences[PAGE_THEME], PageTheme.LIGHT),
                 fontStyle = enumPreference(preferences[FONT_STYLE], ReaderFontStyle.SERIF),
-                fontSizeSp = (preferences[FONT_SIZE_SP] ?: 19).coerceIn(14, 32),
+                fontSizeSp = (preferences[FONT_SIZE_SP] ?: 19).coerceIn(MINIMUM_FONT_SIZE_SP, MAXIMUM_FONT_SIZE_SP),
                 adaptivePacingEnabled = preferences[ADAPTIVE_PACING_ENABLED] ?: true,
-                focusDimmingPercent = (preferences[FOCUS_DIMMING_PERCENT] ?: 45).coerceIn(0, 80),
+                focusDimmingPercent =
+                    (preferences[FOCUS_DIMMING_PERCENT] ?: 45).coerceIn(
+                        MINIMUM_FOCUS_DIMMING_PERCENT,
+                        MAXIMUM_FOCUS_DIMMING_PERCENT,
+                    ),
                 showFocusMascot = preferences[SHOW_FOCUS_MASCOT] ?: true,
                 focusPresentation =
                     enumPreference(
@@ -116,14 +120,18 @@ class UserPreferences(
 
     suspend fun updateReaderSettings(settings: ReaderSettings) {
         context.userDataStore.edit { preferences ->
-            preferences[WORDS_PER_MINUTE] = settings.wordsPerMinute.coerceIn(80, 1200)
-            preferences[WORDS_PER_BLOCK] = settings.wordsPerBlock.coerceIn(1, 8)
+            preferences[WORDS_PER_MINUTE] = settings.wordsPerMinute.coerceIn(MINIMUM_WORDS_PER_MINUTE, MAXIMUM_WORDS_PER_MINUTE)
+            preferences[WORDS_PER_BLOCK] = settings.wordsPerBlock.coerceIn(MINIMUM_WORDS_PER_BLOCK, MAXIMUM_WORDS_PER_BLOCK)
             preferences[READING_MODE] = settings.readingMode.name
             preferences[PAGE_THEME] = settings.pageTheme.name
             preferences[FONT_STYLE] = settings.fontStyle.name
-            preferences[FONT_SIZE_SP] = settings.fontSizeSp.coerceIn(14, 32)
+            preferences[FONT_SIZE_SP] = settings.fontSizeSp.coerceIn(MINIMUM_FONT_SIZE_SP, MAXIMUM_FONT_SIZE_SP)
             preferences[ADAPTIVE_PACING_ENABLED] = settings.adaptivePacingEnabled
-            preferences[FOCUS_DIMMING_PERCENT] = settings.focusDimmingPercent.coerceIn(0, 80)
+            preferences[FOCUS_DIMMING_PERCENT] =
+                settings.focusDimmingPercent.coerceIn(
+                    MINIMUM_FOCUS_DIMMING_PERCENT,
+                    MAXIMUM_FOCUS_DIMMING_PERCENT,
+                )
             preferences[SHOW_FOCUS_MASCOT] = settings.showFocusMascot
             preferences[FOCUS_PRESENTATION] = settings.focusPresentation.name
             preferences[NARRATOR_AVATAR] = settings.narratorAvatar.name
@@ -182,6 +190,14 @@ class UserPreferences(
         const val DEFAULT_AMBIENT_AUDIO_VOLUME_PERCENT = 15
         const val MINIMUM_AMBIENT_AUDIO_VOLUME_PERCENT = 0
         const val MAXIMUM_AMBIENT_AUDIO_VOLUME_PERCENT = 50
+        const val MINIMUM_WORDS_PER_MINUTE = 80
+        const val MAXIMUM_WORDS_PER_MINUTE = 1200
+        const val MINIMUM_WORDS_PER_BLOCK = 1
+        const val MAXIMUM_WORDS_PER_BLOCK = 8
+        const val MINIMUM_FONT_SIZE_SP = 14
+        const val MAXIMUM_FONT_SIZE_SP = 32
+        const val MINIMUM_FOCUS_DIMMING_PERCENT = 0
+        const val MAXIMUM_FOCUS_DIMMING_PERCENT = 80
 
         inline fun <reified T : Enum<T>> enumPreference(
             value: String?,
