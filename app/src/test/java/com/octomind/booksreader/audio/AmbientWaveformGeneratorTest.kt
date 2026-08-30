@@ -1,10 +1,10 @@
 package com.octomind.booksreader.audio
 
 import com.octomind.booksreader.domain.AmbientSoundscape
-import kotlin.math.abs
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.math.abs
 
 class AmbientWaveformGeneratorTest {
     @Test
