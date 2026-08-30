@@ -13,16 +13,20 @@ import java.io.Closeable
 import kotlin.concurrent.thread
 import kotlin.math.max
 
-internal class AmbientAudioController(context: Context) : Closeable {
+internal class AmbientAudioController(
+    context: Context,
+) : Closeable {
     private val audioManager = context.applicationContext.getSystemService(AudioManager::class.java)
     private val mainHandler = Handler(Looper.getMainLooper())
     private val audioAttributes =
-        AudioAttributes.Builder()
+        AudioAttributes
+            .Builder()
             .setUsage(AudioAttributes.USAGE_MEDIA)
             .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
             .build()
     private val focusRequest =
-        AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+        AudioFocusRequest
+            .Builder(AudioManager.AUDIOFOCUS_GAIN)
             .setAudioAttributes(audioAttributes)
             .setWillPauseWhenDucked(true)
             .setOnAudioFocusChangeListener(::handleAudioFocusChange, mainHandler)
@@ -133,7 +137,8 @@ internal class AmbientAudioController(context: Context) : Closeable {
 
     private fun createAudioTrack(): AudioTrack? {
         val format =
-            AudioFormat.Builder()
+            AudioFormat
+                .Builder()
                 .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
                 .setSampleRate(AUDIO_SAMPLE_RATE)
                 .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
@@ -145,7 +150,8 @@ internal class AmbientAudioController(context: Context) : Closeable {
                 AudioFormat.ENCODING_PCM_16BIT,
             )
         val track =
-            AudioTrack.Builder()
+            AudioTrack
+                .Builder()
                 .setAudioAttributes(audioAttributes)
                 .setAudioFormat(format)
                 .setTransferMode(AudioTrack.MODE_STREAM)

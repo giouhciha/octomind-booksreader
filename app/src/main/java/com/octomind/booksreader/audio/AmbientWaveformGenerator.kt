@@ -5,7 +5,9 @@ import java.util.Random
 import kotlin.math.PI
 import kotlin.math.sin
 
-internal class AmbientWaveformGenerator(seed: Long = DEFAULT_RANDOM_SEED) {
+internal class AmbientWaveformGenerator(
+    seed: Long = DEFAULT_RANDOM_SEED,
+) {
     private val random = Random(seed)
     private var sampleIndex = 0L
     private var rainLowPass = 0f
