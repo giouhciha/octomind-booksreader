@@ -49,7 +49,10 @@ internal fun OnboardingScreen(onConfirm: () -> Unit) {
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
         Column {
-            Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(50)) {
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = RoundedCornerShape(ONBOARDING_BADGE_CORNER_PERCENT),
+            ) {
                 Text(
                     text = stringResource(R.string.onboarding_badge),
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
@@ -102,3 +105,5 @@ internal fun OnboardingScreen(onConfirm: () -> Unit) {
         }
     }
 }
+
+private const val ONBOARDING_BADGE_CORNER_PERCENT = 50
