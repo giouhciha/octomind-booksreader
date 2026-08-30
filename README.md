@@ -4,7 +4,7 @@ Aplicación Android de entrenamiento lector que ayuda a cada persona a aumentar 
 
 Octomind combina una guía visual de lectura, evaluaciones adaptativas y un tutor basado en IA. El usuario puede subir libros en EPUB, PDF o TXT; la aplicación procesa su contenido y crea una experiencia personalizada a partir de su desempeño.
 
-> Estado del proyecto: primera fase funcional. Existe una aplicación Android local con importación TXT/EPUB, biblioteca, reanudación exacta, temas de página, calibración personal y Octomind Focus.
+> Estado del proyecto: primera fase funcional. Existe una aplicación Android local con importación TXT, EPUB y PDF, biblioteca, reanudación exacta, temas de página y Octomind Focus.
 
 La cabecera de la biblioteca ofrece un **Respaldo** manual. El usuario puede guardar en su Google Drive personal —mediante el selector seguro de archivos de Android— un paquete que contiene perfil, preferencias, libros, portadas, progreso, citas, sesiones e imagen personalizada. El paquete completo se cifra con una contraseña que Octomind no almacena. Restaurar valida primero su versión, rutas y límites y después reemplaza la biblioteca local; esta fase todavía no realiza sincronización automática ni combina bibliotecas.
 
@@ -93,12 +93,12 @@ Se normaliza en párrafos y secciones antes de crear los fragmentos de lectura.
 
 ### PDF
 
-Tendrá dos experiencias:
+Incluye dos experiencias locales y conectadas por anclas de página:
 
 - **Vista original:** conserva el diseño y las páginas.
 - **Modo entrenamiento:** reorganiza el texto para utilizar correctamente el marcador.
 
-Los PDF escaneados requerirán OCR. Todo fragmento procesado debe conservar una referencia a su capítulo, página o ubicación original.
+La importación guarda una copia privada del original, extrae metadatos y texto seleccionable, crea la portada a partir de la primera página y relaciona cada página con un desplazamiento estable del texto. Los índices conservan cada capítulo como una entrada independiente, unen títulos continuados en la línea siguiente y distinguen visualmente encabezados y secciones. Los PDF importados con una normalización anterior se reprocesan una sola vez al abrirlos, conservando progreso y citas. Desde el lector se puede alternar entre **Página original** y **Lectura adaptada**; cambiar de página actualiza el mismo progreso y al volver permanecen disponibles Focus, el narrador elegido, temas y estadísticas. Los PDF escaneados sin texto seleccionable se rechazan con una explicación porque todavía requieren OCR. El original queda incluido automáticamente en el respaldo cifrado de la biblioteca.
 
 ## Medición de comprensión
 
@@ -179,7 +179,7 @@ Los directorios de servicios e infraestructura se agregarán cuando comience la 
 
 - [x] Proyecto Android base.
 - [x] Confirmación de mayoría de edad.
-- [x] Importación local de EPUB y TXT.
+- [x] Importación local de EPUB, PDF y TXT.
 - [x] Biblioteca y pantalla de lectura.
 - [x] Octomind Focus manual por oraciones completas, controlado por gestos verticales.
 - [x] Presentación opcional Narrador mediante globo de diálogo.

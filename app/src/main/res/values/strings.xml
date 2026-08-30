@@ -165,6 +165,14 @@
     <string name="previous_readings_title">Lecturas anteriores</string>
     <string name="previous_reading_number">Lectura completada #%1$d</string>
     <string name="loading">Preparando tu lectura…</string>
+    <string name="pdf_original_page">Página original</string>
+    <string name="pdf_adapted_reading">Lectura adaptada</string>
+    <string name="pdf_page_description">Página original %1$d del PDF</string>
+    <string name="pdf_page_counter">Página %1$d de %2$d</string>
+    <string name="pdf_previous_page">Página anterior</string>
+    <string name="pdf_next_page">Página siguiente</string>
+    <string name="pdf_render_error">No fue posible mostrar esta página. Tu lectura adaptada continúa disponible.</string>
+    <string name="pdf_finish_book">Terminar libro</string>
     <plurals name="book_progress">
         <item quantity="one">%1$d%% leído · %2$d palabra</item>
         <item quantity="other">%1$d%% leído · %2$d palabras</item>

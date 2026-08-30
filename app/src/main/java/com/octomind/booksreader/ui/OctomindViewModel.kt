@@ -68,6 +68,8 @@ data class ReaderState(
     val quotePreview: Boolean = false,
     val previewQuoteStartOffset: Int? = null,
     val previewQuoteEndOffset: Int? = null,
+    val originalPdfVisible: Boolean = false,
+    val originalPdfPageIndex: Int = 0,
 ) {
     val currentCharacterOffset: Int
         get() = if (completed) document.text.length
@@ -396,6 +398,35 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
     fun completeCurrentBook() {
         val reader = currentReader() ?: return
         if (!reader.focusEnabled) completeReading(reader)
+    }
+
+    fun showOriginalPdf() {
+        val reader = currentReader() ?: return
+        if (reader.focusEnabled || reader.document.originalFilePath == null) return
+        val pageIndex = reader.document.pageIndexFor(reader.currentCharacterOffset) ?: 0
+        updateReader { it.copy(originalPdfVisible = true, originalPdfPageIndex = pageIndex) }
+    }
+
+    fun hideOriginalPdf() {
+        updateReader { it.copy(originalPdfVisible = false) }
+    }
+
+    fun setOriginalPdfPage(pageIndex: Int) {
+        val reader = currentReader()?.takeIf { it.originalPdfVisible } ?: return
+        val safePageIndex = pageIndex.coerceAtLeast(0)
+        reader.document.characterOffsetForPage(safePageIndex)?.let { characterOffset ->
+            val blockIndex = reader.plan.blockIndexFor(characterOffset)
+            if (blockIndex != reader.currentBlockIndex) {
+                moveToBlock(blockIndex, backwards = safePageIndex < reader.originalPdfPageIndex)
+            }
+        }
+        updateReader { it.copy(originalPdfPageIndex = safePageIndex) }
+    }
+
+    fun finishOriginalPdfReading() {
+        val reader = currentReader()?.takeIf { it.originalPdfVisible } ?: return
+        completeReading(reader)
+        finishReader()
     }
 
     fun setVisibleParagraph(paragraphIndex: Int) {

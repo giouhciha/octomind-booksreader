@@ -7,12 +7,15 @@ import android.provider.OpenableColumns
 import com.octomind.booksreader.domain.BookChapter
 import com.octomind.booksreader.domain.BookDocument
 import com.octomind.booksreader.domain.BookFormat
+import com.octomind.booksreader.domain.BookPageAnchor
 import com.octomind.booksreader.domain.BookSummary
 import com.octomind.booksreader.domain.CompletedReading
 import com.octomind.booksreader.domain.NarratorAvatar
 import com.octomind.booksreader.domain.ReadingCycleStats
 import com.octomind.booksreader.domain.SavedQuote
 import java.io.File
+import java.io.InputStream
+import java.io.OutputStream
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -34,20 +37,35 @@ class LocalBookRepository(private val context: Context) {
     suspend fun importBook(uri: Uri): BookSummary = withContext(Dispatchers.IO) {
         val displayName = queryDisplayName(uri)
         val extension = displayName.substringAfterLast('.', "").lowercase()
-        require(extension == "txt" || extension == "epub") { "Por ahora puedes importar archivos TXT o EPUB" }
+        require(extension in SUPPORTED_EXTENSIONS) { "Puedes importar archivos TXT, EPUB o PDF" }
+        validateMimeType(extension, context.contentResolver.getType(uri))
+        queryFileSize(uri)?.takeIf { it >= 0 }?.let { size ->
+            require(size in 1..MAX_IMPORT_BYTES) { "El archivo supera el límite de 200 MB" }
+        }
 
         libraryDirectory.mkdirs()
         val temporaryFile = File.createTempFile("import-", ".$extension", context.cacheDir)
         try {
             context.contentResolver.openInputStream(uri)?.use { input ->
-                temporaryFile.outputStream().use { output -> input.copyTo(output) }
+                temporaryFile.outputStream().use { output ->
+                    input.copyToWithLimit(output)
+                }
             } ?: error("No fue posible abrir el archivo")
 
-            val parser: BookParser = if (extension == "epub") EpubBookParser() else TxtBookParser()
+            val parser: BookParser = when (extension) {
+                "epub" -> EpubBookParser()
+                "pdf" -> PdfBookParser()
+                else -> TxtBookParser()
+            }
             val parsed = parser.parse(temporaryFile, displayName)
             val id = UUID.randomUUID().toString()
             val contentFile = File(libraryDirectory, "$id.txt")
             contentFile.writeText(parsed.text, Charsets.UTF_8)
+            val originalFile = if (parsed.format == BookFormat.PDF) {
+                File(libraryDirectory, "$id.pdf").also { temporaryFile.copyTo(it) }
+            } else {
+                null
+            }
             val coverFile = parsed.coverImage?.takeIf(::isSafeCoverImage)?.let { bytes ->
                 File(libraryDirectory, "$id.cover").also { it.writeBytes(bytes) }
             }
@@ -63,8 +81,11 @@ class LocalBookRepository(private val context: Context) {
                 lastOpenedAtMillis = now,
                 calibrationCompleted = true,
                 contentFileName = contentFile.name,
+                normalizationVersion = CURRENT_DOCUMENT_NORMALIZATION_VERSION,
                 chapters = parsed.chapters,
                 coverFileName = coverFile?.name,
+                originalFileName = originalFile?.name,
+                pageAnchors = parsed.pageAnchors,
                 narratorAvatar = NarratorAvatar.OCTI,
                 completedReadings = emptyList(),
                 currentCycleStats = ReadingCycleStats(),
@@ -85,7 +106,8 @@ class LocalBookRepository(private val context: Context) {
             val records = readRecords().toMutableList()
             val index = records.indexOfFirst { it.id == id }
             require(index >= 0) { "El libro ya no está disponible" }
-            val opened = records[index].copy(lastOpenedAtMillis = System.currentTimeMillis())
+            val refreshed = refreshPdfNormalization(records[index])
+            val opened = refreshed.copy(lastOpenedAtMillis = System.currentTimeMillis())
             records[index] = opened
             writeRecords(records)
             val contentFile = File(libraryDirectory, opened.contentFileName)
@@ -94,6 +116,11 @@ class LocalBookRepository(private val context: Context) {
                 summary = opened.toSummary(libraryDirectory),
                 text = contentFile.readText(Charsets.UTF_8),
                 chapters = opened.chapters,
+                originalFilePath = opened.originalFileName
+                    ?.let { File(libraryDirectory, it) }
+                    ?.takeIf(File::isFile)
+                    ?.absolutePath,
+                pageAnchors = opened.pageAnchors,
             )
         }
     }
@@ -239,6 +266,7 @@ class LocalBookRepository(private val context: Context) {
             val removed = records.firstOrNull { it.id == id } ?: return@synchronized
             File(libraryDirectory, removed.contentFileName).delete()
             removed.coverFileName?.let { File(libraryDirectory, it).delete() }
+            removed.originalFileName?.let { File(libraryDirectory, it).delete() }
             records.removeAll { it.id == id }
             writeRecords(records)
         }
@@ -249,6 +277,24 @@ class LocalBookRepository(private val context: Context) {
             if (cursor.moveToFirst()) return cursor.getString(0)
         }
         return uri.lastPathSegment?.substringAfterLast('/') ?: "libro.txt"
+    }
+
+    private fun queryFileSize(uri: Uri): Long? {
+        context.contentResolver.query(uri, arrayOf(OpenableColumns.SIZE), null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst() && !cursor.isNull(0)) return cursor.getLong(0)
+        }
+        return null
+    }
+
+    private fun validateMimeType(extension: String, mimeType: String?) {
+        val normalizedMimeType = mimeType?.substringBefore(';')?.lowercase()
+        if (normalizedMimeType == null || normalizedMimeType in GENERIC_MIME_TYPES) return
+        val accepted = when (extension) {
+            "pdf" -> normalizedMimeType in PDF_MIME_TYPES
+            "epub" -> normalizedMimeType in EPUB_MIME_TYPES
+            else -> normalizedMimeType.startsWith("text/")
+        }
+        require(accepted) { "El tipo de archivo no coincide con su extensión" }
     }
 
     private fun readRecords(): List<BookRecord> {
@@ -272,12 +318,84 @@ class LocalBookRepository(private val context: Context) {
 
     private fun countWords(text: String): Int = Regex("\\S+").findAll(text).count()
 
+    private fun refreshPdfNormalization(record: BookRecord): BookRecord {
+        if (record.format != BookFormat.PDF ||
+            record.normalizationVersion >= CURRENT_DOCUMENT_NORMALIZATION_VERSION
+        ) return record
+        val originalFileName = record.originalFileName ?: return record
+        val originalFile = File(libraryDirectory, originalFileName).takeIf(File::isFile) ?: return record
+        return runCatching {
+            val parsed = PdfBookParser().parse(originalFile, "${record.title}.pdf")
+            val contentFile = File(libraryDirectory, record.contentFileName)
+            val wasCompleted = record.currentCharacterOffset >= record.totalCharacters
+            val currentPage = record.pageAnchors
+                .lastOrNull { it.startCharacterOffset <= record.currentCharacterOffset }
+                ?.pageIndex
+            val refreshedOffset = when {
+                wasCompleted -> parsed.text.length
+                currentPage != null -> parsed.pageAnchors
+                    .lastOrNull { it.pageIndex <= currentPage }
+                    ?.startCharacterOffset
+                    ?: 0
+                record.totalCharacters > 0 -> (
+                    parsed.text.length * record.currentCharacterOffset.toDouble() / record.totalCharacters
+                    ).toInt()
+                else -> 0
+            }.coerceIn(0, parsed.text.length)
+            contentFile.writeText(parsed.text, Charsets.UTF_8)
+            record.copy(
+                totalWords = countWords(parsed.text),
+                totalCharacters = parsed.text.length,
+                currentCharacterOffset = refreshedOffset,
+                normalizationVersion = CURRENT_DOCUMENT_NORMALIZATION_VERSION,
+                chapters = parsed.chapters,
+                pageAnchors = parsed.pageAnchors,
+                savedQuotes = record.savedQuotes.map { quote -> quote.remapTo(parsed.text) },
+            )
+        }.getOrElse { record }
+    }
+
+    private fun SavedQuote.remapTo(refreshedText: String): SavedQuote {
+        val exactStart = refreshedText.indexOf(text)
+        if (exactStart >= 0) {
+            return copy(
+                startCharacterOffset = exactStart,
+                endCharacterOffset = exactStart + text.length,
+            )
+        }
+        val safeStart = startCharacterOffset.coerceIn(0, refreshedText.length)
+        val safeEnd = endCharacterOffset.coerceIn(safeStart, refreshedText.length)
+        return copy(startCharacterOffset = safeStart, endCharacterOffset = safeEnd)
+    }
+
     private fun isSafeCoverImage(bytes: ByteArray): Boolean {
         val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
         return options.outWidth in 64..8_192 &&
             options.outHeight in 64..8_192 &&
             options.outWidth.toLong() * options.outHeight.toLong() <= 40_000_000L
+    }
+
+    private fun InputStream.copyToWithLimit(output: OutputStream) {
+        val buffer = ByteArray(COPY_BUFFER_BYTES)
+        var copiedBytes = 0L
+        while (true) {
+            val bytesRead = read(buffer)
+            if (bytesRead < 0) return
+            copiedBytes += bytesRead
+            require(copiedBytes <= MAX_IMPORT_BYTES) { "El archivo supera el límite de 200 MB" }
+            output.write(buffer, 0, bytesRead)
+        }
+    }
+
+    private companion object {
+        val SUPPORTED_EXTENSIONS = setOf("txt", "epub", "pdf")
+        val GENERIC_MIME_TYPES = setOf("application/octet-stream", "application/binary")
+        val PDF_MIME_TYPES = setOf("application/pdf", "application/x-pdf")
+        val EPUB_MIME_TYPES = setOf("application/epub+zip", "application/zip")
+        const val MAX_IMPORT_BYTES = 200L * 1024 * 1024
+        const val COPY_BUFFER_BYTES = 64 * 1024
+        const val CURRENT_DOCUMENT_NORMALIZATION_VERSION = 2
     }
 }
 
@@ -292,8 +410,11 @@ private data class BookRecord(
     val lastOpenedAtMillis: Long,
     val calibrationCompleted: Boolean,
     val contentFileName: String,
+    val normalizationVersion: Int,
     val chapters: List<BookChapter>,
     val coverFileName: String?,
+    val originalFileName: String?,
+    val pageAnchors: List<BookPageAnchor>,
     val narratorAvatar: NarratorAvatar,
     val completedReadings: List<CompletedReading>,
     val currentCycleStats: ReadingCycleStats,
@@ -327,7 +448,9 @@ private data class BookRecord(
         put("lastOpenedAtMillis", lastOpenedAtMillis)
         put("calibrationCompleted", calibrationCompleted)
         put("contentFileName", contentFileName)
+        put("normalizationVersion", normalizationVersion)
         put("coverFileName", coverFileName)
+        put("originalFileName", originalFileName)
         put("narratorAvatar", narratorAvatar.name)
         put("completedReadings", JSONArray().apply {
             completedReadings.forEach { reading ->
@@ -371,6 +494,14 @@ private data class BookRecord(
                 })
             }
         })
+        put("pageAnchors", JSONArray().apply {
+            pageAnchors.forEach { anchor ->
+                put(JSONObject().apply {
+                    put("pageIndex", anchor.pageIndex)
+                    put("startCharacterOffset", anchor.startCharacterOffset)
+                })
+            }
+        })
     }
 
     companion object {
@@ -379,6 +510,7 @@ private data class BookRecord(
             val completedReadingsArray = json.optJSONArray("completedReadings") ?: JSONArray()
             val currentCycleStatsJson = json.optJSONObject("currentCycleStats")
             val savedQuotesArray = json.optJSONArray("savedQuotes") ?: JSONArray()
+            val pageAnchorsArray = json.optJSONArray("pageAnchors") ?: JSONArray()
             return BookRecord(
                 id = json.getString("id"),
                 title = json.getString("title"),
@@ -390,9 +522,22 @@ private data class BookRecord(
                 lastOpenedAtMillis = json.optLong("lastOpenedAtMillis", 0),
                 // Los libros creados antes de esta función no deben forzar una calibración retroactiva.
                 calibrationCompleted = json.optBoolean("calibrationCompleted", true),
-                contentFileName = json.getString("contentFileName"),
+                contentFileName = requireSafeRecordFileName(json.getString("contentFileName")),
+                normalizationVersion = json.optInt("normalizationVersion", 0),
                 coverFileName = json.optString("coverFileName")
-                    .takeIf { it.isNotBlank() && it != "null" },
+                    .takeIf { it.isNotBlank() && it != "null" }
+                    ?.let(::requireSafeRecordFileName),
+                originalFileName = json.optString("originalFileName")
+                    .takeIf { it.isNotBlank() && it != "null" }
+                    ?.let(::requireSafeRecordFileName),
+                pageAnchors = (0 until pageAnchorsArray.length()).map { index ->
+                    pageAnchorsArray.getJSONObject(index).let { anchor ->
+                        BookPageAnchor(
+                            pageIndex = anchor.getInt("pageIndex"),
+                            startCharacterOffset = anchor.getInt("startCharacterOffset"),
+                        )
+                    }
+                },
                 narratorAvatar = runCatching {
                     NarratorAvatar.valueOf(json.optString("narratorAvatar"))
                 }.getOrDefault(NarratorAvatar.OCTI),
@@ -442,4 +587,13 @@ private data class BookRecord(
             )
         }
     }
+}
+
+private fun requireSafeRecordFileName(value: String): String {
+    require(
+        value.matches(Regex("^[A-Za-z0-9._-]+$")) && value != "." && value != ".." && File(value).name == value,
+    ) {
+        "La biblioteca contiene una ruta de archivo no válida"
+    }
+    return value
 }

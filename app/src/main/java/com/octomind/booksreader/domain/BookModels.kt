@@ -3,6 +3,7 @@ package com.octomind.booksreader.domain
 enum class BookFormat {
     TXT,
     EPUB,
+    PDF,
 }
 
 data class BookSummary(
@@ -64,13 +65,30 @@ data class BookChapter(
     val startCharacterOffset: Int,
 )
 
+data class BookPageAnchor(
+    val pageIndex: Int,
+    val startCharacterOffset: Int,
+)
+
 data class BookDocument(
     val summary: BookSummary,
     val text: String,
     val chapters: List<BookChapter>,
+    val originalFilePath: String? = null,
+    val pageAnchors: List<BookPageAnchor> = emptyList(),
 ) {
     val exactProgress: Float
         get() = summary.progress
+
+    fun pageIndexFor(characterOffset: Int): Int? = pageAnchors
+        .lastOrNull { it.startCharacterOffset <= characterOffset }
+        ?.pageIndex
+        ?: pageAnchors.firstOrNull()?.pageIndex
+
+    fun characterOffsetForPage(pageIndex: Int): Int? = pageAnchors
+        .lastOrNull { it.pageIndex <= pageIndex }
+        ?.startCharacterOffset
+        ?: pageAnchors.firstOrNull()?.startCharacterOffset
 }
 
 data class ParsedBook(
@@ -80,6 +98,7 @@ data class ParsedBook(
     val text: String,
     val chapters: List<BookChapter>,
     val coverImage: ByteArray? = null,
+    val pageAnchors: List<BookPageAnchor> = emptyList(),
 )
 
 enum class PageTheme {

@@ -11,8 +11,8 @@ plugins {
     id("org.owasp.dependencycheck")
 }
 
-val baseVersionCode = 66
-val baseVersionName = "0.55.0"
+val baseVersionCode = 68
+val baseVersionName = "0.57.0"
 val ciBuildNumber = providers.gradleProperty("ciBuildNumber").orNull?.toIntOrNull()
 require(ciBuildNumber == null || ciBuildNumber in 1..99_999) {
     "ciBuildNumber debe ser un entero entre 1 y 99999."
@@ -111,6 +111,7 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.2.1")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.11.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
+    implementation("com.tom-roush:pdfbox-android:2.0.27.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")

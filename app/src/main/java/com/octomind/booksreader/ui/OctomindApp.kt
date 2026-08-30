@@ -265,6 +265,10 @@ fun OctomindApp(viewModel: OctomindViewModel = viewModel()) {
                 onSaveQuote = viewModel::saveCurrentQuote,
                 onSaveSelectedQuote = viewModel::saveSelectedQuote,
                 onNarratorGestureLearned = viewModel::dismissNarratorGestureHint,
+                onShowOriginalPdf = viewModel::showOriginalPdf,
+                onHideOriginalPdf = viewModel::hideOriginalPdf,
+                onOriginalPdfPage = viewModel::setOriginalPdfPage,
+                onFinishOriginalPdf = viewModel::finishOriginalPdfReading,
             )
             is AppScreen.SessionResult -> SessionResultScreen(
                 summary = screen.summary,
@@ -408,7 +412,9 @@ private fun LibraryScreen(
                         Icon(Icons.Rounded.Bookmark, stringResource(R.string.my_quotes))
                     }
                     FilledIconButton(
-                        onClick = { launcher.launch(arrayOf("text/plain", "application/epub+zip")) },
+                        onClick = {
+                            launcher.launch(arrayOf("text/plain", "application/epub+zip", "application/pdf"))
+                        },
                         enabled = !busy,
                     ) {
                         if (busy) {
@@ -425,7 +431,9 @@ private fun LibraryScreen(
         if (books.isEmpty()) {
             EmptyLibrary(
                 modifier = Modifier.padding(padding),
-                onImport = { launcher.launch(arrayOf("text/plain", "application/epub+zip")) },
+                onImport = {
+                    launcher.launch(arrayOf("text/plain", "application/epub+zip", "application/pdf"))
+                },
             )
         } else {
             BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -511,6 +519,8 @@ private const val NARRATOR_HORIZONTAL_RESERVED_DP = 104
 private const val NARRATOR_MINIMUM_TEXT_WIDTH_DP = 160
 private const val NARRATOR_VERTICAL_RESERVED_DP = 360
 private const val NARRATOR_MINIMUM_TEXT_HEIGHT_DP = 150
+private const val READING_TITLE_SIZE_INCREASE_SP = 4
+private const val READING_SECTION_SIZE_INCREASE_SP = 2
 private const val MINIMUM_AMBIENT_VOLUME = 0f
 private const val MAXIMUM_AMBIENT_VOLUME = 50f
 private const val AMBIENT_VOLUME_STEP = 5f
@@ -1205,33 +1215,53 @@ private fun ReaderScreen(
     onSaveQuote: () -> Unit,
     onSaveSelectedQuote: (String, Int, Int) -> Unit,
     onNarratorGestureLearned: () -> Unit,
+    onShowOriginalPdf: () -> Unit,
+    onHideOriginalPdf: () -> Unit,
+    onOriginalPdfPage: (Int) -> Unit,
+    onFinishOriginalPdf: () -> Unit,
 ) {
     ReaderPageTheme(state.settings.pageTheme) {
-        ReaderScreenContent(
-            state = state,
-            onBack = onBack,
-            onToggleFocus = onToggleFocus,
-            onMoveBlock = onMoveBlock,
-            onVisibleParagraph = onVisibleParagraph,
-            onReachedBookEnd = onReachedBookEnd,
-            onPageTheme = onPageTheme,
-            onFontStyle = onFontStyle,
-            onFontSize = onFontSize,
-            onFocusDimming = onFocusDimming,
-            onShowFocusMascot = onShowFocusMascot,
-            onFocusPresentation = onFocusPresentation,
-            onNarratorAvatar = onNarratorAvatar,
-            onImportCustomAvatar = onImportCustomAvatar,
-            onDeleteCustomAvatar = onDeleteCustomAvatar,
-            onReaderControlsExpanded = onReaderControlsExpanded,
-            onAmbientIntensity = onAmbientIntensity,
-            onAmbientAudioEnabled = onAmbientAudioEnabled,
-            onAmbientSoundscape = onAmbientSoundscape,
-            onAmbientAudioVolume = onAmbientAudioVolume,
-            onSaveQuote = onSaveQuote,
-            onSaveSelectedQuote = onSaveSelectedQuote,
-            onNarratorGestureLearned = onNarratorGestureLearned,
-        )
+        val originalFilePath = state.document.originalFilePath
+        if (state.originalPdfVisible && originalFilePath != null) {
+            BackHandler(onBack = onHideOriginalPdf)
+            PdfOriginalReader(
+                title = state.document.summary.title,
+                filePath = originalFilePath,
+                requestedPageIndex = state.originalPdfPageIndex,
+                readingProgress = state.progress,
+                onBack = onHideOriginalPdf,
+                onAdaptedReading = onHideOriginalPdf,
+                onPageChanged = onOriginalPdfPage,
+                onFinishBook = onFinishOriginalPdf,
+            )
+        } else {
+            ReaderScreenContent(
+                state = state,
+                onBack = onBack,
+                onToggleFocus = onToggleFocus,
+                onMoveBlock = onMoveBlock,
+                onVisibleParagraph = onVisibleParagraph,
+                onReachedBookEnd = onReachedBookEnd,
+                onPageTheme = onPageTheme,
+                onFontStyle = onFontStyle,
+                onFontSize = onFontSize,
+                onFocusDimming = onFocusDimming,
+                onShowFocusMascot = onShowFocusMascot,
+                onFocusPresentation = onFocusPresentation,
+                onNarratorAvatar = onNarratorAvatar,
+                onImportCustomAvatar = onImportCustomAvatar,
+                onDeleteCustomAvatar = onDeleteCustomAvatar,
+                onReaderControlsExpanded = onReaderControlsExpanded,
+                onAmbientIntensity = onAmbientIntensity,
+                onAmbientAudioEnabled = onAmbientAudioEnabled,
+                onAmbientSoundscape = onAmbientSoundscape,
+                onAmbientAudioVolume = onAmbientAudioVolume,
+                onSaveQuote = onSaveQuote,
+                onSaveSelectedQuote = onSaveSelectedQuote,
+                onNarratorGestureLearned = onNarratorGestureLearned,
+                onShowOriginalPdf = onShowOriginalPdf,
+            )
+        }
     }
 }
 
@@ -1261,6 +1291,7 @@ private fun ReaderScreenContent(
     onSaveQuote: () -> Unit,
     onSaveSelectedQuote: (String, Int, Int) -> Unit,
     onNarratorGestureLearned: () -> Unit,
+    onShowOriginalPdf: () -> Unit,
 ) {
     BackHandler(onBack = onBack)
     val readerView = LocalView.current
@@ -1439,6 +1470,13 @@ private fun ReaderScreenContent(
                     },
                     navigationIcon = {
                         IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back)) }
+                    },
+                    actions = {
+                        if (state.document.originalFilePath != null) {
+                            TextButton(onClick = onShowOriginalPdf) {
+                                Text(stringResource(R.string.pdf_original_page))
+                            }
+                        }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 )
@@ -1641,6 +1679,12 @@ private fun ReaderParagraph(
     enableQuoteSelection: Boolean,
     onSaveSelectedQuote: (String, Int, Int) -> Unit,
 ) {
+    val paragraphEmphasis = readingParagraphEmphasis(paragraph.text)
+    val paragraphSizeIncrease = when (paragraphEmphasis) {
+        ReadingParagraphEmphasis.TITLE -> READING_TITLE_SIZE_INCREASE_SP
+        ReadingParagraphEmphasis.SECTION -> READING_SECTION_SIZE_INCREASE_SP
+        ReadingParagraphEmphasis.BODY -> 0
+    }
     var textTopInWindow by remember { mutableFloatStateOf(0f) }
     var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
     var selectionAnchorStart by remember(paragraph.index) { mutableIntStateOf(0) }
@@ -1777,14 +1821,41 @@ private fun ReaderParagraph(
                 },
             ),
             fontFamily = readerFontFamily(fontStyle),
-            fontSize = fontSizeSp.sp,
-            lineHeight = (fontSizeSp * 1.6f).sp,
+            fontSize = (fontSizeSp + paragraphSizeIncrease).sp,
+            fontWeight = when (paragraphEmphasis) {
+                ReadingParagraphEmphasis.TITLE -> FontWeight.Bold
+                ReadingParagraphEmphasis.SECTION -> FontWeight.SemiBold
+                ReadingParagraphEmphasis.BODY -> FontWeight.Normal
+            },
+            lineHeight = ((fontSizeSp + paragraphSizeIncrease) * 1.6f).sp,
         ),
         onTextLayout = { layoutResult ->
             textLayoutResult = layoutResult
             reportActiveBlockCenter()
         },
     )
+}
+
+private enum class ReadingParagraphEmphasis {
+    TITLE,
+    SECTION,
+    BODY,
+}
+
+private fun readingParagraphEmphasis(text: String): ReadingParagraphEmphasis {
+    val normalized = text.trim().lowercase()
+    if (normalized in setOf("índice", "contenido", "contenidos", "tabla de contenidos")) {
+        return ReadingParagraphEmphasis.TITLE
+    }
+    if (
+        normalized.startsWith("capítulo ") ||
+        normalized.startsWith("parte ") ||
+        normalized.startsWith("sección ") ||
+        normalized in setOf("prólogo", "introducción", "epílogo", "referencias")
+    ) {
+        return ReadingParagraphEmphasis.SECTION
+    }
+    return ReadingParagraphEmphasis.BODY
 }
 
 @Composable

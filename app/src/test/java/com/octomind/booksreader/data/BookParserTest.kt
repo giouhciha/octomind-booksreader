@@ -44,6 +44,50 @@ class BookParserTest {
         assertArrayEquals(byteArrayOf(1, 2, 3, 4), parsed.coverImage)
     }
 
+    @Test
+    fun `pdf normalization joins visual lines and preserves semantic breaks`() {
+        val normalized = normalizePdfPageText(
+            """
+            CAPÍTULO 1
+
+            Una oración repartida en varias
+            líneas conserva su ritmo natu-
+            ral.
+
+            42
+            • Primer punto de una lista
+            """.trimIndent(),
+        )
+
+        assertEquals(
+            "CAPÍTULO 1\n\nUna oración repartida en varias líneas conserva su ritmo natural.\n\n" +
+                "• Primer punto de una lista",
+            normalized,
+        )
+    }
+
+    @Test
+    fun `pdf normalization keeps contents entries and wrapped titles separate`() {
+        val normalized = normalizePdfPageText(
+            """
+            índice
+            Capıt́ ulo 1: Repensar la ciencia y la práctica clínicas
+            Capıt́ ulo 12: De los problemas a la prosperidad: mantenimiento y
+            expansión de las ganancias
+            Epıĺ ogo
+            Referencias
+            """.trimIndent(),
+        )
+
+        assertEquals(
+            "Índice\n\n" +
+                "Capítulo 1: Repensar la ciencia y la práctica clínicas\n\n" +
+                "Capítulo 12: De los problemas a la prosperidad: mantenimiento y expansión de las ganancias\n\n" +
+                "Epílogo\n\nReferencias",
+            normalized,
+        )
+    }
+
     private fun createSyntheticEpub(file: File) {
         ZipOutputStream(file.outputStream()).use { zip ->
             zip.add(

@@ -1,10 +1,18 @@
 package com.octomind.booksreader.data
 
+import android.graphics.Bitmap
 import com.octomind.booksreader.domain.BookChapter
 import com.octomind.booksreader.domain.BookFormat
+import com.octomind.booksreader.domain.BookPageAnchor
 import com.octomind.booksreader.domain.ParsedBook
+import com.tom_roush.pdfbox.pdmodel.PDDocument
+import com.tom_roush.pdfbox.pdmodel.encryption.InvalidPasswordException
+import com.tom_roush.pdfbox.rendering.PDFRenderer
+import com.tom_roush.pdfbox.text.PDFTextStripper
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.charset.StandardCharsets
+import java.text.Normalizer
 import java.util.zip.ZipFile
 import javax.xml.parsers.DocumentBuilderFactory
 import org.w3c.dom.Element
@@ -194,6 +202,235 @@ class EpubBookParser : BookParser {
         const val MAX_SINGLE_ENTRY_BYTES = 10L * 1024 * 1024
         const val MAX_ENTRIES = 5_000
         val SUPPORTED_COVER_MIME_TYPES = setOf("image/jpeg", "image/png", "image/webp")
+    }
+}
+
+class PdfBookParser : BookParser {
+    override fun parse(file: File, displayName: String): ParsedBook {
+        require(file.length() <= MAX_PDF_BYTES) { "El archivo PDF supera el límite de 200 MB" }
+        require(file.inputStream().use { input ->
+            val signature = ByteArray(PDF_SIGNATURE.size)
+            input.read(signature) == signature.size && signature.contentEquals(PDF_SIGNATURE)
+        }) { "El archivo no tiene una firma PDF válida" }
+
+        val loadedDocument = try {
+            PDDocument.load(file)
+        } catch (_: InvalidPasswordException) {
+            throw IllegalArgumentException("Los PDF protegidos con contraseña todavía no son compatibles")
+        }
+        loadedDocument.use { document ->
+            require(!document.isEncrypted) { "Los PDF protegidos con contraseña todavía no son compatibles" }
+            require(document.numberOfPages in 1..MAX_PDF_PAGES) {
+                "El PDF supera el límite de $MAX_PDF_PAGES páginas"
+            }
+            val textStripper = PDFTextStripper().apply {
+                sortByPosition = true
+                lineSeparator = "\n"
+                paragraphStart = "\n\n"
+                paragraphEnd = "\n\n"
+            }
+            val combinedText = StringBuilder()
+            val pageAnchors = mutableListOf<BookPageAnchor>()
+            val chapters = mutableListOf<BookChapter>()
+
+            repeat(document.numberOfPages) { pageIndex ->
+                textStripper.startPage = pageIndex + 1
+                textStripper.endPage = pageIndex + 1
+                val rawPageText = textStripper.getText(document)
+                val pageText = normalizePdfPageText(rawPageText)
+                if (pageText.isNotBlank()) {
+                    if (combinedText.isNotEmpty()) combinedText.append("\n\n")
+                    val pageStart = combinedText.length
+                    pageAnchors += BookPageAnchor(pageIndex, pageStart)
+                    detectPdfChapterTitle(pageText)?.let { title ->
+                        if (chapters.none { it.title.equals(title, ignoreCase = true) }) {
+                            chapters += BookChapter(title, pageStart)
+                        }
+                    }
+                    combinedText.append(pageText)
+                }
+            }
+
+            val text = normalizeBookText(combinedText.toString())
+            require(text.isNotBlank()) {
+                "Este PDF parece contener páginas escaneadas sin texto seleccionable; requiere OCR"
+            }
+            val information = document.documentInformation
+            val title = information?.title?.trim().orEmpty()
+                .takeIf { it.isNotBlank() }
+                ?: displayName.substringBeforeLast('.').ifBlank { "Libro sin título" }
+            val author = information?.author?.trim()?.takeIf(String::isNotBlank)
+            return ParsedBook(
+                title = title,
+                author = author,
+                format = BookFormat.PDF,
+                text = text,
+                chapters = chapters.ifEmpty { listOf(BookChapter("Inicio", 0)) },
+                coverImage = renderPdfCover(document),
+                pageAnchors = pageAnchors,
+            )
+        }
+    }
+
+    private fun renderPdfCover(document: PDDocument): ByteArray? = runCatching {
+        val mediaBox = document.getPage(0).mediaBox
+        val longestEdge = maxOf(mediaBox.width, mediaBox.height).takeIf { it.isFinite() && it > 0f }
+            ?: return@runCatching null
+        val renderScale = (COVER_LONGEST_EDGE_PIXELS / longestEdge).coerceIn(MINIMUM_COVER_SCALE, MAXIMUM_COVER_SCALE)
+        val bitmap = PDFRenderer(document).renderImage(0, renderScale)
+        try {
+            ByteArrayOutputStream().use { output ->
+                if (!bitmap.compress(Bitmap.CompressFormat.JPEG, COVER_JPEG_QUALITY, output)) {
+                    return@runCatching null
+                }
+                output.toByteArray()
+            }
+        } finally {
+            bitmap.recycle()
+        }
+    }.getOrNull()
+
+    private companion object {
+        const val MAX_PDF_BYTES = 200L * 1024 * 1024
+        const val MAX_PDF_PAGES = 5_000
+        const val COVER_LONGEST_EDGE_PIXELS = 1_280f
+        const val MINIMUM_COVER_SCALE = 0.1f
+        const val MAXIMUM_COVER_SCALE = 2f
+        const val COVER_JPEG_QUALITY = 88
+        val PDF_SIGNATURE = "%PDF-".toByteArray(StandardCharsets.US_ASCII)
+    }
+}
+
+internal fun normalizePdfPageText(value: String): String {
+    val dehyphenated = value
+        .replace("\r\n", "\n")
+        .replace('\r', '\n')
+        .replace("\u00AD", "")
+        .replace(Regex("(?<=\\p{L})-\\n(?=\\p{Ll})"), "")
+        .filter { character -> character == '\n' || character == '\t' || !character.isISOControl() }
+    val paragraphs = mutableListOf<String>()
+    val current = StringBuilder()
+    var contentsMode = false
+
+    fun flushParagraph() {
+        current.toString().trim().takeIf(String::isNotBlank)?.let(paragraphs::add)
+        current.clear()
+    }
+
+    dehyphenated.lines().forEach { rawLine ->
+        val line = rawLine.trim().replace(Regex("[\\t ]+"), " ")
+        when {
+            line.isBlank() -> if (!contentsMode) flushParagraph()
+            line.matches(Regex("^\\d{1,4}$")) -> Unit
+            isPdfContentsHeading(line) -> {
+                flushParagraph()
+                paragraphs += normalizePdfContentsHeading(line)
+                contentsMode = true
+            }
+            contentsMode && isPdfContentsEntry(line) -> {
+                flushParagraph()
+                current.append(normalizePdfStructuralLine(line))
+            }
+            contentsMode -> {
+                if (current.isNotEmpty()) current.append(' ')
+                current.append(line)
+            }
+            isPdfStandaloneLine(line) -> {
+                flushParagraph()
+                paragraphs += normalizePdfStructuralLine(line)
+            }
+            else -> {
+                if (current.isNotEmpty()) current.append(' ')
+                current.append(line)
+            }
+        }
+    }
+    flushParagraph()
+    return paragraphs.joinToString("\n\n").trim()
+}
+
+private fun isPdfStandaloneLine(line: String): Boolean {
+    val wordCount = Regex("\\S+").findAll(line).count()
+    val structuralLine = line.pdfStructureKey()
+    val isShortHeading = wordCount <= 12 && line.length <= 90 &&
+        (structuralLine.startsWith("capitulo ") ||
+            structuralLine == "prologo" ||
+            structuralLine == "epilogo" ||
+            structuralLine == "referencias" ||
+            line.matches(Regex("^[\\p{Lu}\\d][\\p{Lu}\\d '’.,:;()/-]+$")))
+    val isListItem = line.matches(Regex("^(?:[•▪◦]|\\d+[.)]|[a-zA-Z][.)])\\s+.+"))
+    return isShortHeading || isListItem
+}
+
+private fun isPdfContentsHeading(line: String): Boolean = line.pdfStructureKey() in setOf(
+    "indice",
+    "contenido",
+    "contenidos",
+    "tabla de contenido",
+    "tabla de contenidos",
+    "contents",
+)
+
+private fun normalizePdfContentsHeading(line: String): String = when (line.pdfStructureKey()) {
+    "indice" -> "Índice"
+    "contenido", "contenidos", "tabla de contenido", "tabla de contenidos" -> "Contenido"
+    else -> line
+}
+
+private fun isPdfContentsEntry(line: String): Boolean {
+    val structuralLine = line.pdfStructureKey()
+    return structuralLine.matches(Regex("^(?:capitulo|parte|seccion)\\s+[\\divxlcdm]+.*")) ||
+        structuralLine.startsWith("prologo") ||
+        structuralLine.startsWith("introduccion") ||
+        structuralLine.startsWith("prefacio") ||
+        structuralLine.startsWith("agradecimientos") ||
+        structuralLine.startsWith("epilogo") ||
+        structuralLine.startsWith("referencias") ||
+        structuralLine.startsWith("apendice") ||
+        structuralLine.startsWith("anexo") ||
+        structuralLine.matches(Regex("^\\d+(?:\\.\\d+)*\\s+\\D.*"))
+}
+
+private fun normalizePdfStructuralLine(line: String): String {
+    val cleaned = line.replace(Regex("\\s*\\.{2,}\\s*"), " · ").trim()
+    val structuralLine = cleaned.pdfStructureKey()
+    val title = cleaned.substringAfter(':', "").trim()
+    val chapterNumber = Regex("^capitulo\\s+([\\divxlcdm]+)")
+        .find(structuralLine)
+        ?.groupValues
+        ?.get(1)
+    return when {
+        chapterNumber != null && title.isNotEmpty() -> "Capítulo ${chapterNumber.uppercase()}: $title"
+        structuralLine == "prologo" -> "Prólogo"
+        structuralLine == "epilogo" -> "Epílogo"
+        structuralLine == "introduccion" -> "Introducción"
+        structuralLine == "referencias" -> "Referencias"
+        else -> cleaned
+    }
+}
+
+private fun String.pdfStructureKey(): String = Normalizer.normalize(this, Normalizer.Form.NFD)
+    .replace('ı', 'i')
+    .replace(Regex("\\p{M}+"), "")
+    .lowercase()
+    .replace(Regex("capit\\s*ulo"), "capitulo")
+    .replace(Regex("epil\\s*ogo"), "epilogo")
+    .replace(Regex("prol\\s*ogo"), "prologo")
+    .replace(Regex("ind\\s*ice"), "indice")
+    .replace(Regex("\\s+"), " ")
+    .trim()
+
+private fun detectPdfChapterTitle(pageText: String): String? {
+    val openingParagraphs = pageText.split(Regex("\\n{2,}")).take(4)
+    if (openingParagraphs.firstOrNull()?.let(::isPdfContentsHeading) == true) return null
+    return openingParagraphs.firstOrNull { paragraph ->
+        val structuralParagraph = paragraph.pdfStructureKey()
+        paragraph.length <= 120 && (
+            structuralParagraph.startsWith("capitulo ") ||
+                structuralParagraph == "prologo" ||
+                structuralParagraph == "epilogo" ||
+                structuralParagraph == "referencias"
+            )
     }
 }
 
