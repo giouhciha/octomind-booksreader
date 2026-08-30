@@ -2153,7 +2153,6 @@ private fun AmbientAudioSettings(
     onSoundscape: (AmbientSoundscape) -> Unit,
     onVolume: (Int) -> Unit,
 ) {
-    var volumeValue by remember(volumePercent) { mutableFloatStateOf(volumePercent.toFloat()) }
     Row(verticalAlignment = Alignment.CenterVertically) {
         Column(modifier = Modifier.weight(1f)) {
             Text(stringResource(R.string.ambient_music), fontWeight = FontWeight.SemiBold)
@@ -2167,56 +2166,79 @@ private fun AmbientAudioSettings(
     }
     AnimatedVisibility(visible = enabled) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(
-                stringResource(R.string.ambient_music_soundscape),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
+            AmbientSoundscapeSettings(
+                soundscape = soundscape,
+                onSoundscape = onSoundscape,
             )
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                AmbientSoundscape.entries.chunked(2).forEach { optionRow ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        optionRow.forEach { option ->
-                            FilterChip(
-                                selected = soundscape == option,
-                                onClick = { onSoundscape(option) },
-                                label = { Text(ambientSoundscapeName(option), maxLines = 1) },
-                                modifier = Modifier.weight(1f),
-                            )
-                        }
-                        if (optionRow.size == 1) Spacer(Modifier.weight(1f))
-                    }
-                }
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    stringResource(R.string.ambient_music_volume),
-                    modifier = Modifier.weight(1f),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Text(
-                    stringResource(R.string.ambient_music_volume_value, volumeValue.roundToInt()),
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Slider(
-                value = volumeValue,
-                onValueChange = { volumeValue = (it / AMBIENT_VOLUME_STEP).roundToInt() * AMBIENT_VOLUME_STEP },
-                onValueChangeFinished = { onVolume(volumeValue.roundToInt()) },
-                valueRange = MINIMUM_AMBIENT_VOLUME..MAXIMUM_AMBIENT_VOLUME,
-                steps = AMBIENT_VOLUME_SLIDER_STEPS,
-            )
-            Text(
-                stringResource(R.string.ambient_music_manual_start_hint),
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            AmbientVolumeSettings(
+                volumePercent = volumePercent,
+                onVolume = onVolume,
             )
         }
     }
+}
+
+@Composable
+private fun AmbientSoundscapeSettings(
+    soundscape: AmbientSoundscape,
+    onSoundscape: (AmbientSoundscape) -> Unit,
+) {
+    Text(
+        stringResource(R.string.ambient_music_soundscape),
+        fontSize = 12.sp,
+        fontWeight = FontWeight.SemiBold,
+    )
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        AmbientSoundscape.entries.chunked(2).forEach { optionRow ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                optionRow.forEach { option ->
+                    FilterChip(
+                        selected = soundscape == option,
+                        onClick = { onSoundscape(option) },
+                        label = { Text(ambientSoundscapeName(option), maxLines = 1) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                if (optionRow.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun AmbientVolumeSettings(
+    volumePercent: Int,
+    onVolume: (Int) -> Unit,
+) {
+    var volumeValue by remember(volumePercent) { mutableFloatStateOf(volumePercent.toFloat()) }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            stringResource(R.string.ambient_music_volume),
+            modifier = Modifier.weight(1f),
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Text(
+            stringResource(R.string.ambient_music_volume_value, volumeValue.roundToInt()),
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+    Slider(
+        value = volumeValue,
+        onValueChange = { volumeValue = (it / AMBIENT_VOLUME_STEP).roundToInt() * AMBIENT_VOLUME_STEP },
+        onValueChangeFinished = { onVolume(volumeValue.roundToInt()) },
+        valueRange = MINIMUM_AMBIENT_VOLUME..MAXIMUM_AMBIENT_VOLUME,
+        steps = AMBIENT_VOLUME_SLIDER_STEPS,
+    )
+    Text(
+        stringResource(R.string.ambient_music_manual_start_hint),
+        fontSize = 12.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 @Composable

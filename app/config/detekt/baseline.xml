@@ -13,6 +13,10 @@
     <ID>CyclomaticComplexMethod:ReadingPlan.kt:ReadingPlanBuilder$private fun String.terminalPauseKind: PauseKind</ID>
     <ID>FunctionNaming:NarratorArtwork.kt:@Composable internal fun BookColoredNarratorArtwork</ID>
     <ID>FunctionNaming:OctomindApp.kt:@Composable fun OctomindApp</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun AmbientAudioControl</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun AmbientAudioSettings</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun AmbientSoundscapeSettings</ID>
+    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun AmbientVolumeSettings</ID>
     <ID>FunctionNaming:OctomindApp.kt:@Composable private fun BackupMenuDialog</ID>
     <ID>FunctionNaming:OctomindApp.kt:@Composable private fun BackupPasswordDialog</ID>
     <ID>FunctionNaming:OctomindApp.kt:@Composable private fun BookCover</ID>
