@@ -23,9 +23,12 @@ data class BookSummary(
     val savedQuotes: List<SavedQuote> = emptyList(),
 ) {
     val progress: Float
-        get() = if (totalCharacters == 0) 0f else {
-            (currentCharacterOffset.toFloat() / totalCharacters).coerceIn(0f, 1f)
-        }
+        get() =
+            if (totalCharacters == 0) {
+                0f
+            } else {
+                (currentCharacterOffset.toFloat() / totalCharacters).coerceIn(0f, 1f)
+            }
 
     val isCompleted: Boolean
         get() = totalCharacters > 0 && currentCharacterOffset >= totalCharacters
@@ -80,15 +83,17 @@ data class BookDocument(
     val exactProgress: Float
         get() = summary.progress
 
-    fun pageIndexFor(characterOffset: Int): Int? = pageAnchors
-        .lastOrNull { it.startCharacterOffset <= characterOffset }
-        ?.pageIndex
-        ?: pageAnchors.firstOrNull()?.pageIndex
+    fun pageIndexFor(characterOffset: Int): Int? =
+        pageAnchors
+            .lastOrNull { it.startCharacterOffset <= characterOffset }
+            ?.pageIndex
+            ?: pageAnchors.firstOrNull()?.pageIndex
 
-    fun characterOffsetForPage(pageIndex: Int): Int? = pageAnchors
-        .lastOrNull { it.pageIndex <= pageIndex }
-        ?.startCharacterOffset
-        ?: pageAnchors.firstOrNull()?.startCharacterOffset
+    fun characterOffsetForPage(pageIndex: Int): Int? =
+        pageAnchors
+            .lastOrNull { it.pageIndex <= pageIndex }
+            ?.startCharacterOffset
+            ?: pageAnchors.firstOrNull()?.startCharacterOffset
 }
 
 data class ParsedBook(
@@ -145,7 +150,12 @@ object CustomAvatarPolicy {
 
     private val allowedMimeTypes = setOf("image/jpeg", "image/png", "image/webp")
 
-    fun accepts(mimeType: String?, fileBytes: Long?, width: Int, height: Int): Boolean =
+    fun accepts(
+        mimeType: String?,
+        fileBytes: Long?,
+        width: Int,
+        height: Int,
+    ): Boolean =
         mimeType in allowedMimeTypes &&
             (fileBytes == null || fileBytes in 1..MAX_FILE_BYTES) &&
             width in MIN_EDGE_PIXELS..MAX_EDGE_PIXELS &&

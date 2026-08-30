@@ -6,21 +6,20 @@ import android.os.SystemClock
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.octomind.booksreader.OctomindApplication
+import com.octomind.booksreader.domain.AmbientSoundscape
 import com.octomind.booksreader.domain.BookDocument
 import com.octomind.booksreader.domain.BookSummary
 import com.octomind.booksreader.domain.CompletedReading
-import com.octomind.booksreader.domain.AmbientSoundscape
-import com.octomind.booksreader.domain.PageTheme
 import com.octomind.booksreader.domain.NarratorAvatar
+import com.octomind.booksreader.domain.PageTheme
 import com.octomind.booksreader.domain.ReaderFontStyle
 import com.octomind.booksreader.domain.ReaderSettings
-import com.octomind.booksreader.domain.ReadingPlan
-import com.octomind.booksreader.domain.ReadingPlanBuilder
 import com.octomind.booksreader.domain.ReadingCycleStats
 import com.octomind.booksreader.domain.ReadingMode
+import com.octomind.booksreader.domain.ReadingPlan
+import com.octomind.booksreader.domain.ReadingPlanBuilder
 import com.octomind.booksreader.domain.ReadingSessionSummary
 import com.octomind.booksreader.domain.SavedQuote
-import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -31,13 +30,21 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.roundToInt
 
 sealed interface AppScreen {
     data object Starting : AppScreen
+
     data object Onboarding : AppScreen
+
     data object Library : AppScreen
+
     data object Quotes : AppScreen
-    data class Reader(val state: ReaderState) : AppScreen
+
+    data class Reader(
+        val state: ReaderState,
+    ) : AppScreen
+
     data class SessionResult(
         val bookId: String,
         val summary: ReadingSessionSummary,
@@ -72,13 +79,20 @@ data class ReaderState(
     val originalPdfPageIndex: Int = 0,
 ) {
     val currentCharacterOffset: Int
-        get() = if (completed) document.text.length
-        else plan.blocks.getOrNull(currentBlockIndex)?.startCharacterOffset ?: 0
+        get() =
+            if (completed) {
+                document.text.length
+            } else {
+                plan.blocks.getOrNull(currentBlockIndex)?.startCharacterOffset ?: 0
+            }
 
     val progress: Float
-        get() = if (document.text.isEmpty()) 0f else {
-            (currentCharacterOffset.toFloat() / document.text.length).coerceIn(0f, 1f)
-        }
+        get() =
+            if (document.text.isEmpty()) {
+                0f
+            } else {
+                (currentCharacterOffset.toFloat() / document.text.length).coerceIn(0f, 1f)
+            }
 }
 
 data class OctomindUiState(
@@ -90,7 +104,9 @@ data class OctomindUiState(
     val message: String? = null,
 )
 
-class OctomindViewModel(application: Application) : AndroidViewModel(application) {
+class OctomindViewModel(
+    application: Application,
+) : AndroidViewModel(application) {
     private val app = application as OctomindApplication
     private val repository = app.bookRepository
     private val preferences = app.userPreferences
@@ -126,8 +142,7 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
                 .onSuccess { summary ->
                     reloadLibrary()
                     openBook(summary.id)
-                }
-                .onFailure { error ->
+                }.onFailure { error ->
                     mutableState.update {
                         it.copy(busy = false, message = error.userMessage("No fue posible importar el libro"))
                     }
@@ -143,36 +158,41 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
                 if (document.summary.isCompleted) {
                     return@runCatching completedBookResult(document.summary)
                 }
-                val settings = preferences.readerSettings.first().copy(
-                    readingMode = ReadingMode.SENTENCE,
-                    adaptivePacingEnabled = false,
-                )
-                val plan = withContext(Dispatchers.Default) {
-                    ReadingPlanBuilder.build(
-                        text = document.text,
-                        wordsPerBlock = settings.wordsPerBlock,
-                        readingMode = settings.readingMode,
+                val settings =
+                    preferences.readerSettings.first().copy(
+                        readingMode = ReadingMode.SENTENCE,
+                        adaptivePacingEnabled = false,
                     )
-                }
+                val plan =
+                    withContext(Dispatchers.Default) {
+                        ReadingPlanBuilder.build(
+                            text = document.text,
+                            wordsPerBlock = settings.wordsPerBlock,
+                            readingMode = settings.readingMode,
+                        )
+                    }
                 require(plan.blocks.isNotEmpty()) { "El libro no contiene palabras legibles" }
                 val currentBlockIndex = plan.blockIndexFor(document.summary.currentCharacterOffset)
                 val restoredFocusEnabled = settings.focusEnabled
-                val restoredSettings = settings.copy(
-                    narratorAvatar = document.summary.narratorAvatar,
-                    readerControlsExpanded = if (restoredFocusEnabled) {
-                        false
-                    } else {
-                        settings.readerControlsExpanded
-                    },
-                )
+                val restoredSettings =
+                    settings.copy(
+                        narratorAvatar = document.summary.narratorAvatar,
+                        readerControlsExpanded =
+                            if (restoredFocusEnabled) {
+                                false
+                            } else {
+                                settings.readerControlsExpanded
+                            },
+                    )
                 val now = SystemClock.elapsedRealtime()
                 ReaderState(
                     document = document,
                     plan = plan,
                     settings = restoredSettings,
-                    customNarratorAvatarPath = app.customAvatarRepository.avatarFile
-                        .takeIf { it.isFile }
-                        ?.absolutePath,
+                    customNarratorAvatarPath =
+                        app.customAvatarRepository.avatarFile
+                            .takeIf { it.isFile }
+                            ?.absolutePath,
                     currentBlockIndex = currentBlockIndex,
                     focusEnabled = restoredFocusEnabled,
                     completed = document.summary.currentCharacterOffset >= document.text.length,
@@ -180,11 +200,12 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
                     playStartedAtMillis = now.takeIf { restoredFocusEnabled },
                 )
             }.onSuccess { destination ->
-                val screen = when (destination) {
-                    is ReaderState -> AppScreen.Reader(destination)
-                    is AppScreen.SessionResult -> destination
-                    else -> error("Destino de lectura no compatible")
-                }
+                val screen =
+                    when (destination) {
+                        is ReaderState -> AppScreen.Reader(destination)
+                        is AppScreen.SessionResult -> destination
+                        else -> error("Destino de lectura no compatible")
+                    }
                 mutableState.update { it.copy(screen = screen, busy = false) }
             }.onFailure { error ->
                 mutableState.update {
@@ -201,14 +222,16 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun createBackup(uri: Uri, password: CharArray) {
+    fun createBackup(
+        uri: Uri,
+        password: CharArray,
+    ) {
         viewModelScope.launch {
             mutableState.update { it.copy(busy = true, message = null) }
             runCatching { app.backupRepository.create(uri, password) }
                 .onSuccess {
                     mutableState.update { it.copy(busy = false, message = "Respaldo creado correctamente") }
-                }
-                .onFailure { error ->
+                }.onFailure { error ->
                     mutableState.update {
                         it.copy(busy = false, message = error.userMessage("No fue posible crear el respaldo"))
                     }
@@ -216,7 +239,10 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun restoreBackup(uri: Uri, password: CharArray) {
+    fun restoreBackup(
+        uri: Uri,
+        password: CharArray,
+    ) {
         viewModelScope.launch {
             mutableState.update { it.copy(busy = true, message = null) }
             runCatching { app.backupRepository.restore(uri, password) }
@@ -225,8 +251,7 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
                     mutableState.update {
                         it.copy(screen = AppScreen.Library, message = "Respaldo restaurado correctamente")
                     }
-                }
-                .onFailure { error ->
+                }.onFailure { error ->
                     mutableState.update {
                         it.copy(busy = false, message = error.userMessage("No fue posible restaurar el respaldo"))
                     }
@@ -256,7 +281,11 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
         )
     }
 
-    fun saveSelectedQuote(text: String, startCharacterOffset: Int, endCharacterOffset: Int) {
+    fun saveSelectedQuote(
+        text: String,
+        startCharacterOffset: Int,
+        endCharacterOffset: Int,
+    ) {
         val reader = currentReader()?.takeUnless { it.focusEnabled || it.quotePreview } ?: return
         if (text.isBlank() || startCharacterOffset >= endCharacterOffset) return
         saveQuoteRange(reader, text, startCharacterOffset, endCharacterOffset)
@@ -268,17 +297,19 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
         startCharacterOffset: Int,
         endCharacterOffset: Int,
     ) {
-        val chapter = reader.document.chapters
-            .lastOrNull { it.startCharacterOffset <= startCharacterOffset }
-            ?.title
+        val chapter =
+            reader.document.chapters
+                .lastOrNull { it.startCharacterOffset <= startCharacterOffset }
+                ?.title
         viewModelScope.launch {
-            val saved = repository.saveQuote(
-                bookId = reader.document.summary.id,
-                chapterTitle = chapter,
-                text = text,
-                startCharacterOffset = startCharacterOffset,
-                endCharacterOffset = endCharacterOffset,
-            )
+            val saved =
+                repository.saveQuote(
+                    bookId = reader.document.summary.id,
+                    chapterTitle = chapter,
+                    text = text,
+                    startCharacterOffset = startCharacterOffset,
+                    endCharacterOffset = endCharacterOffset,
+                )
             mutableState.update {
                 it.copy(message = if (saved) "Cita guardada" else "Esta cita ya estaba guardada")
             }
@@ -297,29 +328,32 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
             mutableState.update { it.copy(busy = true, message = null) }
             runCatching {
                 val document = repository.loadBook(quote.bookId)
-                val settings = preferences.readerSettings.first().copy(
-                    readingMode = ReadingMode.SENTENCE,
-                    adaptivePacingEnabled = false,
-                    focusEnabled = false,
-                    readerControlsExpanded = false,
-                    narratorAvatar = document.summary.narratorAvatar,
-                )
-                val plan = withContext(Dispatchers.Default) {
-                    ReadingPlanBuilder.build(
-                        text = document.text,
-                        wordsPerBlock = settings.wordsPerBlock,
-                        readingMode = settings.readingMode,
+                val settings =
+                    preferences.readerSettings.first().copy(
+                        readingMode = ReadingMode.SENTENCE,
+                        adaptivePacingEnabled = false,
+                        focusEnabled = false,
+                        readerControlsExpanded = false,
+                        narratorAvatar = document.summary.narratorAvatar,
                     )
-                }
+                val plan =
+                    withContext(Dispatchers.Default) {
+                        ReadingPlanBuilder.build(
+                            text = document.text,
+                            wordsPerBlock = settings.wordsPerBlock,
+                            readingMode = settings.readingMode,
+                        )
+                    }
                 require(plan.blocks.isNotEmpty()) { "El libro no contiene palabras legibles" }
                 val blockIndex = plan.blockIndexFor(quote.startCharacterOffset)
                 ReaderState(
                     document = document,
                     plan = plan,
                     settings = settings,
-                    customNarratorAvatarPath = app.customAvatarRepository.avatarFile
-                        .takeIf { it.isFile }
-                        ?.absolutePath,
+                    customNarratorAvatarPath =
+                        app.customAvatarRepository.avatarFile
+                            .takeIf { it.isFile }
+                            ?.absolutePath,
                     currentBlockIndex = blockIndex,
                     focusEnabled = false,
                     blockShownAtMillis = SystemClock.elapsedRealtime(),
@@ -346,10 +380,11 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
             saveSettings(settings)
         } else {
             val now = SystemClock.elapsedRealtime()
-            val settings = reader.settings.copy(
-                focusEnabled = true,
-                readerControlsExpanded = false,
-            )
+            val settings =
+                reader.settings.copy(
+                    focusEnabled = true,
+                    readerControlsExpanded = false,
+                )
             updateReader {
                 it.copy(
                     focusEnabled = true,
@@ -377,9 +412,13 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun resumeForForeground() {
-        updateReader { reader -> if (reader.focusEnabled && reader.playStartedAtMillis == null) {
-            reader.copy(playStartedAtMillis = SystemClock.elapsedRealtime())
-        } else reader }
+        updateReader { reader ->
+            if (reader.focusEnabled && reader.playStartedAtMillis == null) {
+                reader.copy(playStartedAtMillis = SystemClock.elapsedRealtime())
+            } else {
+                reader
+            }
+        }
     }
 
     fun moveBlock(delta: Int) {
@@ -436,7 +475,6 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
         if (block.index == reader.currentBlockIndex) return
         moveToBlock(block.index, backwards = false)
     }
-
 
     fun updatePageTheme(pageTheme: PageTheme) {
         val reader = currentReader() ?: return
@@ -498,10 +536,11 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
             }.onSuccess {
                 val latestReader = currentReader() ?: reader
                 val version = (latestReader.settings.customNarratorAvatarVersion + 1).coerceAtLeast(1)
-                val settings = latestReader.settings.copy(
-                    narratorAvatar = NarratorAvatar.CUSTOM_IMAGE,
-                    customNarratorAvatarVersion = version,
-                )
+                val settings =
+                    latestReader.settings.copy(
+                        narratorAvatar = NarratorAvatar.CUSTOM_IMAGE,
+                        customNarratorAvatarVersion = version,
+                    )
                 updateReader {
                     it.copy(
                         settings = settings,
@@ -533,11 +572,12 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
                 )
             }.onSuccess {
                 val latestReader = currentReader() ?: reader
-                val settings = latestReader.settings.copy(
-                    narratorAvatar = NarratorAvatar.OCTI,
-                    customNarratorAvatarVersion =
-                        (latestReader.settings.customNarratorAvatarVersion + 1).coerceAtLeast(1),
-                )
+                val settings =
+                    latestReader.settings.copy(
+                        narratorAvatar = NarratorAvatar.OCTI,
+                        customNarratorAvatarVersion =
+                            (latestReader.settings.customNarratorAvatarVersion + 1).coerceAtLeast(1),
+                    )
                 updateReader { it.copy(settings = settings, customNarratorAvatarPath = null) }
                 saveSettings(settings)
                 mutableState.update { it.copy(message = "Imagen personalizada eliminada") }
@@ -579,12 +619,14 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
 
     fun updateAmbientAudioVolume(volumePercent: Int) {
         val reader = currentReader() ?: return
-        val settings = reader.settings.copy(
-            ambientAudioVolumePercent = volumePercent.coerceIn(
-                MINIMUM_AMBIENT_AUDIO_VOLUME_PERCENT,
-                MAXIMUM_AMBIENT_AUDIO_VOLUME_PERCENT,
-            ),
-        )
+        val settings =
+            reader.settings.copy(
+                ambientAudioVolumePercent =
+                    volumePercent.coerceIn(
+                        MINIMUM_AMBIENT_AUDIO_VOLUME_PERCENT,
+                        MAXIMUM_AMBIENT_AUDIO_VOLUME_PERCENT,
+                    ),
+            )
         updateReader { it.copy(settings = settings) }
         saveSettings(settings)
     }
@@ -605,25 +647,27 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
             }
         }
         val average = cycleStats.averageWordsPerMinute()
-        val summary = ReadingSessionSummary(
-            bookTitle = finalReader.document.summary.title,
-            coverImagePath = finalReader.document.summary.coverImagePath,
-            elapsedMillis = cycleStats.activeDurationMillis,
-            wordsRead = cycleStats.wordsRead,
-            averageWordsPerMinute = average,
-            progress = finalReader.progress,
-            pauses = cycleStats.pauses,
-            backwardsMoves = cycleStats.backwardsMoves,
-            fragmentsRead = cycleStats.fragmentsRead,
-        )
+        val summary =
+            ReadingSessionSummary(
+                bookTitle = finalReader.document.summary.title,
+                coverImagePath = finalReader.document.summary.coverImagePath,
+                elapsedMillis = cycleStats.activeDurationMillis,
+                wordsRead = cycleStats.wordsRead,
+                averageWordsPerMinute = average,
+                progress = finalReader.progress,
+                pauses = cycleStats.pauses,
+                backwardsMoves = cycleStats.backwardsMoves,
+                fragmentsRead = cycleStats.fragmentsRead,
+            )
         mutableState.update {
             it.copy(
-                screen = AppScreen.SessionResult(
-                    bookId = finalReader.document.summary.id,
-                    summary = summary,
-                    previousReadings = finalReader.document.summary.completedReadings,
-                    restartAvailable = finalReader.completed,
-                ),
+                screen =
+                    AppScreen.SessionResult(
+                        bookId = finalReader.document.summary.id,
+                        summary = summary,
+                        previousReadings = finalReader.document.summary.completedReadings,
+                        restartAvailable = finalReader.completed,
+                    ),
             )
         }
     }
@@ -668,11 +712,12 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
                 backwardsMoves = reader.backwardsMoves + if (backwards) 1 else 0,
                 completed = false,
                 blockShownAtMillis = nowMillis,
-                adaptationCooldownBlocks = if (movedForward) {
-                    (reader.adaptationCooldownBlocks - 1).coerceAtLeast(0)
-                } else {
-                    reader.adaptationCooldownBlocks
-                },
+                adaptationCooldownBlocks =
+                    if (movedForward) {
+                        (reader.adaptationCooldownBlocks - 1).coerceAtLeast(0)
+                    } else {
+                        reader.adaptationCooldownBlocks
+                    },
             )
         }
         scheduleProgressSave()
@@ -692,10 +737,11 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
     private fun scheduleProgressSave() {
         if (currentReader()?.quotePreview == true) return
         progressSaveJob?.cancel()
-        progressSaveJob = viewModelScope.launch {
-            delay(750)
-            persistProgress()
-        }
+        progressSaveJob =
+            viewModelScope.launch {
+                delay(750)
+                persistProgress()
+            }
     }
 
     private fun persistProgressImmediately() {
@@ -704,9 +750,10 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
         if (reader.quotePreview) return
         val bookId = reader.document.summary.id
         val characterOffset = reader.currentCharacterOffset
-        progressSaveJob = viewModelScope.launch {
-            repository.saveProgress(bookId, characterOffset)
-        }
+        progressSaveJob =
+            viewModelScope.launch {
+                repository.saveProgress(bookId, characterOffset)
+            }
     }
 
     private suspend fun persistProgress() {
@@ -729,9 +776,10 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
 
     private suspend fun reloadLibrary() {
         val books = repository.listBooks()
-        val customAvatarPath = app.customAvatarRepository.avatarFile
-            .takeIf { it.isFile }
-            ?.absolutePath
+        val customAvatarPath =
+            app.customAvatarRepository.avatarFile
+                .takeIf { it.isFile }
+                ?.absolutePath
         mutableState.update {
             it.copy(
                 books = books,
@@ -741,8 +789,7 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    private fun currentReader(): ReaderState? =
-        (mutableState.value.screen as? AppScreen.Reader)?.state
+    private fun currentReader(): ReaderState? = (mutableState.value.screen as? AppScreen.Reader)?.state
 
     private fun updateReader(transform: (ReaderState) -> ReaderState) {
         mutableState.update { ui ->
@@ -758,11 +805,12 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
 
     private fun completeReading(reader: ReaderState) {
         if (reader.completed || reader.quotePreview || reader.plan.blocks.isEmpty()) return
-        val completedReader = reader.copy(
-            currentBlockIndex = reader.plan.blocks.lastIndex,
-            furthestBlockIndex = reader.plan.blocks.lastIndex,
-            completed = true,
-        )
+        val completedReader =
+            reader.copy(
+                currentBlockIndex = reader.plan.blocks.lastIndex,
+                furthestBlockIndex = reader.plan.blocks.lastIndex,
+                completed = true,
+            )
         updateReader { completedReader }
         viewModelScope.launch {
             repository.completeReading(
@@ -772,8 +820,7 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    private fun Throwable.userMessage(fallback: String): String =
-        message?.takeIf { it.isNotBlank() } ?: fallback
+    private fun Throwable.userMessage(fallback: String): String = message?.takeIf { it.isNotBlank() } ?: fallback
 
     private fun ReaderState.toCompletedReading(completedAtMillis: Long): CompletedReading {
         val aggregate = aggregateCycleStats()
@@ -790,40 +837,46 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
 
     private fun ReaderState.aggregateCycleStats(): ReadingCycleStats {
         val first = sessionStartBlockIndex.coerceAtMost(furthestBlockIndex)
-        val sessionWords = plan.blocks
-            .subList(first, (furthestBlockIndex + 1).coerceAtMost(plan.blocks.size))
-            .sumOf { it.wordCount }
-        val sessionElapsed = activeDurationMillis +
-            (playStartedAtMillis?.let { SystemClock.elapsedRealtime() - it } ?: 0L)
+        val sessionWords =
+            plan.blocks
+                .subList(first, (furthestBlockIndex + 1).coerceAtMost(plan.blocks.size))
+                .sumOf { it.wordCount }
+        val sessionElapsed =
+            activeDurationMillis +
+                (playStartedAtMillis?.let { SystemClock.elapsedRealtime() - it } ?: 0L)
         val previous = document.summary.currentCycleStats
         return ReadingCycleStats(
             activeDurationMillis = previous.activeDurationMillis + sessionElapsed.coerceAtLeast(0),
             wordsRead = previous.wordsRead + sessionWords,
             pauses = previous.pauses + pauses,
             backwardsMoves = previous.backwardsMoves + backwardsMoves,
-            fragmentsRead = previous.fragmentsRead +
-                (furthestBlockIndex - first + 1).coerceAtLeast(0),
+            fragmentsRead =
+                previous.fragmentsRead +
+                    (furthestBlockIndex - first + 1).coerceAtLeast(0),
         )
     }
 
     private fun ReadingCycleStats.averageWordsPerMinute(): Int =
-        if (activeDurationMillis < 1_000 || wordsRead == 0) 0 else {
+        if (activeDurationMillis < 1_000 || wordsRead == 0) {
+            0
+        } else {
             (wordsRead * 60_000.0 / activeDurationMillis).roundToInt()
         }
 
     private fun completedBookResult(book: BookSummary): AppScreen.SessionResult {
         val latest = book.completedReadings.lastOrNull()
-        val summary = ReadingSessionSummary(
-            bookTitle = book.title,
-            coverImagePath = book.coverImagePath,
-            elapsedMillis = latest?.elapsedMillis ?: 0,
-            wordsRead = latest?.wordsRead ?: book.totalWords,
-            averageWordsPerMinute = latest?.averageWordsPerMinute ?: 0,
-            progress = 1f,
-            pauses = latest?.pauses ?: 0,
-            backwardsMoves = latest?.backwardsMoves ?: 0,
-            fragmentsRead = latest?.fragmentsRead ?: 0,
-        )
+        val summary =
+            ReadingSessionSummary(
+                bookTitle = book.title,
+                coverImagePath = book.coverImagePath,
+                elapsedMillis = latest?.elapsedMillis ?: 0,
+                wordsRead = latest?.wordsRead ?: book.totalWords,
+                averageWordsPerMinute = latest?.averageWordsPerMinute ?: 0,
+                progress = 1f,
+                pauses = latest?.pauses ?: 0,
+                backwardsMoves = latest?.backwardsMoves ?: 0,
+                fragmentsRead = latest?.fragmentsRead ?: 0,
+            )
         return AppScreen.SessionResult(
             bookId = book.id,
             summary = summary,

@@ -7,7 +7,10 @@ object NarratorPagination {
     private val wordPattern = Regex("\\S+")
     private val naturalBoundaries = setOf('.', '?', '!', ';', ':', ',', '—', '–')
 
-    fun paginate(text: String, fits: (String) -> Boolean): List<String> {
+    fun paginate(
+        text: String,
+        fits: (String) -> Boolean,
+    ): List<String> {
         val normalizedText = text.trim()
         val words = wordPattern.findAll(normalizedText).toList()
         if (words.isEmpty()) return listOf("")
@@ -27,10 +30,12 @@ object NarratorPagination {
                     high = middle - 1
                 }
             }
-            val minimumNaturalEnd = startWord +
-                ((maximumEnd - startWord) * NATURAL_BOUNDARY_THRESHOLD).roundToInt()
-            val naturalEnd = (maximumEnd downTo minimumNaturalEnd.coerceAtLeast(startWord + 1))
-                .firstOrNull { end -> words[end - 1].value.hasNaturalBoundary() }
+            val minimumNaturalEnd =
+                startWord +
+                    ((maximumEnd - startWord) * NATURAL_BOUNDARY_THRESHOLD).roundToInt()
+            val naturalEnd =
+                (maximumEnd downTo minimumNaturalEnd.coerceAtLeast(startWord + 1))
+                    .firstOrNull { end -> words[end - 1].value.hasNaturalBoundary() }
             val pageEnd = naturalEnd ?: maximumEnd
             pages += textBetween(normalizedText, words, startWord, pageEnd)
             startWord = pageEnd
@@ -43,12 +48,22 @@ object NarratorPagination {
         words: List<MatchResult>,
         start: Int,
         endExclusive: Int,
-    ): String = source.substring(
-        words[start].range.first,
-        words[endExclusive - 1].range.last + 1,
-    ).trim()
+    ): String =
+        source
+            .substring(
+                words[start].range.first,
+                words[endExclusive - 1].range.last + 1,
+            ).trim()
 
-    private fun String.hasNaturalBoundary(): Boolean = trimEnd(
-        '"', '\'', '”', '’', '»', ')', ']', '}',
-    ).lastOrNull() in naturalBoundaries
+    private fun String.hasNaturalBoundary(): Boolean =
+        trimEnd(
+            '"',
+            '\'',
+            '”',
+            '’',
+            '»',
+            ')',
+            ']',
+            '}',
+        ).lastOrNull() in naturalBoundaries
 }

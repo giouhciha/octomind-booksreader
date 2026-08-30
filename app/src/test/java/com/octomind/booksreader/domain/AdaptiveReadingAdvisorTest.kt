@@ -33,12 +33,13 @@ class AdaptiveReadingAdvisorTest {
 
     @Test
     fun `fast manual advances increase pace by at most five percent`() {
-        val suggested = AdaptiveReadingAdvisor.suggestedWordsPerMinute(
-            currentWordsPerMinute = 260,
-            advanceRatios = List(8) { 0.65 },
-            cooldownBlocks = 0,
-            hasRecentBacktracking = false,
-        )
+        val suggested =
+            AdaptiveReadingAdvisor.suggestedWordsPerMinute(
+                currentWordsPerMinute = 260,
+                advanceRatios = List(8) { 0.65 },
+                cooldownBlocks = 0,
+                hasRecentBacktracking = false,
+            )
 
         assertEquals(273, suggested)
     }

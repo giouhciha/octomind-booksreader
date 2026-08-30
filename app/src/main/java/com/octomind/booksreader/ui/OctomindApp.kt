@@ -3,14 +3,12 @@ package com.octomind.booksreader.ui
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.net.Uri
 import android.graphics.BitmapFactory
-import android.graphics.Canvas as AndroidCanvas
-import android.graphics.Color as AndroidColor
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Typeface
+import android.net.Uri
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
@@ -18,22 +16,19 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.magnifier
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.gestures.scrollBy
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -53,16 +48,19 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.magnifier
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.AutoStories
-import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Bookmark
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CloudSync
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.ExpandLess
@@ -92,8 +90,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -103,96 +99,95 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.Constraints
+import androidx.core.content.FileProvider
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.core.content.FileProvider
 import com.octomind.booksreader.R
 import com.octomind.booksreader.audio.AmbientAudioController
+import com.octomind.booksreader.domain.AmbientIntensity
 import com.octomind.booksreader.domain.AmbientSoundscape
 import com.octomind.booksreader.domain.BookSummary
 import com.octomind.booksreader.domain.CompletedReading
-import com.octomind.booksreader.domain.AmbientIntensity
 import com.octomind.booksreader.domain.FocusNavigation
 import com.octomind.booksreader.domain.FocusPresentation
 import com.octomind.booksreader.domain.NarratorAvatar
 import com.octomind.booksreader.domain.NarratorPagination
 import com.octomind.booksreader.domain.PageTheme
 import com.octomind.booksreader.domain.ReaderFontStyle
+import com.octomind.booksreader.domain.ReadingAmbience
+import com.octomind.booksreader.domain.ReadingAmbienceSelector
 import com.octomind.booksreader.domain.ReadingBlock
-import com.octomind.booksreader.domain.ReadingMode
 import com.octomind.booksreader.domain.ReadingParagraph
 import com.octomind.booksreader.domain.ReadingSessionSummary
 import com.octomind.booksreader.domain.SavedQuote
-import com.octomind.booksreader.domain.ReadingAmbience
-import com.octomind.booksreader.domain.ReadingAmbienceSelector
 import com.octomind.booksreader.ui.theme.ReaderPageTheme
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
+import android.graphics.Canvas as AndroidCanvas
+import android.graphics.Color as AndroidColor
 
 @Composable
 fun OctomindApp(viewModel: OctomindViewModel = viewModel()) {
@@ -201,13 +196,14 @@ fun OctomindApp(viewModel: OctomindViewModel = viewModel()) {
     val lifecycleOwner = LocalLifecycleOwner.current
 
     DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_START -> viewModel.resumeForForeground()
-                Lifecycle.Event.ON_STOP -> viewModel.pauseForBackground()
-                else -> Unit
+        val observer =
+            LifecycleEventObserver { _, event ->
+                when (event) {
+                    Lifecycle.Event.ON_START -> viewModel.resumeForForeground()
+                    Lifecycle.Event.ON_STOP -> viewModel.pauseForBackground()
+                    else -> Unit
+                }
             }
-        }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
@@ -223,60 +219,64 @@ fun OctomindApp(viewModel: OctomindViewModel = viewModel()) {
         when (val screen = state.screen) {
             AppScreen.Starting -> LoadingScreen()
             AppScreen.Onboarding -> OnboardingScreen(onConfirm = viewModel::confirmAdult)
-            AppScreen.Library -> LibraryScreen(
-                books = state.books,
-                busy = state.busy,
-                onImport = viewModel::importBook,
-                onOpen = viewModel::openBook,
-                onDelete = viewModel::deleteBook,
-                onShowQuotes = viewModel::showQuotes,
-                onCreateBackup = viewModel::createBackup,
-                onRestoreBackup = viewModel::restoreBackup,
-            )
-            AppScreen.Quotes -> QuotesScreen(
-                quotes = state.quotes,
-                books = state.books,
-                customAvatarPath = state.customNarratorAvatarPath,
-                onBack = viewModel::closeQuotes,
-                onOpen = viewModel::openQuote,
-                onDelete = viewModel::deleteQuote,
-            )
-            is AppScreen.Reader -> ReaderScreen(
-                state = screen.state,
-                onBack = viewModel::finishReader,
-                onToggleFocus = viewModel::toggleFocus,
-                onMoveBlock = viewModel::moveBlock,
-                onVisibleParagraph = viewModel::setVisibleParagraph,
-                onReachedBookEnd = viewModel::completeCurrentBook,
-                onPageTheme = viewModel::updatePageTheme,
-                onFontStyle = viewModel::updateFontStyle,
-                onFontSize = viewModel::updateFontSize,
-                onFocusDimming = viewModel::updateFocusDimming,
-                onShowFocusMascot = viewModel::updateShowFocusMascot,
-                onFocusPresentation = viewModel::updateFocusPresentation,
-                onNarratorAvatar = viewModel::updateNarratorAvatar,
-                onImportCustomAvatar = viewModel::importCustomNarratorAvatar,
-                onDeleteCustomAvatar = viewModel::deleteCustomNarratorAvatar,
-                onReaderControlsExpanded = viewModel::updateReaderControlsExpanded,
-                onAmbientIntensity = viewModel::updateAmbientIntensity,
-                onAmbientAudioEnabled = viewModel::updateAmbientAudioEnabled,
-                onAmbientSoundscape = viewModel::updateAmbientSoundscape,
-                onAmbientAudioVolume = viewModel::updateAmbientAudioVolume,
-                onSaveQuote = viewModel::saveCurrentQuote,
-                onSaveSelectedQuote = viewModel::saveSelectedQuote,
-                onNarratorGestureLearned = viewModel::dismissNarratorGestureHint,
-                onShowOriginalPdf = viewModel::showOriginalPdf,
-                onHideOriginalPdf = viewModel::hideOriginalPdf,
-                onOriginalPdfPage = viewModel::setOriginalPdfPage,
-                onFinishOriginalPdf = viewModel::finishOriginalPdfReading,
-            )
-            is AppScreen.SessionResult -> SessionResultScreen(
-                summary = screen.summary,
-                previousReadings = screen.previousReadings,
-                restartAvailable = screen.restartAvailable,
-                onFinish = viewModel::returnToLibrary,
-                onRestart = { viewModel.restartCompletedBook(screen.bookId) },
-            )
+            AppScreen.Library ->
+                LibraryScreen(
+                    books = state.books,
+                    busy = state.busy,
+                    onImport = viewModel::importBook,
+                    onOpen = viewModel::openBook,
+                    onDelete = viewModel::deleteBook,
+                    onShowQuotes = viewModel::showQuotes,
+                    onCreateBackup = viewModel::createBackup,
+                    onRestoreBackup = viewModel::restoreBackup,
+                )
+            AppScreen.Quotes ->
+                QuotesScreen(
+                    quotes = state.quotes,
+                    books = state.books,
+                    customAvatarPath = state.customNarratorAvatarPath,
+                    onBack = viewModel::closeQuotes,
+                    onOpen = viewModel::openQuote,
+                    onDelete = viewModel::deleteQuote,
+                )
+            is AppScreen.Reader ->
+                ReaderScreen(
+                    state = screen.state,
+                    onBack = viewModel::finishReader,
+                    onToggleFocus = viewModel::toggleFocus,
+                    onMoveBlock = viewModel::moveBlock,
+                    onVisibleParagraph = viewModel::setVisibleParagraph,
+                    onReachedBookEnd = viewModel::completeCurrentBook,
+                    onPageTheme = viewModel::updatePageTheme,
+                    onFontStyle = viewModel::updateFontStyle,
+                    onFontSize = viewModel::updateFontSize,
+                    onFocusDimming = viewModel::updateFocusDimming,
+                    onShowFocusMascot = viewModel::updateShowFocusMascot,
+                    onFocusPresentation = viewModel::updateFocusPresentation,
+                    onNarratorAvatar = viewModel::updateNarratorAvatar,
+                    onImportCustomAvatar = viewModel::importCustomNarratorAvatar,
+                    onDeleteCustomAvatar = viewModel::deleteCustomNarratorAvatar,
+                    onReaderControlsExpanded = viewModel::updateReaderControlsExpanded,
+                    onAmbientIntensity = viewModel::updateAmbientIntensity,
+                    onAmbientAudioEnabled = viewModel::updateAmbientAudioEnabled,
+                    onAmbientSoundscape = viewModel::updateAmbientSoundscape,
+                    onAmbientAudioVolume = viewModel::updateAmbientAudioVolume,
+                    onSaveQuote = viewModel::saveCurrentQuote,
+                    onSaveSelectedQuote = viewModel::saveSelectedQuote,
+                    onNarratorGestureLearned = viewModel::dismissNarratorGestureHint,
+                    onShowOriginalPdf = viewModel::showOriginalPdf,
+                    onHideOriginalPdf = viewModel::hideOriginalPdf,
+                    onOriginalPdfPage = viewModel::setOriginalPdfPage,
+                    onFinishOriginalPdf = viewModel::finishOriginalPdfReading,
+                )
+            is AppScreen.SessionResult ->
+                SessionResultScreen(
+                    summary = screen.summary,
+                    previousReadings = screen.previousReadings,
+                    restartAvailable = screen.restartAvailable,
+                    onFinish = viewModel::returnToLibrary,
+                    onRestart = { viewModel.restartCompletedBook(screen.bookId) },
+                )
         }
 
         SnackbarHost(
@@ -374,22 +374,25 @@ private fun LibraryScreen(
     var backupDialog by rememberSaveable { mutableStateOf<BackupDialog?>(null) }
     var pendingPassword by remember { mutableStateOf<CharArray?>(null) }
     var pendingRestoreUri by rememberSaveable { mutableStateOf<Uri?>(null) }
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        uri?.let(onImport)
-    }
-    val createBackupLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.CreateDocument(BACKUP_MIME_TYPE),
-    ) { uri ->
-        val password = pendingPassword
-        pendingPassword = null
-        if (uri != null && password != null) onCreateBackup(uri, password) else password?.fill('\u0000')
-    }
-    val restoreBackupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
-            pendingRestoreUri = uri
-            backupDialog = BackupDialog.RESTORE_PASSWORD
+    val launcher =
+        rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            uri?.let(onImport)
         }
-    }
+    val createBackupLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.CreateDocument(BACKUP_MIME_TYPE),
+        ) { uri ->
+            val password = pendingPassword
+            pendingPassword = null
+            if (uri != null && password != null) onCreateBackup(uri, password) else password?.fill('\u0000')
+        }
+    val restoreBackupLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) {
+                pendingRestoreUri = uri
+                backupDialog = BackupDialog.RESTORE_PASSWORD
+            }
+        }
 
     Scaffold(
         topBar = {
@@ -444,7 +447,9 @@ private fun LibraryScreen(
                 val coverHeight = coverWidth * 1.48f
                 LazyColumn(
                     modifier = Modifier.fillMaxSize().woodLibraryBackground(),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp),
+                    contentPadding =
+                        androidx.compose.foundation.layout
+                            .PaddingValues(bottom = 24.dp),
                 ) {
                     items(books.chunked(columns), key = { row -> row.joinToString("|") { it.id } }) { rowBooks ->
                         BookshelfRow(
@@ -467,7 +472,10 @@ private fun LibraryScreen(
             title = { Text(stringResource(R.string.delete_title)) },
             text = { Text(stringResource(R.string.delete_body)) },
             confirmButton = {
-                TextButton(onClick = { onDelete(book.id); pendingDelete = null }) {
+                TextButton(onClick = {
+                    onDelete(book.id)
+                    pendingDelete = null
+                }) {
                     Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
                 }
             },
@@ -477,36 +485,39 @@ private fun LibraryScreen(
         )
     }
     when (backupDialog) {
-        BackupDialog.MENU -> BackupMenuDialog(
-            onDismiss = { backupDialog = null },
-            onCreate = { backupDialog = BackupDialog.CREATE_PASSWORD },
-            onRestore = {
-                backupDialog = null
-                restoreBackupLauncher.launch(arrayOf(BACKUP_MIME_TYPE, "application/octet-stream"))
-            },
-        )
-        BackupDialog.CREATE_PASSWORD -> BackupPasswordDialog(
-            restoring = false,
-            onDismiss = { backupDialog = null },
-            onConfirm = { password ->
-                pendingPassword = password.toCharArray()
-                backupDialog = null
-                val date = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
-                createBackupLauncher.launch("octomind-$date.octomind")
-            },
-        )
-        BackupDialog.RESTORE_PASSWORD -> BackupPasswordDialog(
-            restoring = true,
-            onDismiss = {
-                pendingRestoreUri = null
-                backupDialog = null
-            },
-            onConfirm = { password ->
-                pendingRestoreUri?.let { onRestoreBackup(it, password.toCharArray()) }
-                pendingRestoreUri = null
-                backupDialog = null
-            },
-        )
+        BackupDialog.MENU ->
+            BackupMenuDialog(
+                onDismiss = { backupDialog = null },
+                onCreate = { backupDialog = BackupDialog.CREATE_PASSWORD },
+                onRestore = {
+                    backupDialog = null
+                    restoreBackupLauncher.launch(arrayOf(BACKUP_MIME_TYPE, "application/octet-stream"))
+                },
+            )
+        BackupDialog.CREATE_PASSWORD ->
+            BackupPasswordDialog(
+                restoring = false,
+                onDismiss = { backupDialog = null },
+                onConfirm = { password ->
+                    pendingPassword = password.toCharArray()
+                    backupDialog = null
+                    val date = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+                    createBackupLauncher.launch("octomind-$date.octomind")
+                },
+            )
+        BackupDialog.RESTORE_PASSWORD ->
+            BackupPasswordDialog(
+                restoring = true,
+                onDismiss = {
+                    pendingRestoreUri = null
+                    backupDialog = null
+                },
+                onConfirm = { password ->
+                    pendingRestoreUri?.let { onRestoreBackup(it, password.toCharArray()) }
+                    pendingRestoreUri = null
+                    backupDialog = null
+                },
+            )
         null -> Unit
     }
 }
@@ -527,7 +538,11 @@ private const val AMBIENT_VOLUME_STEP = 5f
 private const val AMBIENT_VOLUME_SLIDER_STEPS = 9
 
 @Composable
-private fun BackupMenuDialog(onDismiss: () -> Unit, onCreate: () -> Unit, onRestore: () -> Unit) {
+private fun BackupMenuDialog(
+    onDismiss: () -> Unit,
+    onCreate: () -> Unit,
+    onRestore: () -> Unit,
+) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.backup_title)) },
@@ -598,41 +613,44 @@ private fun BackupPasswordDialog(
 }
 
 @Composable
-private fun EmptyLibrary(modifier: Modifier = Modifier, onImport: () -> Unit) {
+private fun EmptyLibrary(
+    modifier: Modifier = Modifier,
+    onImport: () -> Unit,
+) {
     Box(modifier = modifier.fillMaxSize().woodLibraryBackground().padding(28.dp), contentAlignment = Alignment.Center) {
         Surface(
             shape = RoundedCornerShape(24.dp),
             color = Color(0xFFF9E8C5).copy(alpha = 0.96f),
             shadowElevation = 8.dp,
         ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(24.dp),
-        ) {
-            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
-                Icon(
-                    Icons.Rounded.AutoStories,
-                    contentDescription = null,
-                    modifier = Modifier.padding(22.dp).size(38.dp),
-                    tint = MaterialTheme.colorScheme.primary,
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(24.dp),
+            ) {
+                Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
+                    Icon(
+                        Icons.Rounded.AutoStories,
+                        contentDescription = null,
+                        modifier = Modifier.padding(22.dp).size(38.dp),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                Spacer(Modifier.height(22.dp))
+                Text(stringResource(R.string.empty_library_title), style = MaterialTheme.typography.headlineMedium)
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    stringResource(R.string.empty_library_body),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                Spacer(Modifier.height(24.dp))
+                Button(onClick = onImport) {
+                    Icon(Icons.Rounded.UploadFile, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.import_book))
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(stringResource(R.string.import_formats), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Spacer(Modifier.height(22.dp))
-            Text(stringResource(R.string.empty_library_title), style = MaterialTheme.typography.headlineMedium)
-            Spacer(Modifier.height(10.dp))
-            Text(
-                stringResource(R.string.empty_library_body),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(24.dp))
-            Button(onClick = onImport) {
-                Icon(Icons.Rounded.UploadFile, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.import_book))
-            }
-            Spacer(Modifier.height(8.dp))
-            Text(stringResource(R.string.import_formats), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
         }
     }
 }
@@ -690,7 +708,9 @@ private fun QuotesScreen(
             val groupedQuotes = quotes.groupBy(SavedQuote::bookTitle)
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(padding).woodLibraryBackground(),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(18.dp),
+                contentPadding =
+                    androidx.compose.foundation.layout
+                        .PaddingValues(18.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 groupedQuotes.forEach { (bookTitle, bookQuotes) ->
@@ -706,10 +726,11 @@ private fun QuotesScreen(
                     }
                     items(bookQuotes, key = SavedQuote::id) { quote ->
                         Surface(
-                            modifier = Modifier.clickable(
-                                onClickLabel = stringResource(R.string.open_quote),
-                                onClick = { onOpen(quote) },
-                            ),
+                            modifier =
+                                Modifier.clickable(
+                                    onClickLabel = stringResource(R.string.open_quote),
+                                    onClick = { onOpen(quote) },
+                                ),
                             shape = RoundedCornerShape(18.dp),
                             color = Color(0xFFF9E8C5),
                             shadowElevation = 5.dp,
@@ -762,19 +783,20 @@ private fun QuotesScreen(
     pendingShare?.let { quote ->
         val sharedBook = books.firstOrNull { it.id == quote.bookId }
         val avatar = sharedBook?.narratorAvatar ?: NarratorAvatar.OCTI
-        val narratorName = when (avatar) {
-            NarratorAvatar.OCTI -> stringResource(R.string.narrator_avatar_octi)
-            NarratorAvatar.LOVECRAFT_ILLUSTRATION -> stringResource(R.string.narrator_avatar_lovecraft)
-            NarratorAvatar.SCHOPENHAUER_ILLUSTRATION -> stringResource(R.string.narrator_avatar_schopenhauer)
-            NarratorAvatar.NIETZSCHE_ILLUSTRATION -> stringResource(R.string.narrator_avatar_nietzsche)
-            NarratorAvatar.CAMUS_ILLUSTRATION -> stringResource(R.string.narrator_avatar_camus)
-            NarratorAvatar.STRANGER_ILLUSTRATION -> stringResource(R.string.narrator_avatar_stranger)
-            NarratorAvatar.LILA_ILLUSTRATION -> stringResource(R.string.narrator_avatar_lila)
-            NarratorAvatar.ACHU_ILLUSTRATION -> stringResource(R.string.narrator_avatar_achu)
-            NarratorAvatar.FRANK_N_FURTER_ILLUSTRATION ->
-                stringResource(R.string.narrator_avatar_frank_n_furter)
-            NarratorAvatar.CUSTOM_IMAGE -> stringResource(R.string.narrator_avatar_custom)
-        }
+        val narratorName =
+            when (avatar) {
+                NarratorAvatar.OCTI -> stringResource(R.string.narrator_avatar_octi)
+                NarratorAvatar.LOVECRAFT_ILLUSTRATION -> stringResource(R.string.narrator_avatar_lovecraft)
+                NarratorAvatar.SCHOPENHAUER_ILLUSTRATION -> stringResource(R.string.narrator_avatar_schopenhauer)
+                NarratorAvatar.NIETZSCHE_ILLUSTRATION -> stringResource(R.string.narrator_avatar_nietzsche)
+                NarratorAvatar.CAMUS_ILLUSTRATION -> stringResource(R.string.narrator_avatar_camus)
+                NarratorAvatar.STRANGER_ILLUSTRATION -> stringResource(R.string.narrator_avatar_stranger)
+                NarratorAvatar.LILA_ILLUSTRATION -> stringResource(R.string.narrator_avatar_lila)
+                NarratorAvatar.ACHU_ILLUSTRATION -> stringResource(R.string.narrator_avatar_achu)
+                NarratorAvatar.FRANK_N_FURTER_ILLUSTRATION ->
+                    stringResource(R.string.narrator_avatar_frank_n_furter)
+                NarratorAvatar.CUSTOM_IMAGE -> stringResource(R.string.narrator_avatar_custom)
+            }
         AlertDialog(
             onDismissRequest = { pendingShare = null },
             title = { Text(stringResource(R.string.share_quote_title)) },
@@ -783,17 +805,18 @@ private fun QuotesScreen(
                 TextButton(
                     onClick = {
                         shareScope.launch {
-                            val uri = withContext(Dispatchers.IO) {
-                                createNarratorQuoteCard(
-                                    context = context,
-                                    quote = quote,
-                                    avatar = avatar,
-                                    customAvatarPath = customAvatarPath,
-                                    narratorName = narratorName,
-                                    coverImagePath = sharedBook?.coverImagePath,
-                                    fallbackBookColor = bookCoverPalette(quote.bookTitle).first.toArgb(),
-                                )
-                            }
+                            val uri =
+                                withContext(Dispatchers.IO) {
+                                    createNarratorQuoteCard(
+                                        context = context,
+                                        quote = quote,
+                                        avatar = avatar,
+                                        customAvatarPath = customAvatarPath,
+                                        narratorName = narratorName,
+                                        coverImagePath = sharedBook?.coverImagePath,
+                                        fallbackBookColor = bookCoverPalette(quote.bookTitle).first.toArgb(),
+                                    )
+                                }
                             shareQuoteImage(context, uri)
                         }
                         pendingShare = null
@@ -817,14 +840,19 @@ private fun QuotesScreen(
     }
 }
 
-private fun shareQuote(context: Context, quote: SavedQuote, narratorName: String?) {
+private fun shareQuote(
+    context: Context,
+    quote: SavedQuote,
+    narratorName: String?,
+) {
     val chapter = quote.chapterTitle?.let { "\n$it" }.orEmpty()
     val narrator = narratorName?.let { "Narrador: $it\n\n" }.orEmpty()
     val sharedText = "$narrator“${quote.text}”\n— ${quote.bookTitle}$chapter\n\nOctomind"
-    val intent = Intent(Intent.ACTION_SEND).apply {
-        type = "text/plain"
-        putExtra(Intent.EXTRA_TEXT, sharedText)
-    }
+    val intent =
+        Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, sharedText)
+        }
     context.startActivity(
         Intent.createChooser(intent, context.getString(R.string.share_quote_chooser)),
     )
@@ -843,21 +871,24 @@ private fun createNarratorQuoteCard(
     val bubbleLeft = 410f
     val bubbleRight = 1_120f
     val textWidth = (bubbleRight - bubbleLeft - 96f).toInt()
-    val quotePaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = AndroidColor.rgb(50, 35, 18)
-        textSize = when {
-            quote.text.length <= 180 -> 48f
-            quote.text.length <= 420 -> 42f
-            else -> 36f
+    val quotePaint =
+        TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = AndroidColor.rgb(50, 35, 18)
+            textSize =
+                when {
+                    quote.text.length <= 180 -> 48f
+                    quote.text.length <= 420 -> 42f
+                    else -> 36f
+                }
+            typeface = Typeface.create(Typeface.SERIF, Typeface.NORMAL)
         }
-        typeface = Typeface.create(Typeface.SERIF, Typeface.NORMAL)
-    }
-    val quoteLayout = StaticLayout.Builder
-        .obtain("“${quote.text}”", 0, quote.text.length + 2, quotePaint, textWidth)
-        .setAlignment(Layout.Alignment.ALIGN_NORMAL)
-        .setIncludePad(false)
-        .setLineSpacing(8f, 1f)
-        .build()
+    val quoteLayout =
+        StaticLayout.Builder
+            .obtain("“${quote.text}”", 0, quote.text.length + 2, quotePaint, textWidth)
+            .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+            .setIncludePad(false)
+            .setLineSpacing(8f, 1f)
+            .build()
     val bubbleHeight = (quoteLayout.height + 210).coerceAtLeast(460)
     val cardHeight = (bubbleHeight + 160).coerceAtLeast(720)
     val bitmap = Bitmap.createBitmap(cardWidth, cardHeight, Bitmap.Config.ARGB_8888)
@@ -888,11 +919,12 @@ private fun createNarratorQuoteCard(
     quoteLayout.draw(canvas)
     canvas.restore()
 
-    val metadataPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = AndroidColor.rgb(118, 81, 31)
-        textSize = 30f
-        typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
-    }
+    val metadataPaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = AndroidColor.rgb(118, 81, 31)
+            textSize = 30f
+            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+        }
     canvas.drawText(quote.bookTitle.take(46), bubbleLeft + 48f, bubbleBottom - 72f, metadataPaint)
     quote.chapterTitle?.takeIf(String::isNotBlank)?.let { chapter ->
         metadataPaint.textSize = 24f
@@ -900,17 +932,18 @@ private fun createNarratorQuoteCard(
         canvas.drawText(chapter.take(58), bubbleLeft + 48f, bubbleBottom - 34f, metadataPaint)
     }
 
-    val avatarBitmap = if (avatar == NarratorAvatar.CUSTOM_IMAGE) {
-        customAvatarPath?.let(BitmapFactory::decodeFile)
-            ?: BitmapFactory.decodeResource(context.resources, R.drawable.octi_reader)
-    } else {
-        createBookColoredNarratorBitmap(
-            context = context,
-            avatar = avatar,
-            coverImagePath = coverImagePath,
-            fallbackBookColor = fallbackBookColor,
-        ) ?: BitmapFactory.decodeResource(context.resources, R.drawable.octi_reader)
-    }
+    val avatarBitmap =
+        if (avatar == NarratorAvatar.CUSTOM_IMAGE) {
+            customAvatarPath?.let(BitmapFactory::decodeFile)
+                ?: BitmapFactory.decodeResource(context.resources, R.drawable.octi_reader)
+        } else {
+            createBookColoredNarratorBitmap(
+                context = context,
+                avatar = avatar,
+                coverImagePath = coverImagePath,
+                fallbackBookColor = fallbackBookColor,
+            ) ?: BitmapFactory.decodeResource(context.resources, R.drawable.octi_reader)
+        }
     val avatarRect = RectF(92f, cardHeight - 430f, 372f, cardHeight - 150f)
     canvas.save()
     canvas.clipPath(Path().apply { addOval(avatarRect, Path.Direction.CW) })
@@ -925,12 +958,13 @@ private fun createNarratorQuoteCard(
         },
     )
 
-    val narratorPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = AndroidColor.rgb(50, 40, 23)
-        textSize = 27f
-        textAlign = Paint.Align.CENTER
-        typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
-    }
+    val narratorPaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = AndroidColor.rgb(50, 40, 23)
+            textSize = 27f
+            textAlign = Paint.Align.CENTER
+            typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+        }
     canvas.drawText(narratorName.take(24), avatarRect.centerX(), cardHeight - 104f, narratorPaint)
     narratorPaint.textAlign = Paint.Align.RIGHT
     narratorPaint.textSize = 25f
@@ -948,12 +982,16 @@ private fun createNarratorQuoteCard(
     return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", output)
 }
 
-private fun shareQuoteImage(context: Context, uri: Uri) {
-    val intent = Intent(Intent.ACTION_SEND).apply {
-        type = "image/png"
-        putExtra(Intent.EXTRA_STREAM, uri)
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    }
+private fun shareQuoteImage(
+    context: Context,
+    uri: Uri,
+) {
+    val intent =
+        Intent(Intent.ACTION_SEND).apply {
+            type = "image/png"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
     context.startActivity(
         Intent.createChooser(intent, context.getString(R.string.share_quote_chooser)),
     )
@@ -968,16 +1006,18 @@ private fun BookshelfRow(
     onDelete: (BookSummary) -> Unit,
 ) {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(coverHeight + 42.dp)
-            .woodShelfPanel(),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(coverHeight + 42.dp)
+                .woodShelfPanel(),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.BottomStart)
-                .padding(start = 16.dp, end = 16.dp, bottom = 20.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomStart)
+                    .padding(start = 16.dp, end = 16.dp, bottom = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.Bottom,
         ) {
@@ -991,16 +1031,17 @@ private fun BookshelfRow(
             }
         }
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(20.dp)
-                .align(Alignment.BottomCenter)
-                .shadow(8.dp)
-                .background(
-                    Brush.verticalGradient(
-                        listOf(Color(0xFFF0B35C), Color(0xFF9B531C), Color(0xFF71340F)),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(20.dp)
+                    .align(Alignment.BottomCenter)
+                    .shadow(8.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color(0xFFF0B35C), Color(0xFF9B531C), Color(0xFF71340F)),
+                        ),
                     ),
-                ),
         )
     }
 }
@@ -1014,17 +1055,19 @@ private fun BookCover(
 ) {
     val palette = bookCoverPalette(book.title)
     val coverBitmap by produceState<ImageBitmap?>(null, book.coverImagePath) {
-        value = withContext(Dispatchers.IO) {
-            book.coverImagePath?.let(BitmapFactory::decodeFile)?.asImageBitmap()
-        }
+        value =
+            withContext(Dispatchers.IO) {
+                book.coverImagePath?.let(BitmapFactory::decodeFile)?.asImageBitmap()
+            }
     }
     Surface(
-        modifier = modifier
-            .shadow(7.dp, RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp))
-            .clickable(
-                onClickLabel = stringResource(R.string.open_book, book.title),
-                onClick = onOpen,
-            ),
+        modifier =
+            modifier
+                .shadow(7.dp, RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp))
+                .clickable(
+                    onClickLabel = stringResource(R.string.open_book, book.title),
+                    onClick = onOpen,
+                ),
         shape = RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp),
         color = palette.first,
     ) {
@@ -1038,67 +1081,73 @@ private fun BookCover(
                 )
             } else {
                 Box(
-                Modifier
-                    .fillMaxSize()
-                    .drawBehind {
-                        drawCircle(
-                            color = palette.second.copy(alpha = 0.09f),
-                            radius = size.minDimension * 0.55f,
-                            center = androidx.compose.ui.geometry.Offset(size.width * 0.82f, size.height * 0.68f),
-                        )
-                        drawLine(
-                            color = palette.second.copy(alpha = 0.28f),
-                            start = androidx.compose.ui.geometry.Offset(size.width * 0.12f, 0f),
-                            end = androidx.compose.ui.geometry.Offset(size.width * 0.12f, size.height),
-                            strokeWidth = 2.dp.toPx(),
-                        )
-                    },
+                    Modifier
+                        .fillMaxSize()
+                        .drawBehind {
+                            drawCircle(
+                                color = palette.second.copy(alpha = 0.09f),
+                                radius = size.minDimension * 0.55f,
+                                center =
+                                    androidx.compose.ui.geometry
+                                        .Offset(size.width * 0.82f, size.height * 0.68f),
+                            )
+                            drawLine(
+                                color = palette.second.copy(alpha = 0.28f),
+                                start =
+                                    androidx.compose.ui.geometry
+                                        .Offset(size.width * 0.12f, 0f),
+                                end =
+                                    androidx.compose.ui.geometry
+                                        .Offset(size.width * 0.12f, size.height),
+                                strokeWidth = 2.dp.toPx(),
+                            )
+                        },
                 )
                 Column(
-                modifier = Modifier.fillMaxSize().padding(start = 14.dp, top = 28.dp, end = 10.dp, bottom = 18.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    book.title,
-                    color = palette.second,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = LoraFontFamily,
-                    fontSize = 14.sp,
-                    lineHeight = 17.sp,
-                    maxLines = 5,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Spacer(Modifier.weight(1f))
-                Icon(
-                    Icons.Rounded.AutoStories,
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp),
-                    tint = palette.second.copy(alpha = 0.78f),
-                )
-                book.author?.let {
-                    Spacer(Modifier.height(5.dp))
+                    modifier = Modifier.fillMaxSize().padding(start = 14.dp, top = 28.dp, end = 10.dp, bottom = 18.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
                     Text(
-                        it,
-                        fontSize = 9.sp,
-                        lineHeight = 11.sp,
-                        color = palette.second.copy(alpha = 0.82f),
-                        maxLines = 2,
+                        book.title,
+                        color = palette.second,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = LoraFontFamily,
+                        fontSize = 14.sp,
+                        lineHeight = 17.sp,
+                        maxLines = 5,
                         overflow = TextOverflow.Ellipsis,
                     )
-                }
-                Spacer(Modifier.height(9.dp))
-                LinearProgressIndicator(
-                    progress = { book.progress },
-                    modifier = Modifier.fillMaxWidth().height(5.dp),
-                    color = palette.second,
-                    trackColor = palette.second.copy(alpha = 0.2f),
-                )
-                Spacer(Modifier.height(3.dp))
-                Text(
-                    stringResource(R.string.cover_progress, (book.progress * 100).roundToInt()),
-                    fontSize = 9.sp,
-                    color = palette.second,
-                )
+                    Spacer(Modifier.weight(1f))
+                    Icon(
+                        Icons.Rounded.AutoStories,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                        tint = palette.second.copy(alpha = 0.78f),
+                    )
+                    book.author?.let {
+                        Spacer(Modifier.height(5.dp))
+                        Text(
+                            it,
+                            fontSize = 9.sp,
+                            lineHeight = 11.sp,
+                            color = palette.second.copy(alpha = 0.82f),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    Spacer(Modifier.height(9.dp))
+                    LinearProgressIndicator(
+                        progress = { book.progress },
+                        modifier = Modifier.fillMaxWidth().height(5.dp),
+                        color = palette.second,
+                        trackColor = palette.second.copy(alpha = 0.2f),
+                    )
+                    Spacer(Modifier.height(3.dp))
+                    Text(
+                        stringResource(R.string.cover_progress, (book.progress * 100).roundToInt()),
+                        fontSize = 9.sp,
+                        color = palette.second,
+                    )
                 }
             }
             IconButton(
@@ -1113,18 +1162,20 @@ private fun BookCover(
                 )
             }
             if (book.isCompleted) {
-                val completedDescription = stringResource(
-                    R.string.completed_book_description,
-                    book.title,
-                )
+                val completedDescription =
+                    stringResource(
+                        R.string.completed_book_description,
+                        book.title,
+                    )
                 Surface(
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(7.dp)
-                        .size(30.dp)
-                        .semantics {
-                            contentDescription = completedDescription
-                        },
+                    modifier =
+                        Modifier
+                            .align(Alignment.TopStart)
+                            .padding(7.dp)
+                            .size(30.dp)
+                            .semantics {
+                                contentDescription = completedDescription
+                            },
                     shape = CircleShape,
                     color = Color(0xFF2E7D52),
                     shadowElevation = 4.dp,
@@ -1142,52 +1193,65 @@ private fun BookCover(
 }
 
 private fun bookCoverPalette(title: String): Pair<Color, Color> {
-    val palettes = listOf(
-        Color(0xFF174C5B) to Color(0xFFF6E8C8),
-        Color(0xFF7A2731) to Color(0xFFFFE9C6),
-        Color(0xFFE8D8AA) to Color(0xFF3C3528),
-        Color(0xFF26355E) to Color(0xFFF4D06F),
-        Color(0xFF4D6641) to Color(0xFFF4E7C5),
-        Color(0xFF6B4B77) to Color(0xFFFFE9D6),
-    )
+    val palettes =
+        listOf(
+            Color(0xFF174C5B) to Color(0xFFF6E8C8),
+            Color(0xFF7A2731) to Color(0xFFFFE9C6),
+            Color(0xFFE8D8AA) to Color(0xFF3C3528),
+            Color(0xFF26355E) to Color(0xFFF4D06F),
+            Color(0xFF4D6641) to Color(0xFFF4E7C5),
+            Color(0xFF6B4B77) to Color(0xFFFFE9D6),
+        )
     return palettes[(title.hashCode() and Int.MAX_VALUE) % palettes.size]
 }
 
-private fun Modifier.woodLibraryBackground(): Modifier = drawBehind {
-    drawRect(
-        brush = Brush.verticalGradient(
-            listOf(Color(0xFFD98B32), Color(0xFFB56521), Color(0xFFD18A35)),
-        ),
-    )
-    val grain = 28.dp.toPx()
-    var x = 8.dp.toPx()
-    while (x < size.width) {
-        drawLine(
-            color = Color(0xFF6F3513).copy(alpha = 0.16f),
-            start = androidx.compose.ui.geometry.Offset(x, 0f),
-            end = androidx.compose.ui.geometry.Offset(x + 8.dp.toPx(), size.height),
-            strokeWidth = 1.dp.toPx(),
+private fun Modifier.woodLibraryBackground(): Modifier =
+    drawBehind {
+        drawRect(
+            brush =
+                Brush.verticalGradient(
+                    listOf(Color(0xFFD98B32), Color(0xFFB56521), Color(0xFFD18A35)),
+                ),
         )
-        x += grain
+        val grain = 28.dp.toPx()
+        var x = 8.dp.toPx()
+        while (x < size.width) {
+            drawLine(
+                color = Color(0xFF6F3513).copy(alpha = 0.16f),
+                start =
+                    androidx.compose.ui.geometry
+                        .Offset(x, 0f),
+                end =
+                    androidx.compose.ui.geometry
+                        .Offset(x + 8.dp.toPx(), size.height),
+                strokeWidth = 1.dp.toPx(),
+            )
+            x += grain
+        }
     }
-}
 
-private fun Modifier.woodShelfPanel(): Modifier = drawBehind {
-    drawRect(
-        brush = Brush.verticalGradient(
-            listOf(Color(0xFFB96825), Color(0xFFD98A33), Color(0xFFAA591D)),
-        ),
-    )
-    repeat(6) { index ->
-        val y = size.height * (index + 1) / 7f
-        drawLine(
-            color = Color(0xFF6E3513).copy(alpha = 0.14f),
-            start = androidx.compose.ui.geometry.Offset(0f, y),
-            end = androidx.compose.ui.geometry.Offset(size.width, y + 5.dp.toPx()),
-            strokeWidth = 1.dp.toPx(),
+private fun Modifier.woodShelfPanel(): Modifier =
+    drawBehind {
+        drawRect(
+            brush =
+                Brush.verticalGradient(
+                    listOf(Color(0xFFB96825), Color(0xFFD98A33), Color(0xFFAA591D)),
+                ),
         )
+        repeat(6) { index ->
+            val y = size.height * (index + 1) / 7f
+            drawLine(
+                color = Color(0xFF6E3513).copy(alpha = 0.14f),
+                start =
+                    androidx.compose.ui.geometry
+                        .Offset(0f, y),
+                end =
+                    androidx.compose.ui.geometry
+                        .Offset(size.width, y + 5.dp.toPx()),
+                strokeWidth = 1.dp.toPx(),
+            )
+        }
     }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1305,9 +1369,10 @@ private fun ReaderScreenContent(
     var ambientAudioPlaying by remember(state.document.summary.id) { mutableStateOf(false) }
     DisposableEffect(ambientAudioController, lifecycleOwner) {
         ambientAudioController.onPlaybackChanged = { ambientAudioPlaying = it }
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_STOP) ambientAudioController.pause()
-        }
+        val observer =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_STOP) ambientAudioController.pause()
+            }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
@@ -1342,36 +1407,41 @@ private fun ReaderScreenContent(
     var narratorBlockIndex by remember(state.document.summary.id) {
         mutableIntStateOf(currentBlock?.index ?: -1)
     }
-    val narratorTextStyle = MaterialTheme.typography.headlineSmall.copy(
-        fontFamily = readerFontFamily(state.settings.fontStyle),
-        fontSize = state.settings.fontSizeSp.sp,
-        lineHeight = (state.settings.fontSizeSp * NARRATOR_LINE_HEIGHT_MULTIPLIER).sp,
-    )
-    val narratorTextWidthPixels = with(density) {
-        (configuration.screenWidthDp.dp - NARRATOR_HORIZONTAL_RESERVED_DP.dp)
-            .coerceAtLeast(NARRATOR_MINIMUM_TEXT_WIDTH_DP.dp)
-            .roundToPx()
-    }
-    val narratorTextHeightPixels = with(density) {
-        (configuration.screenHeightDp.dp - NARRATOR_VERTICAL_RESERVED_DP.dp)
-            .coerceAtLeast(NARRATOR_MINIMUM_TEXT_HEIGHT_DP.dp)
-            .roundToPx()
-    }
-    val narratorPages = remember(
-        currentBlock?.index,
-        currentBlock?.text,
-        narratorTextStyle,
-        narratorTextWidthPixels,
-        narratorTextHeightPixels,
-    ) {
-        NarratorPagination.paginate(currentBlock?.text.orEmpty()) { candidate ->
-            narratorTextMeasurer.measure(
-                text = AnnotatedString(candidate),
-                style = narratorTextStyle,
-                constraints = Constraints(maxWidth = narratorTextWidthPixels),
-            ).size.height <= narratorTextHeightPixels
+    val narratorTextStyle =
+        MaterialTheme.typography.headlineSmall.copy(
+            fontFamily = readerFontFamily(state.settings.fontStyle),
+            fontSize = state.settings.fontSizeSp.sp,
+            lineHeight = (state.settings.fontSizeSp * NARRATOR_LINE_HEIGHT_MULTIPLIER).sp,
+        )
+    val narratorTextWidthPixels =
+        with(density) {
+            (configuration.screenWidthDp.dp - NARRATOR_HORIZONTAL_RESERVED_DP.dp)
+                .coerceAtLeast(NARRATOR_MINIMUM_TEXT_WIDTH_DP.dp)
+                .roundToPx()
         }
-    }
+    val narratorTextHeightPixels =
+        with(density) {
+            (configuration.screenHeightDp.dp - NARRATOR_VERTICAL_RESERVED_DP.dp)
+                .coerceAtLeast(NARRATOR_MINIMUM_TEXT_HEIGHT_DP.dp)
+                .roundToPx()
+        }
+    val narratorPages =
+        remember(
+            currentBlock?.index,
+            currentBlock?.text,
+            narratorTextStyle,
+            narratorTextWidthPixels,
+            narratorTextHeightPixels,
+        ) {
+            NarratorPagination.paginate(currentBlock?.text.orEmpty()) { candidate ->
+                narratorTextMeasurer
+                    .measure(
+                        text = AnnotatedString(candidate),
+                        style = narratorTextStyle,
+                        constraints = Constraints(maxWidth = narratorTextWidthPixels),
+                    ).size.height <= narratorTextHeightPixels
+            }
+        }
 
     fun navigateBlock(delta: Int) {
         val targetIndex = state.currentBlockIndex + delta
@@ -1416,12 +1486,13 @@ private fun ReaderScreenContent(
         if (!state.focusEnabled && !state.quotePreview) return@LaunchedEffect
         val markerCenterInWindowY = activeBlockCenterInWindowY ?: return@LaunchedEffect
         val layoutInfo = listState.layoutInfo
-        val targetCenterInListY = FocusNavigation.targetCenterInList(
-            screenHeightPixels = readerView.height,
-            listTopInWindowPixels = listTopInWindow,
-            viewportStartPixels = layoutInfo.viewportStartOffset,
-            viewportEndPixels = layoutInfo.viewportEndOffset,
-        )
+        val targetCenterInListY =
+            FocusNavigation.targetCenterInList(
+                screenHeightPixels = readerView.height,
+                listTopInWindowPixels = listTopInWindow,
+                viewportStartPixels = layoutInfo.viewportStartOffset,
+                viewportEndPixels = layoutInfo.viewportEndOffset,
+            )
         val targetCenterInWindowY = listTopInWindow + targetCenterInListY
         val distanceToCenter = markerCenterInWindowY - targetCenterInWindowY
         if (kotlin.math.abs(distanceToCenter) > 1f) {
@@ -1452,122 +1523,132 @@ private fun ReaderScreenContent(
 
     Scaffold(
         topBar = {
-            if (!state.focusEnabled) Column {
-                TopAppBar(
-                    title = {
-                        Column {
-                            Text(state.document.summary.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text(
-                                when {
-                                    state.quotePreview -> stringResource(R.string.quote_preview)
-                                    state.focusEnabled -> stringResource(R.string.focus_mode)
-                                    else -> stringResource(R.string.normal_quote_hint)
-                                },
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back)) }
-                    },
-                    actions = {
-                        if (state.document.originalFilePath != null) {
-                            TextButton(onClick = onShowOriginalPdf) {
-                                Text(stringResource(R.string.pdf_original_page))
+            if (!state.focusEnabled) {
+                Column {
+                    TopAppBar(
+                        title = {
+                            Column {
+                                Text(state.document.summary.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(
+                                    when {
+                                        state.quotePreview -> stringResource(R.string.quote_preview)
+                                        state.focusEnabled -> stringResource(R.string.focus_mode)
+                                        else -> stringResource(R.string.normal_quote_hint)
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
                             }
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                )
-                LinearProgressIndicator(progress = { state.progress }, modifier = Modifier.fillMaxWidth())
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back)) }
+                        },
+                        actions = {
+                            if (state.document.originalFilePath != null) {
+                                TextButton(onClick = onShowOriginalPdf) {
+                                    Text(stringResource(R.string.pdf_original_page))
+                                }
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+                    )
+                    LinearProgressIndicator(progress = { state.progress }, modifier = Modifier.fillMaxWidth())
+                }
             }
         },
         bottomBar = {
-            if (!state.focusEnabled || state.settings.readerControlsExpanded) ReaderControls(
-                state = state,
-                onToggleFocus = onToggleFocus,
-                onMoveBlock = ::navigateFocus,
-                onPageTheme = onPageTheme,
-                onFontStyle = onFontStyle,
-                onFontSize = onFontSize,
-                onFocusDimming = onFocusDimming,
-                onShowFocusMascot = onShowFocusMascot,
-                onFocusPresentation = onFocusPresentation,
-                onNarratorAvatar = onNarratorAvatar,
-                onImportCustomAvatar = onImportCustomAvatar,
-                onDeleteCustomAvatar = onDeleteCustomAvatar,
-                onReaderControlsExpanded = onReaderControlsExpanded,
-                onAmbientIntensity = onAmbientIntensity,
-                onAmbientAudioEnabled = onAmbientAudioEnabled,
-                onAmbientSoundscape = onAmbientSoundscape,
-                onAmbientAudioVolume = onAmbientAudioVolume,
-            )
+            if (!state.focusEnabled || state.settings.readerControlsExpanded) {
+                ReaderControls(
+                    state = state,
+                    onToggleFocus = onToggleFocus,
+                    onMoveBlock = ::navigateFocus,
+                    onPageTheme = onPageTheme,
+                    onFontStyle = onFontStyle,
+                    onFontSize = onFontSize,
+                    onFocusDimming = onFocusDimming,
+                    onShowFocusMascot = onShowFocusMascot,
+                    onFocusPresentation = onFocusPresentation,
+                    onNarratorAvatar = onNarratorAvatar,
+                    onImportCustomAvatar = onImportCustomAvatar,
+                    onDeleteCustomAvatar = onDeleteCustomAvatar,
+                    onReaderControlsExpanded = onReaderControlsExpanded,
+                    onAmbientIntensity = onAmbientIntensity,
+                    onAmbientAudioEnabled = onAmbientAudioEnabled,
+                    onAmbientSoundscape = onAmbientSoundscape,
+                    onAmbientAudioVolume = onAmbientAudioVolume,
+                )
+            }
         },
     ) { padding ->
         BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(padding)) {
-            val verticalContentPadding = if (state.focusEnabled) {
-                (maxHeight / 2 - 24.dp).coerceAtLeast(24.dp)
-            } else {
-                24.dp
-            }
+            val verticalContentPadding =
+                if (state.focusEnabled) {
+                    (maxHeight / 2 - 24.dp).coerceAtLeast(24.dp)
+                } else {
+                    24.dp
+                }
             LazyColumn(
                 state = listState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .onGloballyPositioned { coordinates ->
-                        listTopInWindow = coordinates.positionInWindow().y
-                    }
-                    .pointerInput(
-                        state.focusEnabled,
-                        state.currentBlockIndex,
-                        state.plan.blocks.size,
-                        state.settings.focusPresentation,
-                        narratorPageIndex,
-                        narratorPages.size,
-                    ) {
-                        if (!state.focusEnabled) return@pointerInput
-                        var accumulatedDragY = 0f
-                        detectVerticalDragGestures(
-                            onDragStart = { accumulatedDragY = 0f },
-                            onVerticalDrag = { change, dragAmount ->
-                                change.consume()
-                                accumulatedDragY += dragAmount
-                            },
-                            onDragEnd = {
-                                val threshold = 48.dp.toPx()
-                                val delta = FocusNavigation.blockDelta(accumulatedDragY, threshold)
-                                val targetIndex = state.currentBlockIndex + delta
-                                val completesBook = delta > 0 &&
-                                    state.currentBlockIndex == state.plan.blocks.lastIndex
-                                val hasNarratorPage = state.settings.focusPresentation ==
-                                    FocusPresentation.OCTI_NARRATOR &&
-                                    narratorPageIndex + delta in narratorPages.indices
-                                val canNavigate = hasNarratorPage ||
-                                    targetIndex in state.plan.blocks.indices ||
-                                    completesBook
-                                if (delta != 0 && canNavigate) {
-                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    if (state.settings.focusPresentation == FocusPresentation.OCTI_NARRATOR) {
-                                        onNarratorGestureLearned()
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .onGloballyPositioned { coordinates ->
+                            listTopInWindow = coordinates.positionInWindow().y
+                        }.pointerInput(
+                            state.focusEnabled,
+                            state.currentBlockIndex,
+                            state.plan.blocks.size,
+                            state.settings.focusPresentation,
+                            narratorPageIndex,
+                            narratorPages.size,
+                        ) {
+                            if (!state.focusEnabled) return@pointerInput
+                            var accumulatedDragY = 0f
+                            detectVerticalDragGestures(
+                                onDragStart = { accumulatedDragY = 0f },
+                                onVerticalDrag = { change, dragAmount ->
+                                    change.consume()
+                                    accumulatedDragY += dragAmount
+                                },
+                                onDragEnd = {
+                                    val threshold = 48.dp.toPx()
+                                    val delta = FocusNavigation.blockDelta(accumulatedDragY, threshold)
+                                    val targetIndex = state.currentBlockIndex + delta
+                                    val completesBook =
+                                        delta > 0 &&
+                                            state.currentBlockIndex == state.plan.blocks.lastIndex
+                                    val hasNarratorPage =
+                                        state.settings.focusPresentation ==
+                                            FocusPresentation.OCTI_NARRATOR &&
+                                            narratorPageIndex + delta in narratorPages.indices
+                                    val canNavigate =
+                                        hasNarratorPage ||
+                                            targetIndex in state.plan.blocks.indices ||
+                                            completesBook
+                                    if (delta != 0 && canNavigate) {
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        if (state.settings.focusPresentation == FocusPresentation.OCTI_NARRATOR) {
+                                            onNarratorGestureLearned()
+                                        }
+                                        navigateFocus(delta)
                                     }
-                                    navigateFocus(delta)
-                                }
-                            },
-                        )
-                    },
+                                },
+                            )
+                        },
                 userScrollEnabled = !state.focusEnabled,
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                    horizontal = 24.dp,
-                    vertical = verticalContentPadding,
-                ),
+                contentPadding =
+                    androidx.compose.foundation.layout.PaddingValues(
+                        horizontal = 24.dp,
+                        vertical = verticalContentPadding,
+                    ),
                 verticalArrangement = Arrangement.spacedBy(18.dp),
             ) {
                 items(state.plan.paragraphs, key = ReadingParagraph::startCharacterOffset) { paragraph ->
-                    val activeBlock = currentBlock?.takeIf {
-                        (state.focusEnabled || state.quotePreview) &&
-                            it.paragraphIndex == paragraph.index
-                    }
+                    val activeBlock =
+                        currentBlock?.takeIf {
+                            (state.focusEnabled || state.quotePreview) &&
+                                it.paragraphIndex == paragraph.index
+                        }
                     ReaderParagraph(
                         paragraph = paragraph,
                         activeBlock = activeBlock,
@@ -1575,9 +1656,12 @@ private fun ReaderScreenContent(
                         fontSizeSp = state.settings.fontSizeSp,
                         focusEnabled = state.focusEnabled,
                         focusDimmingPercent = state.settings.focusDimmingPercent,
-                        onActiveBlockCenter = if (activeBlock == null) null else {
-                            { centerY -> activeBlockCenterInWindowY = centerY }
-                        },
+                        onActiveBlockCenter =
+                            if (activeBlock == null) {
+                                null
+                            } else {
+                                { centerY -> activeBlockCenterInWindowY = centerY }
+                            },
                         onSaveQuote = onSaveQuote,
                         quoteStartCharacterOffset = state.previewQuoteStartOffset,
                         quoteEndCharacterOffset = state.previewQuoteEndOffset,
@@ -1591,28 +1675,32 @@ private fun ReaderScreenContent(
                 state.settings.focusPresentation == FocusPresentation.OCTI_NARRATOR &&
                 currentBlock != null
             ) {
-                val currentChapter = state.document.chapters
-                    .lastOrNull { it.startCharacterOffset <= currentBlock.startCharacterOffset }
+                val currentChapter =
+                    state.document.chapters
+                        .lastOrNull { it.startCharacterOffset <= currentBlock.startCharacterOffset }
                 val chapterStart = currentChapter?.startCharacterOffset ?: 0
-                val nextChapterStart = state.document.chapters
-                    .firstOrNull { it.startCharacterOffset > chapterStart }
-                    ?.startCharacterOffset
-                    ?: state.document.text.length
+                val nextChapterStart =
+                    state.document.chapters
+                        .firstOrNull { it.startCharacterOffset > chapterStart }
+                        ?.startCharacterOffset
+                        ?: state.document.text.length
                 val safeChapterStart = chapterStart.coerceIn(0, state.document.text.length)
                 val safeChapterEnd = nextChapterStart.coerceIn(safeChapterStart, state.document.text.length)
-                val ambience = remember(
-                    state.document.summary.id,
-                    currentChapter?.startCharacterOffset,
-                ) {
-                    ReadingAmbienceSelector.select(
-                        title = state.document.summary.title,
-                        chapterTitle = currentChapter?.title,
-                        chapterSample = state.document.text.substring(
-                            safeChapterStart,
-                            safeChapterEnd,
-                        ),
-                    )
-                }
+                val ambience =
+                    remember(
+                        state.document.summary.id,
+                        currentChapter?.startCharacterOffset,
+                    ) {
+                        ReadingAmbienceSelector.select(
+                            title = state.document.summary.title,
+                            chapterTitle = currentChapter?.title,
+                            chapterSample =
+                                state.document.text.substring(
+                                    safeChapterStart,
+                                    safeChapterEnd,
+                                ),
+                        )
+                    }
                 OctiNarratorOverlay(
                     text = narratorPages.getOrElse(narratorPageIndex) { narratorPages.first() },
                     blockIndex = currentBlock.index,
@@ -1653,15 +1741,15 @@ private fun ReaderScreenContent(
                             )
                         }
                     },
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .navigationBarsPadding()
-                        .padding(12.dp),
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomStart)
+                            .navigationBarsPadding()
+                            .padding(12.dp),
                 )
             }
         }
     }
-
 }
 
 @Composable
@@ -1680,11 +1768,12 @@ private fun ReaderParagraph(
     onSaveSelectedQuote: (String, Int, Int) -> Unit,
 ) {
     val paragraphEmphasis = readingParagraphEmphasis(paragraph.text)
-    val paragraphSizeIncrease = when (paragraphEmphasis) {
-        ReadingParagraphEmphasis.TITLE -> READING_TITLE_SIZE_INCREASE_SP
-        ReadingParagraphEmphasis.SECTION -> READING_SECTION_SIZE_INCREASE_SP
-        ReadingParagraphEmphasis.BODY -> 0
-    }
+    val paragraphSizeIncrease =
+        when (paragraphEmphasis) {
+            ReadingParagraphEmphasis.TITLE -> READING_TITLE_SIZE_INCREASE_SP
+            ReadingParagraphEmphasis.SECTION -> READING_SECTION_SIZE_INCREASE_SP
+            ReadingParagraphEmphasis.BODY -> 0
+        }
     var textTopInWindow by remember { mutableFloatStateOf(0f) }
     var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
     var selectionAnchorStart by remember(paragraph.index) { mutableIntStateOf(0) }
@@ -1693,6 +1782,7 @@ private fun ReaderParagraph(
     var selectionEnd by remember(paragraph.index) { mutableStateOf<Int?>(null) }
     var magnifierCenter by remember(paragraph.index) { mutableStateOf(Offset.Unspecified) }
     val selectionHaptics = LocalHapticFeedback.current
+
     fun reportActiveBlockCenter() {
         val block = activeBlock ?: return
         val layoutResult = textLayoutResult ?: return
@@ -1700,135 +1790,156 @@ private fun ReaderParagraph(
         val offset = block.localStartOffset.coerceIn(0, paragraph.text.lastIndex)
         onActiveBlockCenter?.invoke(textTopInWindow + layoutResult.getBoundingBox(offset).center.y)
     }
-    val text = buildAnnotatedString {
-        append(paragraph.text)
-        val quoteStart = quoteStartCharacterOffset?.let {
-            (it - paragraph.startCharacterOffset).coerceIn(0, paragraph.text.length)
+    val text =
+        buildAnnotatedString {
+            append(paragraph.text)
+            val quoteStart =
+                quoteStartCharacterOffset?.let {
+                    (it - paragraph.startCharacterOffset).coerceIn(0, paragraph.text.length)
+                }
+            val quoteEnd =
+                quoteEndCharacterOffset?.let {
+                    (it - paragraph.startCharacterOffset).coerceIn(0, paragraph.text.length)
+                }
+            if (quoteStart != null && quoteEnd != null && quoteStart < quoteEnd) {
+                addStyle(
+                    SpanStyle(
+                        background = Color(0xFFFFD66B),
+                        color = Color(0xFF33230A),
+                        fontWeight = FontWeight.Bold,
+                    ),
+                    start = quoteStart,
+                    end = quoteEnd,
+                )
+            }
+            val selectedStart = selectionStart
+            val selectedEnd = selectionEnd
+            if (selectedStart != null && selectedEnd != null && selectedStart < selectedEnd) {
+                addStyle(
+                    SpanStyle(
+                        background = Color(0xFFFFD66B),
+                        color = Color(0xFF33230A),
+                        fontWeight = FontWeight.Bold,
+                    ),
+                    start = selectedStart,
+                    end = selectedEnd,
+                )
+            }
+            if (
+                activeBlock != null &&
+                quoteStartCharacterOffset == null &&
+                activeBlock.localStartOffset in 0..paragraph.text.length
+            ) {
+                addStyle(
+                    SpanStyle(
+                        background = MaterialTheme.colorScheme.primaryContainer,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        fontWeight = FontWeight.SemiBold,
+                    ),
+                    start = activeBlock.localStartOffset,
+                    end = activeBlock.localEndOffset.coerceAtMost(paragraph.text.length),
+                )
+            }
         }
-        val quoteEnd = quoteEndCharacterOffset?.let {
-            (it - paragraph.startCharacterOffset).coerceIn(0, paragraph.text.length)
-        }
-        if (quoteStart != null && quoteEnd != null && quoteStart < quoteEnd) {
-            addStyle(
-                SpanStyle(
-                    background = Color(0xFFFFD66B),
-                    color = Color(0xFF33230A),
-                    fontWeight = FontWeight.Bold,
-                ),
-                start = quoteStart,
-                end = quoteEnd,
-            )
-        }
-        val selectedStart = selectionStart
-        val selectedEnd = selectionEnd
-        if (selectedStart != null && selectedEnd != null && selectedStart < selectedEnd) {
-            addStyle(
-                SpanStyle(
-                    background = Color(0xFFFFD66B),
-                    color = Color(0xFF33230A),
-                    fontWeight = FontWeight.Bold,
-                ),
-                start = selectedStart,
-                end = selectedEnd,
-            )
-        }
-        if (
-            activeBlock != null &&
-            quoteStartCharacterOffset == null &&
-            activeBlock.localStartOffset in 0..paragraph.text.length
-        ) {
-            addStyle(
-                SpanStyle(
-                    background = MaterialTheme.colorScheme.primaryContainer,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    fontWeight = FontWeight.SemiBold,
-                ),
-                start = activeBlock.localStartOffset,
-                end = activeBlock.localEndOffset.coerceAtMost(paragraph.text.length),
-            )
-        }
-    }
     Text(
         text = text,
-        modifier = Modifier
-            .onGloballyPositioned { coordinates ->
-                textTopInWindow = coordinates.positionInWindow().y
-                reportActiveBlockCenter()
-            }
-            .then(
-                if (activeBlock == null) Modifier else Modifier.pointerInput(activeBlock.index) {
-                    detectTapGestures(onLongPress = { onSaveQuote() })
-                },
-            )
-            .then(
-                if (!enableQuoteSelection) Modifier else Modifier.pointerInput(paragraph.index) {
-                    detectDragGesturesAfterLongPress(
-                        onDragStart = { position ->
-                            val layout = textLayoutResult ?: return@detectDragGesturesAfterLongPress
-                            val offset = layout.getOffsetForPosition(position)
-                                .coerceIn(0, paragraph.text.length)
-                            val boundary = layout.getWordBoundary(offset)
-                            selectionAnchorStart = boundary.start
-                            selectionAnchorEnd = boundary.end
-                            selectionStart = boundary.start
-                            selectionEnd = boundary.end
-                            magnifierCenter = position
-                            selectionHaptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                        },
-                        onDrag = { change, _ ->
-                            val layout = textLayoutResult ?: return@detectDragGesturesAfterLongPress
-                            change.consume()
-                            val offset = layout.getOffsetForPosition(change.position)
-                                .coerceIn(0, paragraph.text.length)
-                            val boundary = layout.getWordBoundary(offset)
-                            selectionStart = minOf(selectionAnchorStart, boundary.start)
-                            selectionEnd = maxOf(selectionAnchorEnd, boundary.end)
-                            magnifierCenter = change.position
-                        },
-                        onDragEnd = {
-                            val start = selectionStart
-                            val end = selectionEnd
-                            if (start != null && end != null && start < end) {
-                                onSaveSelectedQuote(
-                                    paragraph.text.substring(start, end),
-                                    paragraph.startCharacterOffset + start,
-                                    paragraph.startCharacterOffset + end,
-                                )
-                            }
-                            selectionStart = null
-                            selectionEnd = null
-                            magnifierCenter = Offset.Unspecified
-                        },
-                        onDragCancel = {
-                            selectionStart = null
-                            selectionEnd = null
-                            magnifierCenter = Offset.Unspecified
-                        },
-                    )
-                },
-            )
-            .then(
-                if (!enableQuoteSelection) Modifier else Modifier.magnifier(
-                    sourceCenter = { magnifierCenter },
+        modifier =
+            Modifier
+                .onGloballyPositioned { coordinates ->
+                    textTopInWindow = coordinates.positionInWindow().y
+                    reportActiveBlockCenter()
+                }.then(
+                    if (activeBlock == null) {
+                        Modifier
+                    } else {
+                        Modifier.pointerInput(activeBlock.index) {
+                            detectTapGestures(onLongPress = { onSaveQuote() })
+                        }
+                    },
+                ).then(
+                    if (!enableQuoteSelection) {
+                        Modifier
+                    } else {
+                        Modifier.pointerInput(paragraph.index) {
+                            detectDragGesturesAfterLongPress(
+                                onDragStart = { position ->
+                                    val layout = textLayoutResult ?: return@detectDragGesturesAfterLongPress
+                                    val offset =
+                                        layout
+                                            .getOffsetForPosition(position)
+                                            .coerceIn(0, paragraph.text.length)
+                                    val boundary = layout.getWordBoundary(offset)
+                                    selectionAnchorStart = boundary.start
+                                    selectionAnchorEnd = boundary.end
+                                    selectionStart = boundary.start
+                                    selectionEnd = boundary.end
+                                    magnifierCenter = position
+                                    selectionHaptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                },
+                                onDrag = { change, _ ->
+                                    val layout = textLayoutResult ?: return@detectDragGesturesAfterLongPress
+                                    change.consume()
+                                    val offset =
+                                        layout
+                                            .getOffsetForPosition(change.position)
+                                            .coerceIn(0, paragraph.text.length)
+                                    val boundary = layout.getWordBoundary(offset)
+                                    selectionStart = minOf(selectionAnchorStart, boundary.start)
+                                    selectionEnd = maxOf(selectionAnchorEnd, boundary.end)
+                                    magnifierCenter = change.position
+                                },
+                                onDragEnd = {
+                                    val start = selectionStart
+                                    val end = selectionEnd
+                                    if (start != null && end != null && start < end) {
+                                        onSaveSelectedQuote(
+                                            paragraph.text.substring(start, end),
+                                            paragraph.startCharacterOffset + start,
+                                            paragraph.startCharacterOffset + end,
+                                        )
+                                    }
+                                    selectionStart = null
+                                    selectionEnd = null
+                                    magnifierCenter = Offset.Unspecified
+                                },
+                                onDragCancel = {
+                                    selectionStart = null
+                                    selectionEnd = null
+                                    magnifierCenter = Offset.Unspecified
+                                },
+                            )
+                        }
+                    },
+                ).then(
+                    if (!enableQuoteSelection) {
+                        Modifier
+                    } else {
+                        Modifier.magnifier(
+                            sourceCenter = { magnifierCenter },
+                        )
+                    },
                 ),
+        style =
+            MaterialTheme.typography.bodyLarge.copy(
+                color =
+                    MaterialTheme.colorScheme.onBackground.copy(
+                        alpha =
+                            if (focusEnabled) {
+                                1f - focusDimmingPercent.coerceIn(0, 80) / 100f
+                            } else {
+                                1f
+                            },
+                    ),
+                fontFamily = readerFontFamily(fontStyle),
+                fontSize = (fontSizeSp + paragraphSizeIncrease).sp,
+                fontWeight =
+                    when (paragraphEmphasis) {
+                        ReadingParagraphEmphasis.TITLE -> FontWeight.Bold
+                        ReadingParagraphEmphasis.SECTION -> FontWeight.SemiBold
+                        ReadingParagraphEmphasis.BODY -> FontWeight.Normal
+                    },
+                lineHeight = ((fontSizeSp + paragraphSizeIncrease) * 1.6f).sp,
             ),
-        style = MaterialTheme.typography.bodyLarge.copy(
-            color = MaterialTheme.colorScheme.onBackground.copy(
-                alpha = if (focusEnabled) {
-                    1f - focusDimmingPercent.coerceIn(0, 80) / 100f
-                } else {
-                    1f
-                },
-            ),
-            fontFamily = readerFontFamily(fontStyle),
-            fontSize = (fontSizeSp + paragraphSizeIncrease).sp,
-            fontWeight = when (paragraphEmphasis) {
-                ReadingParagraphEmphasis.TITLE -> FontWeight.Bold
-                ReadingParagraphEmphasis.SECTION -> FontWeight.SemiBold
-                ReadingParagraphEmphasis.BODY -> FontWeight.Normal
-            },
-            lineHeight = ((fontSizeSp + paragraphSizeIncrease) * 1.6f).sp,
-        ),
         onTextLayout = { layoutResult ->
             textLayoutResult = layoutResult
             reportActiveBlockCenter()
@@ -1920,11 +2031,12 @@ private fun OctiNarratorOverlay(
                 .fillMaxSize()
                 .background(
                     MaterialTheme.colorScheme.background.copy(
-                        alpha = when (ambientIntensity) {
-                            AmbientIntensity.OFF -> 0.92f
-                            AmbientIntensity.SUBTLE -> 0.62f
-                            AmbientIntensity.IMMERSIVE -> 0.38f
-                        },
+                        alpha =
+                            when (ambientIntensity) {
+                                AmbientIntensity.OFF -> 0.92f
+                                AmbientIntensity.SUBTLE -> 0.62f
+                                AmbientIntensity.IMMERSIVE -> 0.38f
+                            },
                     ),
                 ),
         )
@@ -1938,21 +2050,22 @@ private fun OctiNarratorOverlay(
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                 tonalElevation = 8.dp,
                 shadowElevation = 6.dp,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .pointerInput(blockIndex, continuationIndex) {
-                        detectTapGestures(onLongPress = { onSaveQuote() })
-                    }
-                    .graphicsLayer {
-                        rotationY = bubblePageTurn.value * 18f
-                        translationX = bubblePageTurn.value * size.width * 0.08f
-                        alpha = 1f - kotlin.math.abs(bubblePageTurn.value) * 0.18f
-                        transformOrigin = TransformOrigin(
-                            pivotFractionX = if (bubblePageTurn.value >= 0f) 0f else 1f,
-                            pivotFractionY = 0.5f,
-                        )
-                        cameraDistance = 18f * density
-                    },
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .pointerInput(blockIndex, continuationIndex) {
+                            detectTapGestures(onLongPress = { onSaveQuote() })
+                        }.graphicsLayer {
+                            rotationY = bubblePageTurn.value * 18f
+                            translationX = bubblePageTurn.value * size.width * 0.08f
+                            alpha = 1f - kotlin.math.abs(bubblePageTurn.value) * 0.18f
+                            transformOrigin =
+                                TransformOrigin(
+                                    pivotFractionX = if (bubblePageTurn.value >= 0f) 0f else 1f,
+                                    pivotFractionY = 0.5f,
+                                )
+                            cameraDistance = 18f * density
+                        },
             ) {
                 Column(modifier = Modifier.padding(horizontal = 28.dp, vertical = 26.dp)) {
                     Text(
@@ -1962,11 +2075,12 @@ private fun OctiNarratorOverlay(
                     if (continuationCount > 1) {
                         Spacer(Modifier.height(12.dp))
                         Text(
-                            text = stringResource(
-                                R.string.narrator_continuation,
-                                continuationIndex + 1,
-                                continuationCount,
-                            ),
+                            text =
+                                stringResource(
+                                    R.string.narrator_continuation,
+                                    continuationIndex + 1,
+                                    continuationCount,
+                                ),
                             modifier = Modifier.align(Alignment.End),
                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.64f),
                             style = MaterialTheme.typography.labelMedium,
@@ -1975,14 +2089,14 @@ private fun OctiNarratorOverlay(
                 }
             }
             Box(
-                modifier = Modifier
-                    .offset(y = (-1).dp)
-                    .size(22.dp)
-                    .graphicsLayer {
-                        rotationZ = 45f
-                        alpha = 1f - kotlin.math.abs(bubblePageTurn.value) * 0.18f
-                    }
-                    .background(MaterialTheme.colorScheme.primaryContainer),
+                modifier =
+                    Modifier
+                        .offset(y = (-1).dp)
+                        .size(22.dp)
+                        .graphicsLayer {
+                            rotationZ = 45f
+                            alpha = 1f - kotlin.math.abs(bubblePageTurn.value) * 0.18f
+                        }.background(MaterialTheme.colorScheme.primaryContainer),
             )
             FocusNarratorAvatar(
                 avatar = narratorAvatar,
@@ -2015,9 +2129,10 @@ private fun FocusFullscreenTapZones(
     val exitInteraction = remember { MutableInteractionSource() }
     val menuInteraction = remember { MutableInteractionSource() }
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .statusBarsPadding(),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .statusBarsPadding(),
     ) {
         Spacer(
             Modifier
@@ -2080,11 +2195,15 @@ private fun FocusNarratorAvatar(
 }
 
 @Composable
-private fun CustomCircularNarratorAvatar(path: String?, version: Int) {
+private fun CustomCircularNarratorAvatar(
+    path: String?,
+    version: Int,
+) {
     val bitmap by produceState<ImageBitmap?>(initialValue = null, path, version) {
-        value = withContext(Dispatchers.IO) {
-            path?.let { BitmapFactory.decodeFile(it)?.asImageBitmap() }
-        }
+        value =
+            withContext(Dispatchers.IO) {
+                path?.let { BitmapFactory.decodeFile(it)?.asImageBitmap() }
+            }
     }
     Surface(
         modifier = Modifier.size(168.dp),
@@ -2120,61 +2239,144 @@ private fun ReadingAmbientBackdrop(
     val (targetStart, targetEnd) = ambientPalette(ambience)
     val startColor by animateColorAsState(targetStart, tween(1_000), label = "ambientStart")
     val endColor by animateColorAsState(targetEnd, tween(1_000), label = "ambientEnd")
-    val opacity = when (intensity) {
-        AmbientIntensity.OFF -> 0f
-        AmbientIntensity.SUBTLE -> 0.58f
-        AmbientIntensity.IMMERSIVE -> 0.9f
-    }
+    val opacity =
+        when (intensity) {
+            AmbientIntensity.OFF -> 0f
+            AmbientIntensity.SUBTLE -> 0.58f
+            AmbientIntensity.IMMERSIVE -> 0.9f
+        }
     Canvas(modifier = modifier) {
         drawRect(
-            brush = Brush.linearGradient(
-                colors = listOf(startColor, endColor),
-                start = androidx.compose.ui.geometry.Offset.Zero,
-                end = androidx.compose.ui.geometry.Offset(size.width, size.height),
-            ),
+            brush =
+                Brush.linearGradient(
+                    colors = listOf(startColor, endColor),
+                    start = androidx.compose.ui.geometry.Offset.Zero,
+                    end =
+                        androidx.compose.ui.geometry
+                            .Offset(size.width, size.height),
+                ),
             alpha = opacity,
         )
         when (ambience) {
             ReadingAmbience.MYSTERY -> {
                 drawCircle(Color(0xFF111827), size.minDimension * 0.38f, center = center, alpha = opacity * 0.34f)
-                drawCircle(Color(0xFFD8E3EA), size.minDimension * 0.12f, center = center.copy(x = size.width * 0.78f, y = size.height * 0.18f), alpha = opacity * 0.38f)
+                drawCircle(
+                    Color(0xFFD8E3EA),
+                    size.minDimension * 0.12f,
+                    center =
+                        center.copy(
+                            x = size.width * 0.78f,
+                            y =
+                                size.height * 0.18f,
+                        ),
+                    alpha = opacity * 0.38f,
+                )
             }
             ReadingAmbience.FANTASY -> {
-                drawCircle(Color(0xFFFFD782), size.minDimension * 0.18f, center = center.copy(x = size.width * 0.22f, y = size.height * 0.2f), alpha = opacity * 0.34f)
-                drawCircle(Color(0xFFB8E0C2), size.minDimension * 0.3f, center = center.copy(x = size.width * 0.78f, y = size.height * 0.82f), alpha = opacity * 0.32f)
+                drawCircle(
+                    Color(0xFFFFD782),
+                    size.minDimension * 0.18f,
+                    center = center.copy(x = size.width * 0.22f, y = size.height * 0.2f),
+                    alpha =
+                        opacity * 0.34f,
+                )
+                drawCircle(
+                    Color(0xFFB8E0C2),
+                    size.minDimension * 0.3f,
+                    center = center.copy(x = size.width * 0.78f, y = size.height * 0.82f),
+                    alpha =
+                        opacity * 0.32f,
+                )
             }
-            ReadingAmbience.SCIENCE_FICTION -> repeat(6) { index ->
-                val y = size.height * (0.12f + index * 0.15f)
-                drawLine(Color(0xFF76E4F7), start = center.copy(x = 0f, y = y), end = center.copy(x = size.width, y = y - size.height * 0.08f), strokeWidth = 2f, alpha = opacity * 0.3f)
-            }
+            ReadingAmbience.SCIENCE_FICTION ->
+                repeat(6) { index ->
+                    val y = size.height * (0.12f + index * 0.15f)
+                    drawLine(
+                        Color(0xFF76E4F7),
+                        start = center.copy(x = 0f, y = y),
+                        end =
+                            center.copy(
+                                x = size.width,
+                                y =
+                                    y - size.height * 0.08f,
+                            ),
+                        strokeWidth = 2f,
+                        alpha = opacity * 0.3f,
+                    )
+                }
             ReadingAmbience.ROMANCE -> {
-                drawCircle(Color(0xFFFFCAD4), size.minDimension * 0.32f, center = center.copy(x = size.width * 0.2f, y = size.height * 0.25f), alpha = opacity * 0.42f)
-                drawCircle(Color(0xFFFFE5B4), size.minDimension * 0.28f, center = center.copy(x = size.width * 0.85f, y = size.height * 0.78f), alpha = opacity * 0.38f)
+                drawCircle(
+                    Color(0xFFFFCAD4),
+                    size.minDimension * 0.32f,
+                    center = center.copy(x = size.width * 0.2f, y = size.height * 0.25f),
+                    alpha =
+                        opacity * 0.42f,
+                )
+                drawCircle(
+                    Color(0xFFFFE5B4),
+                    size.minDimension * 0.28f,
+                    center =
+                        center.copy(
+                            x = size.width * 0.85f,
+                            y =
+                                size.height * 0.78f,
+                        ),
+                    alpha = opacity * 0.38f,
+                )
             }
             ReadingAmbience.NATURE -> {
-                drawCircle(Color(0xFFB7D7A8), size.minDimension * 0.42f, center = center.copy(x = size.width * 0.18f, y = size.height * 0.8f), alpha = opacity * 0.35f)
-                drawCircle(Color(0xFFB6D7E8), size.minDimension * 0.3f, center = center.copy(x = size.width * 0.82f, y = size.height * 0.18f), alpha = opacity * 0.32f)
+                drawCircle(
+                    Color(0xFFB7D7A8),
+                    size.minDimension * 0.42f,
+                    center = center.copy(x = size.width * 0.18f, y = size.height * 0.8f),
+                    alpha =
+                        opacity * 0.35f,
+                )
+                drawCircle(
+                    Color(0xFFB6D7E8),
+                    size.minDimension * 0.3f,
+                    center = center.copy(x = size.width * 0.82f, y = size.height * 0.18f),
+                    alpha =
+                        opacity * 0.32f,
+                )
             }
-            ReadingAmbience.KNOWLEDGE -> repeat(5) { index ->
-                val inset = size.minDimension * (0.08f + index * 0.07f)
-                drawCircle(Color(0xFFF4C95D), inset, center = center, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f), alpha = opacity * 0.25f)
-            }
+            ReadingAmbience.KNOWLEDGE ->
+                repeat(5) { index ->
+                    val inset = size.minDimension * (0.08f + index * 0.07f)
+                    drawCircle(
+                        Color(0xFFF4C95D),
+                        inset,
+                        center = center,
+                        style =
+                            androidx.compose.ui.graphics.drawscope
+                                .Stroke(width = 2f),
+                        alpha =
+                            opacity * 0.25f,
+                    )
+                }
             ReadingAmbience.NEUTRAL -> {
-                drawCircle(Color.White, size.minDimension * 0.34f, center = center.copy(x = size.width * 0.78f, y = size.height * 0.2f), alpha = opacity * 0.2f)
+                drawCircle(
+                    Color.White,
+                    size.minDimension * 0.34f,
+                    center = center.copy(x = size.width * 0.78f, y = size.height * 0.2f),
+                    alpha =
+                        opacity * 0.2f,
+                )
             }
         }
     }
 }
 
-private fun ambientPalette(ambience: ReadingAmbience): Pair<Color, Color> = when (ambience) {
-    ReadingAmbience.MYSTERY -> Color(0xFF172033) to Color(0xFF44556A)
-    ReadingAmbience.FANTASY -> Color(0xFF315C4A) to Color(0xFF7864A8)
-    ReadingAmbience.SCIENCE_FICTION -> Color(0xFF102A43) to Color(0xFF5C3D99)
-    ReadingAmbience.ROMANCE -> Color(0xFFC66B82) to Color(0xFFF0B67F)
-    ReadingAmbience.NATURE -> Color(0xFF3F704D) to Color(0xFF77A6B6)
-    ReadingAmbience.KNOWLEDGE -> Color(0xFF315B78) to Color(0xFFC49A45)
-    ReadingAmbience.NEUTRAL -> Color(0xFF6D7280) to Color(0xFF9B8065)
-}
+private fun ambientPalette(ambience: ReadingAmbience): Pair<Color, Color> =
+    when (ambience) {
+        ReadingAmbience.MYSTERY -> Color(0xFF172033) to Color(0xFF44556A)
+        ReadingAmbience.FANTASY -> Color(0xFF315C4A) to Color(0xFF7864A8)
+        ReadingAmbience.SCIENCE_FICTION -> Color(0xFF102A43) to Color(0xFF5C3D99)
+        ReadingAmbience.ROMANCE -> Color(0xFFC66B82) to Color(0xFFF0B67F)
+        ReadingAmbience.NATURE -> Color(0xFF3F704D) to Color(0xFF77A6B6)
+        ReadingAmbience.KNOWLEDGE -> Color(0xFF315B78) to Color(0xFFC49A45)
+        ReadingAmbience.NEUTRAL -> Color(0xFF6D7280) to Color(0xFF9B8065)
+    }
 
 @Composable
 private fun AmbientAudioControl(
@@ -2204,11 +2406,12 @@ private fun AmbientAudioControl(
             IconButton(onClick = onTogglePlayback, modifier = Modifier.size(44.dp)) {
                 Icon(
                     imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                    contentDescription = if (isPlaying) {
-                        stringResource(R.string.pause_ambient_music, soundscapeName)
-                    } else {
-                        stringResource(R.string.play_ambient_music, soundscapeName)
-                    },
+                    contentDescription =
+                        if (isPlaying) {
+                            stringResource(R.string.pause_ambient_music, soundscapeName)
+                        } else {
+                            stringResource(R.string.play_ambient_music, soundscapeName)
+                        },
                 )
             }
         }
@@ -2313,12 +2516,13 @@ private fun AmbientVolumeSettings(
 }
 
 @Composable
-private fun ambientSoundscapeName(soundscape: AmbientSoundscape): String = when (soundscape) {
-    AmbientSoundscape.CONCENTRATION -> stringResource(R.string.ambient_music_concentration)
-    AmbientSoundscape.RAIN -> stringResource(R.string.ambient_music_rain)
-    AmbientSoundscape.BROWN_NOISE -> stringResource(R.string.ambient_music_brown_noise)
-    AmbientSoundscape.QUIET_NIGHT -> stringResource(R.string.ambient_music_quiet_night)
-}
+private fun ambientSoundscapeName(soundscape: AmbientSoundscape): String =
+    when (soundscape) {
+        AmbientSoundscape.CONCENTRATION -> stringResource(R.string.ambient_music_concentration)
+        AmbientSoundscape.RAIN -> stringResource(R.string.ambient_music_rain)
+        AmbientSoundscape.BROWN_NOISE -> stringResource(R.string.ambient_music_brown_noise)
+        AmbientSoundscape.QUIET_NIGHT -> stringResource(R.string.ambient_music_quiet_night)
+    }
 
 @Composable
 private fun ReaderControls(
@@ -2340,9 +2544,10 @@ private fun ReaderControls(
     onAmbientSoundscape: (AmbientSoundscape) -> Unit,
     onAmbientAudioVolume: (Int) -> Unit,
 ) {
-    val customAvatarLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        uri?.let(onImportCustomAvatar)
-    }
+    val customAvatarLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            uri?.let(onImportCustomAvatar)
+        }
     var focusDimmingValue by remember(state.settings.focusDimmingPercent) {
         mutableFloatStateOf(state.settings.focusDimmingPercent.toFloat())
     }
@@ -2359,12 +2564,13 @@ private fun ReaderControls(
     val maxMenuHeight = LocalConfiguration.current.screenHeightDp.dp * 0.62f
     Surface(tonalElevation = 6.dp) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = maxMenuHeight)
-                .verticalScroll(rememberScrollState())
-                .navigationBarsPadding()
-                .padding(horizontal = 20.dp, vertical = 12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = maxMenuHeight)
+                    .verticalScroll(rememberScrollState())
+                    .navigationBarsPadding()
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
@@ -2406,10 +2612,11 @@ private fun ReaderControls(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 FocusPresentation.entries.forEach { presentation ->
-                    val label = when (presentation) {
-                        FocusPresentation.TEXT_MARKER -> stringResource(R.string.focus_presentation_marker)
-                        FocusPresentation.OCTI_NARRATOR -> stringResource(R.string.focus_presentation_narrator)
-                    }
+                    val label =
+                        when (presentation) {
+                            FocusPresentation.TEXT_MARKER -> stringResource(R.string.focus_presentation_marker)
+                            FocusPresentation.OCTI_NARRATOR -> stringResource(R.string.focus_presentation_narrator)
+                        }
                     FilterChip(
                         selected = state.settings.focusPresentation == presentation,
                         onClick = { onFocusPresentation(presentation) },
@@ -2437,27 +2644,28 @@ private fun ReaderControls(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
                                 avatarRow.forEach { avatar ->
-                                    val label = when (avatar) {
-                                        NarratorAvatar.OCTI -> stringResource(R.string.narrator_avatar_octi)
-                                        NarratorAvatar.LOVECRAFT_ILLUSTRATION ->
-                                            stringResource(R.string.narrator_avatar_lovecraft)
-                                        NarratorAvatar.SCHOPENHAUER_ILLUSTRATION ->
-                                            stringResource(R.string.narrator_avatar_schopenhauer)
-                                        NarratorAvatar.NIETZSCHE_ILLUSTRATION ->
-                                            stringResource(R.string.narrator_avatar_nietzsche)
-                                        NarratorAvatar.CAMUS_ILLUSTRATION ->
-                                            stringResource(R.string.narrator_avatar_camus)
-                                        NarratorAvatar.STRANGER_ILLUSTRATION ->
-                                            stringResource(R.string.narrator_avatar_stranger)
-                                        NarratorAvatar.LILA_ILLUSTRATION ->
-                                            stringResource(R.string.narrator_avatar_lila)
-                                        NarratorAvatar.ACHU_ILLUSTRATION ->
-                                            stringResource(R.string.narrator_avatar_achu)
-                                        NarratorAvatar.FRANK_N_FURTER_ILLUSTRATION ->
-                                            stringResource(R.string.narrator_avatar_frank_n_furter)
-                                        NarratorAvatar.CUSTOM_IMAGE ->
-                                            stringResource(R.string.narrator_avatar_custom)
-                                    }
+                                    val label =
+                                        when (avatar) {
+                                            NarratorAvatar.OCTI -> stringResource(R.string.narrator_avatar_octi)
+                                            NarratorAvatar.LOVECRAFT_ILLUSTRATION ->
+                                                stringResource(R.string.narrator_avatar_lovecraft)
+                                            NarratorAvatar.SCHOPENHAUER_ILLUSTRATION ->
+                                                stringResource(R.string.narrator_avatar_schopenhauer)
+                                            NarratorAvatar.NIETZSCHE_ILLUSTRATION ->
+                                                stringResource(R.string.narrator_avatar_nietzsche)
+                                            NarratorAvatar.CAMUS_ILLUSTRATION ->
+                                                stringResource(R.string.narrator_avatar_camus)
+                                            NarratorAvatar.STRANGER_ILLUSTRATION ->
+                                                stringResource(R.string.narrator_avatar_stranger)
+                                            NarratorAvatar.LILA_ILLUSTRATION ->
+                                                stringResource(R.string.narrator_avatar_lila)
+                                            NarratorAvatar.ACHU_ILLUSTRATION ->
+                                                stringResource(R.string.narrator_avatar_achu)
+                                            NarratorAvatar.FRANK_N_FURTER_ILLUSTRATION ->
+                                                stringResource(R.string.narrator_avatar_frank_n_furter)
+                                            NarratorAvatar.CUSTOM_IMAGE ->
+                                                stringResource(R.string.narrator_avatar_custom)
+                                        }
                                     FilterChip(
                                         selected = state.settings.narratorAvatar == avatar,
                                         onClick = {
@@ -2515,11 +2723,12 @@ private fun ReaderControls(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         AmbientIntensity.entries.forEach { intensity ->
-                            val label = when (intensity) {
-                                AmbientIntensity.OFF -> stringResource(R.string.reading_ambience_off)
-                                AmbientIntensity.SUBTLE -> stringResource(R.string.reading_ambience_subtle)
-                                AmbientIntensity.IMMERSIVE -> stringResource(R.string.reading_ambience_immersive)
-                            }
+                            val label =
+                                when (intensity) {
+                                    AmbientIntensity.OFF -> stringResource(R.string.reading_ambience_off)
+                                    AmbientIntensity.SUBTLE -> stringResource(R.string.reading_ambience_subtle)
+                                    AmbientIntensity.IMMERSIVE -> stringResource(R.string.reading_ambience_immersive)
+                                }
                             FilterChip(
                                 selected = state.settings.ambientIntensity == intensity,
                                 onClick = { onAmbientIntensity(intensity) },
@@ -2547,11 +2756,12 @@ private fun ReaderControls(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 PageTheme.entries.forEach { pageTheme ->
-                    val label = when (pageTheme) {
-                        PageTheme.LIGHT -> stringResource(R.string.page_theme_light)
-                        PageTheme.SEPIA -> stringResource(R.string.page_theme_sepia)
-                        PageTheme.DARK -> stringResource(R.string.page_theme_dark)
-                    }
+                    val label =
+                        when (pageTheme) {
+                            PageTheme.LIGHT -> stringResource(R.string.page_theme_light)
+                            PageTheme.SEPIA -> stringResource(R.string.page_theme_sepia)
+                            PageTheme.DARK -> stringResource(R.string.page_theme_dark)
+                        }
                     FilterChip(
                         selected = state.settings.pageTheme == pageTheme,
                         onClick = { onPageTheme(pageTheme) },
@@ -2667,11 +2877,12 @@ private fun FontSettings(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         ReaderFontStyle.entries.forEach { style ->
-            val label = when (style) {
-                ReaderFontStyle.SERIF -> stringResource(R.string.font_style_serif)
-                ReaderFontStyle.SANS_SERIF -> stringResource(R.string.font_style_sans_serif)
-                ReaderFontStyle.MONOSPACE -> stringResource(R.string.font_style_monospace)
-            }
+            val label =
+                when (style) {
+                    ReaderFontStyle.SERIF -> stringResource(R.string.font_style_serif)
+                    ReaderFontStyle.SANS_SERIF -> stringResource(R.string.font_style_sans_serif)
+                    ReaderFontStyle.MONOSPACE -> stringResource(R.string.font_style_monospace)
+                }
             FilterChip(
                 selected = fontStyle == style,
                 onClick = { onFontStyle(style) },
@@ -2724,11 +2935,12 @@ private fun FontSettings(
     }
 }
 
-private fun readerFontFamily(style: ReaderFontStyle): FontFamily = when (style) {
-    ReaderFontStyle.SERIF -> LoraFontFamily
-    ReaderFontStyle.SANS_SERIF -> RobotoFontFamily
-    ReaderFontStyle.MONOSPACE -> RobotoMonoFontFamily
-}
+private fun readerFontFamily(style: ReaderFontStyle): FontFamily =
+    when (style) {
+        ReaderFontStyle.SERIF -> LoraFontFamily
+        ReaderFontStyle.SANS_SERIF -> RobotoFontFamily
+        ReaderFontStyle.MONOSPACE -> RobotoMonoFontFamily
+    }
 
 private val LoraFontFamily = FontFamily(Font(R.font.lora))
 private val RobotoFontFamily = FontFamily(Font(R.font.roboto))
@@ -2743,11 +2955,12 @@ private fun CollapsedReaderMenuHandle(
     onExpand: () -> Unit,
 ) {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = if (focusEnabled && showMascot && !narratorMode) 116.dp else 52.dp)
-            .navigationBarsPadding()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = if (focusEnabled && showMascot && !narratorMode) 116.dp else 52.dp)
+                .navigationBarsPadding()
+                .padding(horizontal = 8.dp, vertical = 4.dp),
     ) {
         if (focusEnabled) {
             Surface(
@@ -2806,10 +3019,11 @@ private fun SessionResultScreen(
         topBar = {
             Surface(color = Color(0xFFF3D293), shadowElevation = 4.dp) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .statusBarsPadding()
-                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .statusBarsPadding()
+                            .padding(horizontal = 24.dp, vertical = 16.dp),
                 ) {
                     Text(
                         stringResource(R.string.library_brand),
@@ -2826,10 +3040,11 @@ private fun SessionResultScreen(
         bottomBar = {
             Surface(color = Color(0xFFF3D293), shadowElevation = 8.dp) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .padding(horizontal = 24.dp, vertical = 12.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .padding(horizontal = 24.dp, vertical = 12.dp),
                 ) {
                     if (restartAvailable) {
                         Button(
@@ -2851,16 +3066,18 @@ private fun SessionResultScreen(
         },
     ) { padding ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .woodLibraryBackground(),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                start = 18.dp,
-                top = 20.dp,
-                end = 18.dp,
-                bottom = 28.dp,
-            ),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .woodLibraryBackground(),
+            contentPadding =
+                androidx.compose.foundation.layout.PaddingValues(
+                    start = 18.dp,
+                    top = 20.dp,
+                    end = 18.dp,
+                    bottom = 28.dp,
+                ),
         ) {
             item {
                 Surface(
@@ -2954,7 +3171,10 @@ private fun SessionResultScreen(
 }
 
 @Composable
-private fun PreviousReadingCard(readingNumber: Int, reading: CompletedReading) {
+private fun PreviousReadingCard(
+    readingNumber: Int,
+    reading: CompletedReading,
+) {
     Surface(
         shape = RoundedCornerShape(18.dp),
         color = Color(0xFFF9E8C5),
@@ -2994,9 +3214,10 @@ private fun SessionBookCover(
 ) {
     val palette = bookCoverPalette(title)
     val coverBitmap by produceState<ImageBitmap?>(null, coverImagePath) {
-        value = withContext(Dispatchers.IO) {
-            coverImagePath?.let(BitmapFactory::decodeFile)?.asImageBitmap()
-        }
+        value =
+            withContext(Dispatchers.IO) {
+                coverImagePath?.let(BitmapFactory::decodeFile)?.asImageBitmap()
+            }
     }
     Surface(
         modifier = modifier.shadow(6.dp, RoundedCornerShape(3.dp)),
@@ -3036,16 +3257,18 @@ private fun SessionBookCover(
             }
             LinearProgressIndicator(
                 progress = { progress.coerceIn(0f, 1f) },
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .height(5.dp),
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .height(5.dp),
                 color = if (coverBitmap == null) palette.second else MaterialTheme.colorScheme.primary,
-                trackColor = if (coverBitmap == null) {
-                    palette.second.copy(alpha = 0.2f)
-                } else {
-                    Color.Black.copy(alpha = 0.35f)
-                },
+                trackColor =
+                    if (coverBitmap == null) {
+                        palette.second.copy(alpha = 0.2f)
+                    } else {
+                        Color.Black.copy(alpha = 0.35f)
+                    },
             )
         }
     }
@@ -3065,7 +3288,11 @@ private fun SessionMetricPair(
 }
 
 @Composable
-private fun SessionMetricTile(label: String, value: String, modifier: Modifier = Modifier) {
+private fun SessionMetricTile(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+) {
     Surface(
         modifier = modifier.heightIn(min = 86.dp),
         shape = RoundedCornerShape(18.dp),
@@ -3113,6 +3340,9 @@ private fun formatDuration(millis: Long): String {
     val totalSeconds = millis / 1_000
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
-    return if (minutes > 0) stringResource(R.string.minutes_short, minutes, seconds)
-    else stringResource(R.string.seconds_short, seconds)
+    return if (minutes > 0) {
+        stringResource(R.string.minutes_short, minutes, seconds)
+    } else {
+        stringResource(R.string.seconds_short, seconds)
+    }
 }

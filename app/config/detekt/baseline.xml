@@ -2,8 +2,11 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
+    <ID>ComplexCondition:OctomindApp.kt:normalized.startsWith("capítulo ") || normalized.startsWith("parte ") || normalized.startsWith("sección ") || normalized in setOf("prólogo", "introducción", "epílogo", "referencias")</ID>
     <ID>ComplexCondition:ReadingPlan.kt:ReadingPlanBuilder$dashRole == null &amp;&amp; pauseKind != PauseKind.NONE &amp;&amp; (readingMode != ReadingMode.SENTENCE || pauseKind == PauseKind.STRONG) &amp;&amp; !isNonTerminalAbbreviation(words, index)</ID>
     <ID>ComplexCondition:ReadingPlan.kt:ReadingPlanBuilder$terminalCharacter == '.' || terminalCharacter == '!' || terminalCharacter == '?' || terminalCharacter == '…'</ID>
+    <ID>CyclomaticComplexMethod:BookParser.kt:internal fun normalizePdfPageText: String</ID>
+    <ID>CyclomaticComplexMethod:LocalBookRepository.kt:BookRecord$fun toJson</ID>
     <ID>CyclomaticComplexMethod:LocalBookRepository.kt:BookRecord.Companion$fun fromJson: BookRecord</ID>
     <ID>CyclomaticComplexMethod:OctomindApp.kt:@Composable private fun ReaderControls</ID>
     <ID>CyclomaticComplexMethod:OctomindApp.kt:@Composable private fun ReaderParagraph</ID>
@@ -44,25 +47,37 @@
     <ID>FunctionNaming:OctomindApp.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable private fun QuotesScreen</ID>
     <ID>FunctionNaming:OctomindApp.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable private fun ReaderScreen</ID>
     <ID>FunctionNaming:OctomindApp.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable private fun ReaderScreenContent</ID>
+    <ID>FunctionNaming:PdfOriginalReader.kt:@Composable private fun PdfPage</ID>
+    <ID>FunctionNaming:PdfOriginalReader.kt:@Composable private fun PdfRenderError</ID>
+    <ID>FunctionNaming:PdfOriginalReader.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable internal fun PdfOriginalReader</ID>
     <ID>FunctionNaming:Theme.kt:@Composable fun OctomindTheme</ID>
     <ID>FunctionNaming:Theme.kt:@Composable fun ReaderPageTheme</ID>
     <ID>LargeClass:OctomindViewModel.kt:OctomindViewModel : AndroidViewModel</ID>
     <ID>LongMethod:BookParser.kt:EpubBookParser$override fun parse: ParsedBook</ID>
+    <ID>LongMethod:BookParser.kt:PdfBookParser$override fun parse: ParsedBook</ID>
+    <ID>LongMethod:LocalBookRepository.kt:BookRecord$fun toJson</ID>
     <ID>LongMethod:LocalBookRepository.kt:BookRecord.Companion$fun fromJson: BookRecord</ID>
+    <ID>LongMethod:LocalBookRepository.kt:LocalBookRepository$suspend fun importBook: BookSummary</ID>
     <ID>LongMethod:OctomindApp.kt:@Composable fun OctomindApp</ID>
     <ID>LongMethod:OctomindApp.kt:@Composable private fun BookCover</ID>
     <ID>LongMethod:OctomindApp.kt:@Composable private fun FontSettings</ID>
     <ID>LongMethod:OctomindApp.kt:@Composable private fun OctiNarratorOverlay</ID>
     <ID>LongMethod:OctomindApp.kt:@Composable private fun ReaderControls</ID>
     <ID>LongMethod:OctomindApp.kt:@Composable private fun ReaderParagraph</ID>
+    <ID>LongMethod:OctomindApp.kt:@Composable private fun ReadingAmbientBackdrop</ID>
+    <ID>LongMethod:OctomindApp.kt:@Composable private fun SessionBookCover</ID>
     <ID>LongMethod:OctomindApp.kt:@Composable private fun SessionResultScreen</ID>
     <ID>LongMethod:OctomindApp.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable private fun LibraryScreen</ID>
     <ID>LongMethod:OctomindApp.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable private fun QuotesScreen</ID>
     <ID>LongMethod:OctomindApp.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable private fun ReaderScreenContent</ID>
     <ID>LongMethod:OctomindApp.kt:private fun createNarratorQuoteCard: Uri</ID>
+    <ID>LongMethod:OctomindViewModel.kt:OctomindViewModel$fun openBook</ID>
+    <ID>LongMethod:PdfOriginalReader.kt:@Composable private fun PdfPage</ID>
+    <ID>LongMethod:PdfOriginalReader.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable internal fun PdfOriginalReader</ID>
     <ID>LongMethod:ReadingPlan.kt:ReadingPlanBuilder$fun build: ReadingPlan</ID>
     <ID>MagicNumber:AdaptiveReadingAdvisor.kt:AdaptiveReadingAdvisor$100</ID>
     <ID>MagicNumber:AdaptiveReadingAdvisor.kt:AdaptiveReadingAdvisor$700</ID>
+    <ID>MagicNumber:BookParser.kt:120</ID>
     <ID>MagicNumber:BookParser.kt:EpubBookParser$16</ID>
     <ID>MagicNumber:CustomAvatarRepository.kt:CustomAvatarRepository$100</ID>
     <ID>MagicNumber:CustomAvatarRepository.kt:CustomAvatarRepository$2_048</ID>
@@ -176,20 +191,14 @@
     <ID>MagicNumber:UserPreferences.kt:UserPreferences$8</ID>
     <ID>MagicNumber:UserPreferences.kt:UserPreferences$80</ID>
     <ID>MaxLineLength:BookParser.kt:EpubBookParser$.</ID>
+    <ID>MaxLineLength:BookParser.kt:PdfBookParser$val renderScale = (COVER_LONGEST_EDGE_PIXELS / longestEdge).coerceIn(MINIMUM_COVER_SCALE, MAXIMUM_COVER_SCALE)</ID>
     <ID>MaxLineLength:OctomindApp.kt:IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back)) }</ID>
     <ID>MaxLineLength:OctomindApp.kt:Text(stringResource(R.string.import_formats), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:OctomindApp.kt:drawCircle(Color(0xFFB6D7E8), size.minDimension * 0.3f, center = center.copy(x = size.width * 0.82f, y = size.height * 0.18f), alpha = opacity * 0.32f)</ID>
-    <ID>MaxLineLength:OctomindApp.kt:drawCircle(Color(0xFFB7D7A8), size.minDimension * 0.42f, center = center.copy(x = size.width * 0.18f, y = size.height * 0.8f), alpha = opacity * 0.35f)</ID>
-    <ID>MaxLineLength:OctomindApp.kt:drawCircle(Color(0xFFB8E0C2), size.minDimension * 0.3f, center = center.copy(x = size.width * 0.78f, y = size.height * 0.82f), alpha = opacity * 0.32f)</ID>
-    <ID>MaxLineLength:OctomindApp.kt:drawCircle(Color(0xFFD8E3EA), size.minDimension * 0.12f, center = center.copy(x = size.width * 0.78f, y = size.height * 0.18f), alpha = opacity * 0.38f)</ID>
-    <ID>MaxLineLength:OctomindApp.kt:drawCircle(Color(0xFFF4C95D), inset, center = center, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f), alpha = opacity * 0.25f)</ID>
-    <ID>MaxLineLength:OctomindApp.kt:drawCircle(Color(0xFFFFCAD4), size.minDimension * 0.32f, center = center.copy(x = size.width * 0.2f, y = size.height * 0.25f), alpha = opacity * 0.42f)</ID>
-    <ID>MaxLineLength:OctomindApp.kt:drawCircle(Color(0xFFFFD782), size.minDimension * 0.18f, center = center.copy(x = size.width * 0.22f, y = size.height * 0.2f), alpha = opacity * 0.34f)</ID>
-    <ID>MaxLineLength:OctomindApp.kt:drawCircle(Color(0xFFFFE5B4), size.minDimension * 0.28f, center = center.copy(x = size.width * 0.85f, y = size.height * 0.78f), alpha = opacity * 0.38f)</ID>
-    <ID>MaxLineLength:OctomindApp.kt:drawCircle(Color.White, size.minDimension * 0.34f, center = center.copy(x = size.width * 0.78f, y = size.height * 0.2f), alpha = opacity * 0.2f)</ID>
-    <ID>MaxLineLength:OctomindApp.kt:drawLine(Color(0xFF76E4F7), start = center.copy(x = 0f, y = y), end = center.copy(x = size.width, y = y - size.height * 0.08f), strokeWidth = 2f, alpha = opacity * 0.3f)</ID>
+    <ID>MaxLineLength:OctomindApp.kt:colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)</ID>
     <ID>ReturnCount:AdaptiveReadingAdvisor.kt:AdaptiveReadingAdvisor$fun suggestedWordsPerMinute: Int?</ID>
+    <ID>ReturnCount:LocalBookRepository.kt:LocalBookRepository$private fun refreshPdfNormalization: BookRecord</ID>
     <ID>ReturnCount:OctomindApp.kt:fun reportActiveBlockCenter</ID>
+    <ID>ReturnCount:OctomindApp.kt:private fun readingParagraphEmphasis: ReadingParagraphEmphasis</ID>
     <ID>ReturnCount:OctomindViewModel.kt:OctomindViewModel$fun moveBlock</ID>
     <ID>ReturnCount:OctomindViewModel.kt:OctomindViewModel$fun setVisibleParagraph</ID>
     <ID>ReturnCount:ReadingPlan.kt:ReadingPlan$fun blockIndexFor: Int</ID>

@@ -6,11 +6,11 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.octomind.booksreader.domain.PageTheme
-import com.octomind.booksreader.domain.FocusPresentation
 import com.octomind.booksreader.domain.AmbientIntensity
 import com.octomind.booksreader.domain.AmbientSoundscape
+import com.octomind.booksreader.domain.FocusPresentation
 import com.octomind.booksreader.domain.NarratorAvatar
+import com.octomind.booksreader.domain.PageTheme
 import com.octomind.booksreader.domain.ReaderFontStyle
 import com.octomind.booksreader.domain.ReaderProfile
 import com.octomind.booksreader.domain.ReaderSettings
@@ -52,20 +52,23 @@ class UserPreferences(
                         preferences[FOCUS_PRESENTATION],
                         FocusPresentation.OCTI_NARRATOR,
                     ),
-                narratorAvatar = enumPreference(
-                    preferences[NARRATOR_AVATAR],
-                    NarratorAvatar.OCTI,
-                ),
+                narratorAvatar =
+                    enumPreference(
+                        preferences[NARRATOR_AVATAR],
+                        NarratorAvatar.OCTI,
+                    ),
                 customNarratorAvatarVersion = preferences[CUSTOM_NARRATOR_AVATAR_VERSION] ?: 0,
-                ambientIntensity = enumPreference(
-                    preferences[AMBIENT_INTENSITY],
-                    AmbientIntensity.SUBTLE,
-                ),
+                ambientIntensity =
+                    enumPreference(
+                        preferences[AMBIENT_INTENSITY],
+                        AmbientIntensity.SUBTLE,
+                    ),
                 ambientAudioEnabled = preferences[AMBIENT_AUDIO_ENABLED] ?: false,
-                ambientSoundscape = enumPreference(
-                    preferences[AMBIENT_SOUNDSCAPE],
-                    AmbientSoundscape.CONCENTRATION,
-                ),
+                ambientSoundscape =
+                    enumPreference(
+                        preferences[AMBIENT_SOUNDSCAPE],
+                        AmbientSoundscape.CONCENTRATION,
+                    ),
                 ambientAudioVolumePercent =
                     (preferences[AMBIENT_AUDIO_VOLUME_PERCENT] ?: DEFAULT_AMBIENT_AUDIO_VOLUME_PERCENT)
                         .coerceIn(MINIMUM_AMBIENT_AUDIO_VOLUME_PERCENT, MAXIMUM_AMBIENT_AUDIO_VOLUME_PERCENT),
@@ -75,34 +78,39 @@ class UserPreferences(
             )
         }
 
-    val readerProfile: Flow<ReaderProfile> = context.userDataStore.data.map { preferences ->
-        ReaderProfile(
-            baselineWordsPerMinute = preferences[PROFILE_BASELINE_WPM] ?: 260,
-            calibrationSampleCount = preferences[PROFILE_SAMPLE_COUNT] ?: 0,
-            completedCalibrations = preferences[PROFILE_CALIBRATIONS] ?: 0,
-        )
-    }
+    val readerProfile: Flow<ReaderProfile> =
+        context.userDataStore.data.map { preferences ->
+            ReaderProfile(
+                baselineWordsPerMinute = preferences[PROFILE_BASELINE_WPM] ?: 260,
+                calibrationSampleCount = preferences[PROFILE_SAMPLE_COUNT] ?: 0,
+                completedCalibrations = preferences[PROFILE_CALIBRATIONS] ?: 0,
+            )
+        }
 
     suspend fun confirmAdult() {
         context.userDataStore.edit { it[ADULT_CONFIRMED] = true }
     }
 
-    suspend fun snapshot(): UserPreferencesSnapshot = UserPreferencesSnapshot(
-        adultConfirmed = adultConfirmed.first(),
-        readerSettings = readerSettings.first(),
-        readerProfile = readerProfile.first(),
-    )
+    suspend fun snapshot(): UserPreferencesSnapshot =
+        UserPreferencesSnapshot(
+            adultConfirmed = adultConfirmed.first(),
+            readerSettings = readerSettings.first(),
+            readerProfile = readerProfile.first(),
+        )
 
     suspend fun restore(snapshot: UserPreferencesSnapshot) {
         updateReaderSettings(snapshot.readerSettings)
         context.userDataStore.edit { preferences ->
             preferences[ADULT_CONFIRMED] = snapshot.adultConfirmed
-            preferences[PROFILE_BASELINE_WPM] = snapshot.readerProfile.baselineWordsPerMinute
-                .coerceIn(MINIMUM_PROFILE_WORDS_PER_MINUTE, MAXIMUM_PROFILE_WORDS_PER_MINUTE)
-            preferences[PROFILE_SAMPLE_COUNT] = snapshot.readerProfile.calibrationSampleCount
-                .coerceAtLeast(0)
-            preferences[PROFILE_CALIBRATIONS] = snapshot.readerProfile.completedCalibrations
-                .coerceAtLeast(0)
+            preferences[PROFILE_BASELINE_WPM] =
+                snapshot.readerProfile.baselineWordsPerMinute
+                    .coerceIn(MINIMUM_PROFILE_WORDS_PER_MINUTE, MAXIMUM_PROFILE_WORDS_PER_MINUTE)
+            preferences[PROFILE_SAMPLE_COUNT] =
+                snapshot.readerProfile.calibrationSampleCount
+                    .coerceAtLeast(0)
+            preferences[PROFILE_CALIBRATIONS] =
+                snapshot.readerProfile.completedCalibrations
+                    .coerceAtLeast(0)
         }
     }
 
@@ -124,38 +132,46 @@ class UserPreferences(
             preferences[AMBIENT_INTENSITY] = settings.ambientIntensity.name
             preferences[AMBIENT_AUDIO_ENABLED] = settings.ambientAudioEnabled
             preferences[AMBIENT_SOUNDSCAPE] = settings.ambientSoundscape.name
-            preferences[AMBIENT_AUDIO_VOLUME_PERCENT] = settings.ambientAudioVolumePercent
-                .coerceIn(MINIMUM_AMBIENT_AUDIO_VOLUME_PERCENT, MAXIMUM_AMBIENT_AUDIO_VOLUME_PERCENT)
+            preferences[AMBIENT_AUDIO_VOLUME_PERCENT] =
+                settings.ambientAudioVolumePercent
+                    .coerceIn(MINIMUM_AMBIENT_AUDIO_VOLUME_PERCENT, MAXIMUM_AMBIENT_AUDIO_VOLUME_PERCENT)
             preferences[FOCUS_ENABLED] = settings.focusEnabled
             preferences[READER_CONTROLS_EXPANDED] = settings.readerControlsExpanded
             preferences[NARRATOR_GESTURE_HINT_DISMISSED] = settings.narratorGestureHintDismissed
         }
     }
 
-    suspend fun recordCalibration(estimatedWordsPerMinute: Int, sampleCount: Int): ReaderProfile {
+    suspend fun recordCalibration(
+        estimatedWordsPerMinute: Int,
+        sampleCount: Int,
+    ): ReaderProfile {
         var updatedProfile = ReaderProfile()
         context.userDataStore.edit { preferences ->
             val previousSamples = preferences[PROFILE_SAMPLE_COUNT] ?: 0
             val previousBaseline = preferences[PROFILE_BASELINE_WPM] ?: 260
             val acceptedSamples = sampleCount.coerceAtLeast(0)
             val totalSamples = previousSamples + acceptedSamples
-            val blendedBaseline = if (totalSamples == 0) {
-                estimatedWordsPerMinute
-            } else {
-                ((previousBaseline.toLong() * previousSamples) +
-                    (estimatedWordsPerMinute.toLong() * acceptedSamples)) / totalSamples
-            }.toInt().coerceIn(100, 700)
+            val blendedBaseline =
+                if (totalSamples == 0) {
+                    estimatedWordsPerMinute
+                } else {
+                    (
+                        (previousBaseline.toLong() * previousSamples) +
+                            (estimatedWordsPerMinute.toLong() * acceptedSamples)
+                    ) / totalSamples
+                }.toInt().coerceIn(100, 700)
             val calibrations = (preferences[PROFILE_CALIBRATIONS] ?: 0) + 1
 
             preferences[PROFILE_BASELINE_WPM] = blendedBaseline
             preferences[PROFILE_SAMPLE_COUNT] = totalSamples
             preferences[PROFILE_CALIBRATIONS] = calibrations
             preferences[WORDS_PER_MINUTE] = blendedBaseline
-            updatedProfile = ReaderProfile(
-                baselineWordsPerMinute = blendedBaseline,
-                calibrationSampleCount = totalSamples,
-                completedCalibrations = calibrations,
-            )
+            updatedProfile =
+                ReaderProfile(
+                    baselineWordsPerMinute = blendedBaseline,
+                    calibrationSampleCount = totalSamples,
+                    completedCalibrations = calibrations,
+                )
         }
         return updatedProfile
     }
@@ -166,8 +182,11 @@ class UserPreferences(
         const val DEFAULT_AMBIENT_AUDIO_VOLUME_PERCENT = 15
         const val MINIMUM_AMBIENT_AUDIO_VOLUME_PERCENT = 0
         const val MAXIMUM_AMBIENT_AUDIO_VOLUME_PERCENT = 50
-        inline fun <reified T : Enum<T>> enumPreference(value: String?, fallback: T): T =
-            runCatching { enumValueOf<T>(value.orEmpty()) }.getOrDefault(fallback)
+
+        inline fun <reified T : Enum<T>> enumPreference(
+            value: String?,
+            fallback: T,
+        ): T = runCatching { enumValueOf<T>(value.orEmpty()) }.getOrDefault(fallback)
 
         val ADULT_CONFIRMED = booleanPreferencesKey("adult_confirmed")
         val WORDS_PER_MINUTE = intPreferencesKey("words_per_minute")
@@ -179,6 +198,7 @@ class UserPreferences(
         val ADAPTIVE_PACING_ENABLED = booleanPreferencesKey("adaptive_pacing_enabled")
         val FOCUS_DIMMING_PERCENT = intPreferencesKey("focus_dimming_percent")
         val SHOW_FOCUS_MASCOT = booleanPreferencesKey("show_focus_mascot")
+
         // La clave v2 establece Narrador como experiencia inicial para instalaciones
         // que conocieron la primera mascota antes de que existiera el selector de estilo.
         val FOCUS_PRESENTATION = stringPreferencesKey("focus_presentation_v2")

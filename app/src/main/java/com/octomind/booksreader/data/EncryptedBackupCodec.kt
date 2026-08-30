@@ -24,7 +24,11 @@ internal object EncryptedBackupCodec {
     private const val GCM_TAG_BITS = 128
     private const val MINIMUM_PASSWORD_LENGTH = 8
 
-    fun encrypt(password: CharArray, output: OutputStream, writePlaintext: (OutputStream) -> Unit) {
+    fun encrypt(
+        password: CharArray,
+        output: OutputStream,
+        writePlaintext: (OutputStream) -> Unit,
+    ) {
         require(password.size >= MINIMUM_PASSWORD_LENGTH) { "La contraseña debe tener al menos 8 caracteres" }
         val salt = ByteArray(SALT_BYTES).also(SecureRandom()::nextBytes)
         val iv = ByteArray(IV_BYTES).also(SecureRandom()::nextBytes)
@@ -36,10 +40,11 @@ internal object EncryptedBackupCodec {
             dataOutput.write(salt)
             dataOutput.write(iv)
             dataOutput.flush()
-            val cipher = Cipher.getInstance("AES/GCM/NoPadding").apply {
-                init(Cipher.ENCRYPT_MODE, key, GCMParameterSpec(GCM_TAG_BITS, iv))
-                updateAAD(magic)
-            }
+            val cipher =
+                Cipher.getInstance("AES/GCM/NoPadding").apply {
+                    init(Cipher.ENCRYPT_MODE, key, GCMParameterSpec(GCM_TAG_BITS, iv))
+                    updateAAD(magic)
+                }
             CipherOutputStream(output, cipher).use(writePlaintext)
         } finally {
             key.encoded.fill(0)
@@ -47,7 +52,11 @@ internal object EncryptedBackupCodec {
         }
     }
 
-    fun decrypt(password: CharArray, input: InputStream, readPlaintext: (InputStream) -> Unit) {
+    fun decrypt(
+        password: CharArray,
+        input: InputStream,
+        readPlaintext: (InputStream) -> Unit,
+    ) {
         require(password.isNotEmpty()) { "Escribe la contraseña del respaldo" }
         val dataInput = DataInputStream(input)
         val foundMagic = ByteArray(magic.size).also(dataInput::readFully)
@@ -57,10 +66,11 @@ internal object EncryptedBackupCodec {
         val iv = ByteArray(IV_BYTES).also(dataInput::readFully)
         val key = deriveKey(password, salt)
         try {
-            val cipher = Cipher.getInstance("AES/GCM/NoPadding").apply {
-                init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(GCM_TAG_BITS, iv))
-                updateAAD(magic)
-            }
+            val cipher =
+                Cipher.getInstance("AES/GCM/NoPadding").apply {
+                    init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(GCM_TAG_BITS, iv))
+                    updateAAD(magic)
+                }
             try {
                 CipherInputStream(input, cipher).use(readPlaintext)
             } catch (_: AEADBadTagException) {
@@ -72,12 +82,17 @@ internal object EncryptedBackupCodec {
         }
     }
 
-    private fun deriveKey(password: CharArray, salt: ByteArray): SecretKeySpec {
+    private fun deriveKey(
+        password: CharArray,
+        salt: ByteArray,
+    ): SecretKeySpec {
         val specification = PBEKeySpec(password, salt, ITERATIONS, KEY_BITS)
         return try {
-            val bytes = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
-                .generateSecret(specification)
-                .encoded
+            val bytes =
+                SecretKeyFactory
+                    .getInstance("PBKDF2WithHmacSHA256")
+                    .generateSecret(specification)
+                    .encoded
             SecretKeySpec(bytes, "AES").also { bytes.fill(0) }
         } finally {
             specification.clearPassword()

@@ -3,7 +3,10 @@ package com.octomind.booksreader.domain
 object FocusNavigation {
     const val READING_ANCHOR_FRACTION = 0.42f
 
-    fun blockDelta(totalVerticalDragPixels: Float, thresholdPixels: Float): Int {
+    fun blockDelta(
+        totalVerticalDragPixels: Float,
+        thresholdPixels: Float,
+    ): Int {
         require(thresholdPixels > 0f) { "El umbral del gesto debe ser positivo" }
         return when {
             totalVerticalDragPixels <= -thresholdPixels -> 1

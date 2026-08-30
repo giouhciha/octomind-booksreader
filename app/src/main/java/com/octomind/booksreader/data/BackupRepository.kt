@@ -11,20 +11,23 @@ import com.octomind.booksreader.domain.ReaderFontStyle
 import com.octomind.booksreader.domain.ReaderProfile
 import com.octomind.booksreader.domain.ReaderSettings
 import com.octomind.booksreader.domain.ReadingMode
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import java.io.File
 import java.io.InputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import org.json.JSONObject
 
 class BackupRepository(
     private val context: Context,
     private val preferences: UserPreferences,
 ) {
-    suspend fun create(uri: Uri, password: CharArray) = withContext(Dispatchers.IO) {
+    suspend fun create(
+        uri: Uri,
+        password: CharArray,
+    ) = withContext(Dispatchers.IO) {
         val snapshot = preferences.snapshot()
         context.contentResolver.openOutputStream(uri, "w")?.use { output ->
             EncryptedBackupCodec.encrypt(password, output) { encryptedOutput ->
@@ -39,7 +42,10 @@ class BackupRepository(
         } ?: error("No fue posible crear el archivo de respaldo")
     }
 
-    suspend fun restore(uri: Uri, password: CharArray) = withContext(Dispatchers.IO) {
+    suspend fun restore(
+        uri: Uri,
+        password: CharArray,
+    ) = withContext(Dispatchers.IO) {
         val staging = File(context.cacheDir, "backup-restore-${System.nanoTime()}")
         val extracted = File(staging, "content")
         try {
@@ -65,7 +71,10 @@ class BackupRepository(
         }
     }
 
-    private fun extract(input: InputStream, destination: File) {
+    private fun extract(
+        input: InputStream,
+        destination: File,
+    ) {
         var entryCount = 0
         var totalBytes = 0L
         ZipInputStream(input).use { zip ->
@@ -112,12 +121,17 @@ class BackupRepository(
         if (!directory.exists()) return
         require(directory.isDirectory) { "La biblioteca del respaldo no es válida" }
         val metadata = File(directory, "books.json")
-        if (metadata.exists()) require(runCatching { org.json.JSONArray(metadata.readText()) }.isSuccess) {
-            "Los metadatos de la biblioteca están dañados"
+        if (metadata.exists()) {
+            require(runCatching { org.json.JSONArray(metadata.readText()) }.isSuccess) {
+                "Los metadatos de la biblioteca están dañados"
+            }
         }
     }
 
-    private fun replacePrivateDirectory(name: String, restored: File) {
+    private fun replacePrivateDirectory(
+        name: String,
+        restored: File,
+    ) {
         val current = File(context.filesDir, name)
         val previous = File(context.filesDir, "$name.backup-previous")
         previous.deleteRecursively()
@@ -132,7 +146,11 @@ class BackupRepository(
         }
     }
 
-    private fun addDirectory(zip: ZipOutputStream, directory: File, prefix: String) {
+    private fun addDirectory(
+        zip: ZipOutputStream,
+        directory: File,
+        prefix: String,
+    ) {
         if (!directory.isDirectory) return
         directory.walkTopDown().filter(File::isFile).forEach { file ->
             val relative = file.relativeTo(directory).invariantSeparatorsPath
@@ -142,13 +160,20 @@ class BackupRepository(
         }
     }
 
-    private fun writeText(zip: ZipOutputStream, name: String, value: String) {
+    private fun writeText(
+        zip: ZipOutputStream,
+        name: String,
+        value: String,
+    ) {
         zip.putNextEntry(ZipEntry(name))
         zip.write(value.toByteArray(Charsets.UTF_8))
         zip.closeEntry()
     }
 
-    private fun safeTarget(root: File, name: String): File {
+    private fun safeTarget(
+        root: File,
+        name: String,
+    ): File {
         require(name.isNotBlank() && !name.startsWith('/')) { "Ruta no válida en el respaldo" }
         val target = File(root, name).canonicalFile
         val rootPath = root.canonicalFile.path + File.separator
@@ -156,10 +181,11 @@ class BackupRepository(
         return target
     }
 
-    private fun manifestJson() = JSONObject()
-        .put("schemaVersion", SCHEMA_VERSION)
-        .put("createdAtMillis", System.currentTimeMillis())
-        .put("application", "Octomind Books Reader")
+    private fun manifestJson() =
+        JSONObject()
+            .put("schemaVersion", SCHEMA_VERSION)
+            .put("createdAtMillis", System.currentTimeMillis())
+            .put("application", "Octomind Books Reader")
 
     private companion object {
         const val SCHEMA_VERSION = 1
@@ -172,79 +198,89 @@ class BackupRepository(
     }
 }
 
-private fun UserPreferencesSnapshot.toJson() = JSONObject()
-    .put("adultConfirmed", adultConfirmed)
-    .put("readerSettings", readerSettings.toJson())
-    .put("readerProfile", readerProfile.toJson())
+private fun UserPreferencesSnapshot.toJson() =
+    JSONObject()
+        .put("adultConfirmed", adultConfirmed)
+        .put("readerSettings", readerSettings.toJson())
+        .put("readerProfile", readerProfile.toJson())
 
-private fun ReaderSettings.toJson() = JSONObject()
-    .put("wordsPerMinute", wordsPerMinute)
-    .put("wordsPerBlock", wordsPerBlock)
-    .put("readingMode", readingMode.name)
-    .put("pageTheme", pageTheme.name)
-    .put("fontStyle", fontStyle.name)
-    .put("fontSizeSp", fontSizeSp)
-    .put("adaptivePacingEnabled", adaptivePacingEnabled)
-    .put("focusDimmingPercent", focusDimmingPercent)
-    .put("showFocusMascot", showFocusMascot)
-    .put("focusPresentation", focusPresentation.name)
-    .put("narratorAvatar", narratorAvatar.name)
-    .put("customNarratorAvatarVersion", customNarratorAvatarVersion)
-    .put("ambientIntensity", ambientIntensity.name)
-    .put("ambientAudioEnabled", ambientAudioEnabled)
-    .put("ambientSoundscape", ambientSoundscape.name)
-    .put("ambientAudioVolumePercent", ambientAudioVolumePercent)
-    .put("focusEnabled", focusEnabled)
-    .put("readerControlsExpanded", readerControlsExpanded)
-    .put("narratorGestureHintDismissed", narratorGestureHintDismissed)
+private fun ReaderSettings.toJson() =
+    JSONObject()
+        .put("wordsPerMinute", wordsPerMinute)
+        .put("wordsPerBlock", wordsPerBlock)
+        .put("readingMode", readingMode.name)
+        .put("pageTheme", pageTheme.name)
+        .put("fontStyle", fontStyle.name)
+        .put("fontSizeSp", fontSizeSp)
+        .put("adaptivePacingEnabled", adaptivePacingEnabled)
+        .put("focusDimmingPercent", focusDimmingPercent)
+        .put("showFocusMascot", showFocusMascot)
+        .put("focusPresentation", focusPresentation.name)
+        .put("narratorAvatar", narratorAvatar.name)
+        .put("customNarratorAvatarVersion", customNarratorAvatarVersion)
+        .put("ambientIntensity", ambientIntensity.name)
+        .put("ambientAudioEnabled", ambientAudioEnabled)
+        .put("ambientSoundscape", ambientSoundscape.name)
+        .put("ambientAudioVolumePercent", ambientAudioVolumePercent)
+        .put("focusEnabled", focusEnabled)
+        .put("readerControlsExpanded", readerControlsExpanded)
+        .put("narratorGestureHintDismissed", narratorGestureHintDismissed)
 
-private fun ReaderProfile.toJson() = JSONObject()
-    .put("baselineWordsPerMinute", baselineWordsPerMinute)
-    .put("calibrationSampleCount", calibrationSampleCount)
-    .put("completedCalibrations", completedCalibrations)
+private fun ReaderProfile.toJson() =
+    JSONObject()
+        .put("baselineWordsPerMinute", baselineWordsPerMinute)
+        .put("calibrationSampleCount", calibrationSampleCount)
+        .put("completedCalibrations", completedCalibrations)
 
 private fun JSONObject.toPreferencesSnapshot(): UserPreferencesSnapshot {
     val settings = getJSONObject("readerSettings")
     val profile = getJSONObject("readerProfile")
     return UserPreferencesSnapshot(
         adultConfirmed = optBoolean("adultConfirmed", true),
-        readerSettings = ReaderSettings(
-            wordsPerMinute = settings.optInt("wordsPerMinute", DEFAULT_WORDS_PER_MINUTE),
-            wordsPerBlock = settings.optInt("wordsPerBlock", DEFAULT_WORDS_PER_BLOCK),
-            readingMode = settings.enum("readingMode", ReadingMode.FIXED_WORDS),
-            pageTheme = settings.enum("pageTheme", PageTheme.LIGHT),
-            fontStyle = settings.enum("fontStyle", ReaderFontStyle.SERIF),
-            fontSizeSp = settings.optInt("fontSizeSp", DEFAULT_FONT_SIZE_SP),
-            adaptivePacingEnabled = settings.optBoolean("adaptivePacingEnabled", true),
-            focusDimmingPercent = settings.optInt("focusDimmingPercent", DEFAULT_FOCUS_DIMMING_PERCENT),
-            showFocusMascot = settings.optBoolean("showFocusMascot", true),
-            focusPresentation = settings.enum("focusPresentation", FocusPresentation.OCTI_NARRATOR),
-            narratorAvatar = settings.enum("narratorAvatar", NarratorAvatar.OCTI),
-            customNarratorAvatarVersion = settings.optInt("customNarratorAvatarVersion", 0),
-            ambientIntensity = settings.enum("ambientIntensity", AmbientIntensity.SUBTLE),
-            ambientAudioEnabled = settings.optBoolean("ambientAudioEnabled", false),
-            ambientSoundscape = settings.enum(
-                "ambientSoundscape",
-                AmbientSoundscape.CONCENTRATION,
+        readerSettings =
+            ReaderSettings(
+                wordsPerMinute = settings.optInt("wordsPerMinute", DEFAULT_WORDS_PER_MINUTE),
+                wordsPerBlock = settings.optInt("wordsPerBlock", DEFAULT_WORDS_PER_BLOCK),
+                readingMode = settings.enum("readingMode", ReadingMode.FIXED_WORDS),
+                pageTheme = settings.enum("pageTheme", PageTheme.LIGHT),
+                fontStyle = settings.enum("fontStyle", ReaderFontStyle.SERIF),
+                fontSizeSp = settings.optInt("fontSizeSp", DEFAULT_FONT_SIZE_SP),
+                adaptivePacingEnabled = settings.optBoolean("adaptivePacingEnabled", true),
+                focusDimmingPercent = settings.optInt("focusDimmingPercent", DEFAULT_FOCUS_DIMMING_PERCENT),
+                showFocusMascot = settings.optBoolean("showFocusMascot", true),
+                focusPresentation = settings.enum("focusPresentation", FocusPresentation.OCTI_NARRATOR),
+                narratorAvatar = settings.enum("narratorAvatar", NarratorAvatar.OCTI),
+                customNarratorAvatarVersion = settings.optInt("customNarratorAvatarVersion", 0),
+                ambientIntensity = settings.enum("ambientIntensity", AmbientIntensity.SUBTLE),
+                ambientAudioEnabled = settings.optBoolean("ambientAudioEnabled", false),
+                ambientSoundscape =
+                    settings.enum(
+                        "ambientSoundscape",
+                        AmbientSoundscape.CONCENTRATION,
+                    ),
+                ambientAudioVolumePercent =
+                    settings
+                        .optInt(
+                            "ambientAudioVolumePercent",
+                            DEFAULT_AMBIENT_AUDIO_VOLUME_PERCENT,
+                        ).coerceIn(MINIMUM_AMBIENT_AUDIO_VOLUME_PERCENT, MAXIMUM_AMBIENT_AUDIO_VOLUME_PERCENT),
+                focusEnabled = settings.optBoolean("focusEnabled", false),
+                readerControlsExpanded = settings.optBoolean("readerControlsExpanded", true),
+                narratorGestureHintDismissed = settings.optBoolean("narratorGestureHintDismissed", false),
             ),
-            ambientAudioVolumePercent = settings.optInt(
-                "ambientAudioVolumePercent",
-                DEFAULT_AMBIENT_AUDIO_VOLUME_PERCENT,
-            ).coerceIn(MINIMUM_AMBIENT_AUDIO_VOLUME_PERCENT, MAXIMUM_AMBIENT_AUDIO_VOLUME_PERCENT),
-            focusEnabled = settings.optBoolean("focusEnabled", false),
-            readerControlsExpanded = settings.optBoolean("readerControlsExpanded", true),
-            narratorGestureHintDismissed = settings.optBoolean("narratorGestureHintDismissed", false),
-        ),
-        readerProfile = ReaderProfile(
-            baselineWordsPerMinute = profile.optInt("baselineWordsPerMinute", DEFAULT_WORDS_PER_MINUTE),
-            calibrationSampleCount = profile.optInt("calibrationSampleCount", 0),
-            completedCalibrations = profile.optInt("completedCalibrations", 0),
-        ),
+        readerProfile =
+            ReaderProfile(
+                baselineWordsPerMinute = profile.optInt("baselineWordsPerMinute", DEFAULT_WORDS_PER_MINUTE),
+                calibrationSampleCount = profile.optInt("calibrationSampleCount", 0),
+                completedCalibrations = profile.optInt("completedCalibrations", 0),
+            ),
     )
 }
 
-private inline fun <reified T : Enum<T>> JSONObject.enum(name: String, fallback: T): T =
-    runCatching { enumValueOf<T>(optString(name)) }.getOrDefault(fallback)
+private inline fun <reified T : Enum<T>> JSONObject.enum(
+    name: String,
+    fallback: T,
+): T = runCatching { enumValueOf<T>(optString(name)) }.getOrDefault(fallback)
 
 private const val DEFAULT_WORDS_PER_MINUTE = 260
 private const val DEFAULT_WORDS_PER_BLOCK = 4

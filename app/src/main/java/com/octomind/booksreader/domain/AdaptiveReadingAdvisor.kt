@@ -11,11 +11,15 @@ object AdaptiveReadingAdvisor {
     private const val FAST_READING_RATIO = 0.80
     private const val MAXIMUM_SPEED_INCREASE = 1.05
 
-    fun recentBackwardMoves(timestamps: List<Long>, nowMillis: Long): List<Long> =
-        timestamps.filter { nowMillis - it in 0..BACKWARD_WINDOW_MILLIS }
+    fun recentBackwardMoves(
+        timestamps: List<Long>,
+        nowMillis: Long,
+    ): List<Long> = timestamps.filter { nowMillis - it in 0..BACKWARD_WINDOW_MILLIS }
 
-    fun shouldSuggestRecovery(timestamps: List<Long>, nowMillis: Long): Boolean =
-        recentBackwardMoves(timestamps, nowMillis).size >= BACKWARD_THRESHOLD
+    fun shouldSuggestRecovery(
+        timestamps: List<Long>,
+        nowMillis: Long,
+    ): Boolean = recentBackwardMoves(timestamps, nowMillis).size >= BACKWARD_THRESHOLD
 
     fun suggestedWordsPerMinute(
         currentWordsPerMinute: Int,
@@ -32,7 +36,9 @@ object AdaptiveReadingAdvisor {
 
         val observedPace = (currentWordsPerMinute / median).roundToInt()
         val maximumIncrease = (currentWordsPerMinute * MAXIMUM_SPEED_INCREASE).roundToInt()
-        return observedPace.coerceAtMost(maximumIncrease).coerceIn(100, 700)
+        return observedPace
+            .coerceAtMost(maximumIncrease)
+            .coerceIn(100, 700)
             .takeIf { it > currentWordsPerMinute }
     }
 }

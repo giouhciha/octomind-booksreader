@@ -1,8 +1,8 @@
 package com.octomind.booksreader.domain
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class BookSummaryTest {
@@ -20,7 +20,10 @@ class BookSummaryTest {
         assertEquals(0, ReadingCycleStats().wordsRead)
     }
 
-    private fun summary(currentOffset: Int, totalCharacters: Int) = BookSummary(
+    private fun summary(
+        currentOffset: Int,
+        totalCharacters: Int,
+    ) = BookSummary(
         id = "synthetic-book",
         title = "Lectura sintética",
         author = null,

@@ -49,9 +49,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.octomind.booksreader.R
-import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -83,9 +83,10 @@ internal fun PdfOriginalReader(
                             Text(stringResource(R.string.pdf_adapted_reading))
                         }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.background,
-                    ),
+                    colors =
+                        TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.background,
+                        ),
                 )
                 LinearProgressIndicator(
                     progress = { readingProgress },
@@ -95,10 +96,11 @@ internal fun PdfOriginalReader(
         },
     ) { padding ->
         BoxWithConstraints(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
         ) {
             val targetWidth = with(LocalDensity.current) { maxWidth.roundToPx() }
             val pageState by produceState<PdfPageUiState>(
@@ -108,14 +110,15 @@ internal fun PdfOriginalReader(
                 targetWidth,
             ) {
                 value = PdfPageUiState.Loading
-                value = withContext(Dispatchers.IO) {
-                    runCatching {
-                        PdfPageRenderer.render(filePath, requestedPageIndex, targetWidth)
-                    }.fold(
-                        onSuccess = { PdfPageUiState.Loaded(it) },
-                        onFailure = { PdfPageUiState.Error },
-                    )
-                }
+                value =
+                    withContext(Dispatchers.IO) {
+                        runCatching {
+                            PdfPageRenderer.render(filePath, requestedPageIndex, targetWidth)
+                        }.fold(
+                            onSuccess = { PdfPageUiState.Loaded(it) },
+                            onFailure = { PdfPageUiState.Error },
+                        )
+                    }
             }
 
             when (val currentState = pageState) {
@@ -152,45 +155,47 @@ private fun PdfPage(
             bitmap = page.bitmap.asImageBitmap(),
             contentDescription = stringResource(R.string.pdf_page_description, page.pageIndex + 1),
             contentScale = ContentScale.Fit,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(
-                    start = PDF_PAGE_HORIZONTAL_PADDING_DP.dp,
-                    top = PDF_PAGE_VERTICAL_PADDING_DP.dp,
-                    end = PDF_PAGE_HORIZONTAL_PADDING_DP.dp,
-                    bottom = PDF_PAGE_BOTTOM_CLEARANCE_DP.dp,
-                )
-                .pointerInput(page.pageIndex, page.pageCount) {
-                    var horizontalDrag = 0f
-                    detectHorizontalDragGestures(
-                        onDragStart = { horizontalDrag = 0f },
-                        onHorizontalDrag = { change, amount ->
-                            change.consume()
-                            horizontalDrag += amount
-                        },
-                        onDragEnd = {
-                            when {
-                                horizontalDrag < -PDF_SWIPE_THRESHOLD_DP.dp.toPx() -> changePage(1)
-                                horizontalDrag > PDF_SWIPE_THRESHOLD_DP.dp.toPx() -> changePage(-1)
-                            }
-                        },
-                    )
-                },
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(
+                        start = PDF_PAGE_HORIZONTAL_PADDING_DP.dp,
+                        top = PDF_PAGE_VERTICAL_PADDING_DP.dp,
+                        end = PDF_PAGE_HORIZONTAL_PADDING_DP.dp,
+                        bottom = PDF_PAGE_BOTTOM_CLEARANCE_DP.dp,
+                    ).pointerInput(page.pageIndex, page.pageCount) {
+                        var horizontalDrag = 0f
+                        detectHorizontalDragGestures(
+                            onDragStart = { horizontalDrag = 0f },
+                            onHorizontalDrag = { change, amount ->
+                                change.consume()
+                                horizontalDrag += amount
+                            },
+                            onDragEnd = {
+                                when {
+                                    horizontalDrag < -PDF_SWIPE_THRESHOLD_DP.dp.toPx() -> changePage(1)
+                                    horizontalDrag > PDF_SWIPE_THRESHOLD_DP.dp.toPx() -> changePage(-1)
+                                }
+                            },
+                        )
+                    },
         )
         Surface(
             tonalElevation = PDF_NAVIGATION_ELEVATION_DP.dp,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .navigationBarsPadding(),
+            modifier =
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .navigationBarsPadding(),
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        horizontal = PDF_NAVIGATION_HORIZONTAL_PADDING_DP.dp,
-                        vertical = PDF_PAGE_VERTICAL_PADDING_DP.dp,
-                    ),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = PDF_NAVIGATION_HORIZONTAL_PADDING_DP.dp,
+                            vertical = PDF_PAGE_VERTICAL_PADDING_DP.dp,
+                        ),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -231,9 +236,10 @@ private fun PdfPage(
 @Composable
 private fun PdfRenderError(onAdaptedReading: () -> Unit) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(PDF_ERROR_PADDING_DP.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(PDF_ERROR_PADDING_DP.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -252,8 +258,12 @@ private fun PdfRenderError(onAdaptedReading: () -> Unit) {
 
 private sealed interface PdfPageUiState {
     data object Loading : PdfPageUiState
+
     data object Error : PdfPageUiState
-    data class Loaded(val page: RenderedPdfPage) : PdfPageUiState
+
+    data class Loaded(
+        val page: RenderedPdfPage,
+    ) : PdfPageUiState
 }
 
 private data class RenderedPdfPage(
@@ -263,7 +273,11 @@ private data class RenderedPdfPage(
 )
 
 private object PdfPageRenderer {
-    fun render(filePath: String, requestedPageIndex: Int, targetWidth: Int): RenderedPdfPage {
+    fun render(
+        filePath: String,
+        requestedPageIndex: Int,
+        targetWidth: Int,
+    ): RenderedPdfPage {
         val file = File(filePath)
         require(file.isFile) { "PDF original no disponible" }
         ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { descriptor ->
@@ -272,15 +286,17 @@ private object PdfPageRenderer {
                 val pageIndex = requestedPageIndex.coerceIn(0, renderer.pageCount - 1)
                 renderer.openPage(pageIndex).use { page ->
                     val requestedWidth = targetWidth.coerceIn(MINIMUM_RENDER_WIDTH, MAXIMUM_RENDER_WIDTH)
-                    val requestedHeight = (
-                        requestedWidth.toFloat() * page.height.toFloat() / page.width.coerceAtLeast(1)
+                    val requestedHeight =
+                        (
+                            requestedWidth.toFloat() * page.height.toFloat() / page.width.coerceAtLeast(1)
                         ).toInt().coerceAtLeast(1)
                     val bitmapHeight = requestedHeight.coerceAtMost(MAXIMUM_RENDER_HEIGHT)
-                    val bitmapWidth = if (requestedHeight > MAXIMUM_RENDER_HEIGHT) {
-                        (requestedWidth.toFloat() * bitmapHeight / requestedHeight).toInt().coerceAtLeast(1)
-                    } else {
-                        requestedWidth
-                    }
+                    val bitmapWidth =
+                        if (requestedHeight > MAXIMUM_RENDER_HEIGHT) {
+                            (requestedWidth.toFloat() * bitmapHeight / requestedHeight).toInt().coerceAtLeast(1)
+                        } else {
+                            requestedWidth
+                        }
                     val bitmap = Bitmap.createBitmap(bitmapWidth, bitmapHeight, Bitmap.Config.ARGB_8888)
                     bitmap.eraseColor(Color.WHITE)
                     page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
