@@ -73,8 +73,6 @@ import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.UploadFile
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
@@ -286,78 +284,6 @@ fun OctomindApp(viewModel: OctomindViewModel = viewModel()) {
     }
 }
 
-@Composable
-private fun LoadingScreen() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            CircularProgressIndicator()
-            Spacer(Modifier.height(16.dp))
-            Text(stringResource(R.string.loading), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
-}
-
-@Composable
-private fun OnboardingScreen(onConfirm: () -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 28.dp, vertical = 24.dp),
-        verticalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Column {
-            Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(50)) {
-                Text(
-                    text = stringResource(R.string.onboarding_badge),
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp,
-                    letterSpacing = 1.2.sp,
-                )
-            }
-            Spacer(Modifier.height(30.dp))
-            Text(stringResource(R.string.onboarding_title), style = MaterialTheme.typography.headlineLarge)
-            Spacer(Modifier.height(16.dp))
-            Text(
-                stringResource(R.string.onboarding_body),
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.Normal,
-            )
-        }
-
-        Column {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                shape = RoundedCornerShape(22.dp),
-            ) {
-                Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.Top) {
-                    Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                    Spacer(Modifier.width(14.dp))
-                    Column {
-                        Text(stringResource(R.string.adult_only_title), fontWeight = FontWeight.Bold)
-                        Spacer(Modifier.height(6.dp))
-                        Text(
-                            stringResource(R.string.adult_only_body),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            }
-            Spacer(Modifier.height(18.dp))
-            Button(onClick = onConfirm, modifier = Modifier.fillMaxWidth().height(56.dp)) {
-                Text(stringResource(R.string.confirm_adult))
-            }
-            Spacer(Modifier.height(12.dp))
-            Text(
-                stringResource(R.string.privacy_note),
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 13.sp,
-            )
-        }
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LibraryScreen(
@@ -416,7 +342,7 @@ private fun LibraryScreen(
                     }
                     FilledIconButton(
                         onClick = {
-                            launcher.launch(arrayOf("text/plain", "application/epub+zip", "application/pdf"))
+                            launcher.launch(arrayOf("*/*"))
                         },
                         enabled = !busy,
                     ) {
@@ -435,7 +361,7 @@ private fun LibraryScreen(
             EmptyLibrary(
                 modifier = Modifier.padding(padding),
                 onImport = {
-                    launcher.launch(arrayOf("text/plain", "application/epub+zip", "application/pdf"))
+                    launcher.launch(arrayOf("*/*"))
                 },
             )
         } else {

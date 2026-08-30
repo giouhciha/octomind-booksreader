@@ -263,8 +263,9 @@ class PdfBookParser : BookParser {
         require(file.length() <= MAX_PDF_BYTES) { "El archivo PDF supera el límite de 200 MB" }
         require(
             file.inputStream().use { input ->
-                val signature = ByteArray(PDF_SIGNATURE.size)
-                input.read(signature) == signature.size && signature.contentEquals(PDF_SIGNATURE)
+                val header = ByteArray(PDF_HEADER_BYTES)
+                val bytesRead = input.read(header)
+                bytesRead > 0 && BookImportFormatDetector.isPdf(header.copyOf(bytesRead))
             },
         ) { "El archivo no tiene una firma PDF válida" }
 
@@ -360,7 +361,7 @@ class PdfBookParser : BookParser {
         const val MINIMUM_COVER_SCALE = 0.1f
         const val MAXIMUM_COVER_SCALE = 2f
         const val COVER_JPEG_QUALITY = 88
-        val PDF_SIGNATURE = "%PDF-".toByteArray(StandardCharsets.US_ASCII)
+        const val PDF_HEADER_BYTES = 1_100
     }
 }
 

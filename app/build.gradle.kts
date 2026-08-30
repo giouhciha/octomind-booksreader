@@ -11,8 +11,8 @@ plugins {
     id("org.owasp.dependencycheck")
 }
 
-val baseVersionCode = 68
-val baseVersionName = "0.57.0"
+val baseVersionCode = 69
+val baseVersionName = "0.58.0"
 val ciBuildNumber = providers.gradleProperty("ciBuildNumber").orNull?.toIntOrNull()
 require(ciBuildNumber == null || ciBuildNumber in 1..99_999) {
     "ciBuildNumber debe ser un entero entre 1 y 99999."
@@ -76,6 +76,7 @@ ktlint {
 
 detekt {
     buildUponDefaultConfig = true
+    config.setFrom(file("config/detekt/detekt.yml"))
     baseline = file("config/detekt/baseline.xml")
     parallel = true
 }

@@ -41,15 +41,13 @@ class LocalBookRepository(
     suspend fun importBook(uri: Uri): BookSummary =
         withContext(Dispatchers.IO) {
             val displayName = queryDisplayName(uri)
-            val extension = displayName.substringAfterLast('.', "").lowercase()
-            require(extension in SUPPORTED_EXTENSIONS) { "Puedes importar archivos TXT, EPUB o PDF" }
-            validateMimeType(extension, context.contentResolver.getType(uri))
+            val mimeType = context.contentResolver.getType(uri)
             queryFileSize(uri)?.takeIf { it >= 0 }?.let { size ->
                 require(size in 1..MAX_IMPORT_BYTES) { "El archivo supera el límite de 200 MB" }
             }
 
             libraryDirectory.mkdirs()
-            val temporaryFile = File.createTempFile("import-", ".$extension", context.cacheDir)
+            val temporaryFile = File.createTempFile("import-", ".book", context.cacheDir)
             try {
                 context.contentResolver.openInputStream(uri)?.use { input ->
                     temporaryFile.outputStream().use { output ->
@@ -57,11 +55,18 @@ class LocalBookRepository(
                     }
                 } ?: error("No fue posible abrir el archivo")
 
+                val detectedFormat =
+                    BookImportFormatDetector.detect(
+                        displayName = displayName,
+                        mimeType = mimeType,
+                        header = temporaryFile.readHeader(),
+                    )
+
                 val parser: BookParser =
-                    when (extension) {
-                        "epub" -> EpubBookParser()
-                        "pdf" -> PdfBookParser()
-                        else -> TxtBookParser()
+                    when (detectedFormat) {
+                        BookFormat.EPUB -> EpubBookParser()
+                        BookFormat.PDF -> PdfBookParser()
+                        BookFormat.TXT -> TxtBookParser()
                     }
                 val parsed = parser.parse(temporaryFile, displayName)
                 val id = UUID.randomUUID().toString()
@@ -315,9 +320,11 @@ class LocalBookRepository(
 
     private fun queryDisplayName(uri: Uri): String {
         context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
-            if (cursor.moveToFirst()) return cursor.getString(0)
+            if (cursor.moveToFirst()) {
+                cursor.getString(0)?.trim()?.takeIf(String::isNotEmpty)?.let { return it }
+            }
         }
-        return uri.lastPathSegment?.substringAfterLast('/') ?: "libro.txt"
+        return uri.lastPathSegment?.substringAfterLast('/')?.takeIf(String::isNotBlank) ?: "libro"
     }
 
     private fun queryFileSize(uri: Uri): Long? {
@@ -325,21 +332,6 @@ class LocalBookRepository(
             if (cursor.moveToFirst() && !cursor.isNull(0)) return cursor.getLong(0)
         }
         return null
-    }
-
-    private fun validateMimeType(
-        extension: String,
-        mimeType: String?,
-    ) {
-        val normalizedMimeType = mimeType?.substringBefore(';')?.lowercase()
-        if (normalizedMimeType == null || normalizedMimeType in GENERIC_MIME_TYPES) return
-        val accepted =
-            when (extension) {
-                "pdf" -> normalizedMimeType in PDF_MIME_TYPES
-                "epub" -> normalizedMimeType in EPUB_MIME_TYPES
-                else -> normalizedMimeType.startsWith("text/")
-            }
-        require(accepted) { "El tipo de archivo no coincide con su extensión" }
     }
 
     private fun readRecords(): List<BookRecord> {
@@ -439,13 +431,17 @@ class LocalBookRepository(
         }
     }
 
+    private fun File.readHeader(): ByteArray =
+        inputStream().use { input ->
+            val header = ByteArray(IMPORT_HEADER_BYTES)
+            val bytesRead = input.read(header)
+            if (bytesRead <= 0) ByteArray(0) else header.copyOf(bytesRead)
+        }
+
     private companion object {
-        val SUPPORTED_EXTENSIONS = setOf("txt", "epub", "pdf")
-        val GENERIC_MIME_TYPES = setOf("application/octet-stream", "application/binary")
-        val PDF_MIME_TYPES = setOf("application/pdf", "application/x-pdf")
-        val EPUB_MIME_TYPES = setOf("application/epub+zip", "application/zip")
         const val MAX_IMPORT_BYTES = 200L * 1024 * 1024
         const val COPY_BUFFER_BYTES = 64 * 1024
+        const val IMPORT_HEADER_BYTES = 1_100
         const val CURRENT_DOCUMENT_NORMALIZATION_VERSION = 2
     }
 }

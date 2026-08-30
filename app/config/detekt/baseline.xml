@@ -13,44 +13,6 @@
     <ID>CyclomaticComplexMethod:OctomindApp.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable private fun ReaderScreenContent</ID>
     <ID>CyclomaticComplexMethod:OctomindApp.kt:private fun createNarratorQuoteCard: Uri</ID>
     <ID>CyclomaticComplexMethod:ReadingPlan.kt:ReadingPlanBuilder$private fun String.terminalPauseKind: PauseKind</ID>
-    <ID>FunctionNaming:NarratorArtwork.kt:@Composable internal fun BookColoredNarratorArtwork</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable fun OctomindApp</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun AmbientAudioControl</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun AmbientAudioSettings</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun AmbientSoundscapeSettings</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun AmbientVolumeSettings</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun BackupMenuDialog</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun BackupPasswordDialog</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun BookCover</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun BookshelfRow</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun CollapsedReaderMenuHandle</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun CustomCircularNarratorAvatar</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun EmptyLibrary</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun FocusFullscreenTapZones</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun FocusNarratorAvatar</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun FocusReadingMascot</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun FontSettings</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun LoadingScreen</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun OctiNarratorOverlay</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun OnboardingScreen</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun PreviousReadingCard</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun ReaderControls</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun ReaderParagraph</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun ReadingAmbientBackdrop</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun SessionBookCover</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun SessionMetricPair</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun SessionMetricTile</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun SessionProgressMetric</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@Composable private fun SessionResultScreen</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable private fun LibraryScreen</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable private fun QuotesScreen</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable private fun ReaderScreen</ID>
-    <ID>FunctionNaming:OctomindApp.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable private fun ReaderScreenContent</ID>
-    <ID>FunctionNaming:PdfOriginalReader.kt:@Composable private fun PdfPage</ID>
-    <ID>FunctionNaming:PdfOriginalReader.kt:@Composable private fun PdfRenderError</ID>
-    <ID>FunctionNaming:PdfOriginalReader.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable internal fun PdfOriginalReader</ID>
-    <ID>FunctionNaming:Theme.kt:@Composable fun OctomindTheme</ID>
-    <ID>FunctionNaming:Theme.kt:@Composable fun ReaderPageTheme</ID>
     <ID>LargeClass:OctomindViewModel.kt:OctomindViewModel : AndroidViewModel</ID>
     <ID>LongMethod:BookParser.kt:EpubBookParser$override fun parse: ParsedBook</ID>
     <ID>LongMethod:BookParser.kt:PdfBookParser$override fun parse: ParsedBook</ID>
