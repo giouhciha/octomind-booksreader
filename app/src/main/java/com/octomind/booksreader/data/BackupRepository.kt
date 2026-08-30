@@ -3,6 +3,7 @@ package com.octomind.booksreader.data
 import android.content.Context
 import android.net.Uri
 import com.octomind.booksreader.domain.AmbientIntensity
+import com.octomind.booksreader.domain.AmbientSoundscape
 import com.octomind.booksreader.domain.FocusPresentation
 import com.octomind.booksreader.domain.NarratorAvatar
 import com.octomind.booksreader.domain.PageTheme
@@ -190,6 +191,9 @@ private fun ReaderSettings.toJson() = JSONObject()
     .put("narratorAvatar", narratorAvatar.name)
     .put("customNarratorAvatarVersion", customNarratorAvatarVersion)
     .put("ambientIntensity", ambientIntensity.name)
+    .put("ambientAudioEnabled", ambientAudioEnabled)
+    .put("ambientSoundscape", ambientSoundscape.name)
+    .put("ambientAudioVolumePercent", ambientAudioVolumePercent)
     .put("focusEnabled", focusEnabled)
     .put("readerControlsExpanded", readerControlsExpanded)
     .put("narratorGestureHintDismissed", narratorGestureHintDismissed)
@@ -218,6 +222,15 @@ private fun JSONObject.toPreferencesSnapshot(): UserPreferencesSnapshot {
             narratorAvatar = settings.enum("narratorAvatar", NarratorAvatar.OCTI),
             customNarratorAvatarVersion = settings.optInt("customNarratorAvatarVersion", 0),
             ambientIntensity = settings.enum("ambientIntensity", AmbientIntensity.SUBTLE),
+            ambientAudioEnabled = settings.optBoolean("ambientAudioEnabled", false),
+            ambientSoundscape = settings.enum(
+                "ambientSoundscape",
+                AmbientSoundscape.CONCENTRATION,
+            ),
+            ambientAudioVolumePercent = settings.optInt(
+                "ambientAudioVolumePercent",
+                DEFAULT_AMBIENT_AUDIO_VOLUME_PERCENT,
+            ).coerceIn(MINIMUM_AMBIENT_AUDIO_VOLUME_PERCENT, MAXIMUM_AMBIENT_AUDIO_VOLUME_PERCENT),
             focusEnabled = settings.optBoolean("focusEnabled", false),
             readerControlsExpanded = settings.optBoolean("readerControlsExpanded", true),
             narratorGestureHintDismissed = settings.optBoolean("narratorGestureHintDismissed", false),
@@ -237,3 +250,6 @@ private const val DEFAULT_WORDS_PER_MINUTE = 260
 private const val DEFAULT_WORDS_PER_BLOCK = 4
 private const val DEFAULT_FONT_SIZE_SP = 19
 private const val DEFAULT_FOCUS_DIMMING_PERCENT = 45
+private const val DEFAULT_AMBIENT_AUDIO_VOLUME_PERCENT = 15
+private const val MINIMUM_AMBIENT_AUDIO_VOLUME_PERCENT = 0
+private const val MAXIMUM_AMBIENT_AUDIO_VOLUME_PERCENT = 50

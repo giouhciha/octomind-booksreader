@@ -9,6 +9,7 @@ import com.octomind.booksreader.OctomindApplication
 import com.octomind.booksreader.domain.BookDocument
 import com.octomind.booksreader.domain.BookSummary
 import com.octomind.booksreader.domain.CompletedReading
+import com.octomind.booksreader.domain.AmbientSoundscape
 import com.octomind.booksreader.domain.PageTheme
 import com.octomind.booksreader.domain.NarratorAvatar
 import com.octomind.booksreader.domain.ReaderFontStyle
@@ -531,6 +532,32 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
         saveSettings(settings)
     }
 
+    fun updateAmbientAudioEnabled(enabled: Boolean) {
+        val reader = currentReader() ?: return
+        val settings = reader.settings.copy(ambientAudioEnabled = enabled)
+        updateReader { it.copy(settings = settings) }
+        saveSettings(settings)
+    }
+
+    fun updateAmbientSoundscape(soundscape: AmbientSoundscape) {
+        val reader = currentReader() ?: return
+        val settings = reader.settings.copy(ambientSoundscape = soundscape)
+        updateReader { it.copy(settings = settings) }
+        saveSettings(settings)
+    }
+
+    fun updateAmbientAudioVolume(volumePercent: Int) {
+        val reader = currentReader() ?: return
+        val settings = reader.settings.copy(
+            ambientAudioVolumePercent = volumePercent.coerceIn(
+                MINIMUM_AMBIENT_AUDIO_VOLUME_PERCENT,
+                MAXIMUM_AMBIENT_AUDIO_VOLUME_PERCENT,
+            ),
+        )
+        updateReader { it.copy(settings = settings) }
+        saveSettings(settings)
+    }
+
     fun finishReader() {
         val reader = currentReader() ?: return
         if (reader.quotePreview) {
@@ -691,6 +718,11 @@ class OctomindViewModel(application: Application) : AndroidViewModel(application
             val screen = ui.screen as? AppScreen.Reader ?: return@update ui
             ui.copy(screen = AppScreen.Reader(transform(screen.state)))
         }
+    }
+
+    private companion object {
+        const val MINIMUM_AMBIENT_AUDIO_VOLUME_PERCENT = 0
+        const val MAXIMUM_AMBIENT_AUDIO_VOLUME_PERCENT = 50
     }
 
     private fun completeReading(reader: ReaderState) {

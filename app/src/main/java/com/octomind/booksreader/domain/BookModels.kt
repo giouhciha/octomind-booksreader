@@ -140,6 +140,13 @@ enum class AmbientIntensity {
     IMMERSIVE,
 }
 
+enum class AmbientSoundscape {
+    CONCENTRATION,
+    RAIN,
+    BROWN_NOISE,
+    QUIET_NIGHT,
+}
+
 data class ReaderSettings(
     val wordsPerMinute: Int = 260,
     val wordsPerBlock: Int = 4,
@@ -154,6 +161,9 @@ data class ReaderSettings(
     val narratorAvatar: NarratorAvatar = NarratorAvatar.OCTI,
     val customNarratorAvatarVersion: Int = 0,
     val ambientIntensity: AmbientIntensity = AmbientIntensity.SUBTLE,
+    val ambientAudioEnabled: Boolean = false,
+    val ambientSoundscape: AmbientSoundscape = AmbientSoundscape.CONCENTRATION,
+    val ambientAudioVolumePercent: Int = 15,
     val focusEnabled: Boolean = false,
     val readerControlsExpanded: Boolean = true,
     val narratorGestureHintDismissed: Boolean = false,

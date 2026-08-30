@@ -1,6 +1,7 @@
 package com.octomind.booksreader.domain
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -8,6 +9,15 @@ class ReaderSettingsTest {
     @Test
     fun `controls start expanded before user chooses otherwise`() {
         assertTrue(ReaderSettings().readerControlsExpanded)
+    }
+
+    @Test
+    fun `ambient audio remains optional and quiet by default`() {
+        val settings = ReaderSettings()
+
+        assertFalse(settings.ambientAudioEnabled)
+        assertEquals(AmbientSoundscape.CONCENTRATION, settings.ambientSoundscape)
+        assertEquals(15, settings.ambientAudioVolumePercent)
     }
 
     @Test

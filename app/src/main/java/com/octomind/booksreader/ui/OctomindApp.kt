@@ -67,6 +67,7 @@ import androidx.compose.material.icons.rounded.CloudSync
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Remove
@@ -161,6 +162,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.core.content.FileProvider
 import com.octomind.booksreader.R
+import com.octomind.booksreader.audio.AmbientAudioController
+import com.octomind.booksreader.domain.AmbientSoundscape
 import com.octomind.booksreader.domain.BookSummary
 import com.octomind.booksreader.domain.CompletedReading
 import com.octomind.booksreader.domain.AmbientIntensity
@@ -256,6 +259,9 @@ fun OctomindApp(viewModel: OctomindViewModel = viewModel()) {
                 onDeleteCustomAvatar = viewModel::deleteCustomNarratorAvatar,
                 onReaderControlsExpanded = viewModel::updateReaderControlsExpanded,
                 onAmbientIntensity = viewModel::updateAmbientIntensity,
+                onAmbientAudioEnabled = viewModel::updateAmbientAudioEnabled,
+                onAmbientSoundscape = viewModel::updateAmbientSoundscape,
+                onAmbientAudioVolume = viewModel::updateAmbientAudioVolume,
                 onSaveQuote = viewModel::saveCurrentQuote,
                 onSaveSelectedQuote = viewModel::saveSelectedQuote,
                 onNarratorGestureLearned = viewModel::dismissNarratorGestureHint,
@@ -505,6 +511,10 @@ private const val NARRATOR_HORIZONTAL_RESERVED_DP = 104
 private const val NARRATOR_MINIMUM_TEXT_WIDTH_DP = 160
 private const val NARRATOR_VERTICAL_RESERVED_DP = 360
 private const val NARRATOR_MINIMUM_TEXT_HEIGHT_DP = 150
+private const val MINIMUM_AMBIENT_VOLUME = 0f
+private const val MAXIMUM_AMBIENT_VOLUME = 50f
+private const val AMBIENT_VOLUME_STEP = 5f
+private const val AMBIENT_VOLUME_SLIDER_STEPS = 9
 
 @Composable
 private fun BackupMenuDialog(onDismiss: () -> Unit, onCreate: () -> Unit, onRestore: () -> Unit) {
@@ -1189,6 +1199,9 @@ private fun ReaderScreen(
     onDeleteCustomAvatar: () -> Unit,
     onReaderControlsExpanded: (Boolean) -> Unit,
     onAmbientIntensity: (AmbientIntensity) -> Unit,
+    onAmbientAudioEnabled: (Boolean) -> Unit,
+    onAmbientSoundscape: (AmbientSoundscape) -> Unit,
+    onAmbientAudioVolume: (Int) -> Unit,
     onSaveQuote: () -> Unit,
     onSaveSelectedQuote: (String, Int, Int) -> Unit,
     onNarratorGestureLearned: () -> Unit,
@@ -1212,6 +1225,9 @@ private fun ReaderScreen(
             onDeleteCustomAvatar = onDeleteCustomAvatar,
             onReaderControlsExpanded = onReaderControlsExpanded,
             onAmbientIntensity = onAmbientIntensity,
+            onAmbientAudioEnabled = onAmbientAudioEnabled,
+            onAmbientSoundscape = onAmbientSoundscape,
+            onAmbientAudioVolume = onAmbientAudioVolume,
             onSaveQuote = onSaveQuote,
             onSaveSelectedQuote = onSaveSelectedQuote,
             onNarratorGestureLearned = onNarratorGestureLearned,
@@ -1239,16 +1255,46 @@ private fun ReaderScreenContent(
     onDeleteCustomAvatar: () -> Unit,
     onReaderControlsExpanded: (Boolean) -> Unit,
     onAmbientIntensity: (AmbientIntensity) -> Unit,
+    onAmbientAudioEnabled: (Boolean) -> Unit,
+    onAmbientSoundscape: (AmbientSoundscape) -> Unit,
+    onAmbientAudioVolume: (Int) -> Unit,
     onSaveQuote: () -> Unit,
     onSaveSelectedQuote: (String, Int, Int) -> Unit,
     onNarratorGestureLearned: () -> Unit,
 ) {
     BackHandler(onBack = onBack)
     val readerView = LocalView.current
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     val hapticFeedback = LocalHapticFeedback.current
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
     val narratorTextMeasurer = rememberTextMeasurer()
+    val ambientAudioController = remember(context) { AmbientAudioController(context) }
+    var ambientAudioPlaying by remember(state.document.summary.id) { mutableStateOf(false) }
+    DisposableEffect(ambientAudioController, lifecycleOwner) {
+        ambientAudioController.onPlaybackChanged = { ambientAudioPlaying = it }
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) ambientAudioController.pause()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            ambientAudioController.close()
+        }
+    }
+    LaunchedEffect(state.settings.ambientAudioEnabled) {
+        if (!state.settings.ambientAudioEnabled) ambientAudioController.pause()
+    }
+    LaunchedEffect(
+        state.settings.ambientSoundscape,
+        state.settings.ambientAudioVolumePercent,
+    ) {
+        ambientAudioController.update(
+            state.settings.ambientSoundscape,
+            state.settings.ambientAudioVolumePercent,
+        )
+    }
     DisposableEffect(readerView, state.focusEnabled) {
         val previousKeepScreenOn = readerView.keepScreenOn
         readerView.keepScreenOn = state.focusEnabled
@@ -1415,6 +1461,9 @@ private fun ReaderScreenContent(
                 onDeleteCustomAvatar = onDeleteCustomAvatar,
                 onReaderControlsExpanded = onReaderControlsExpanded,
                 onAmbientIntensity = onAmbientIntensity,
+                onAmbientAudioEnabled = onAmbientAudioEnabled,
+                onAmbientSoundscape = onAmbientSoundscape,
+                onAmbientAudioVolume = onAmbientAudioVolume,
             )
         },
     ) { padding ->
@@ -1550,6 +1599,26 @@ private fun ReaderScreenContent(
                     onBack = onBack,
                     onExitFocus = onToggleFocus,
                     onOpenFocusMenu = { onReaderControlsExpanded(true) },
+                )
+            }
+            if (state.settings.ambientAudioEnabled) {
+                AmbientAudioControl(
+                    soundscape = state.settings.ambientSoundscape,
+                    isPlaying = ambientAudioPlaying,
+                    onTogglePlayback = {
+                        if (ambientAudioPlaying) {
+                            ambientAudioController.pause()
+                        } else {
+                            ambientAudioController.play(
+                                state.settings.ambientSoundscape,
+                                state.settings.ambientAudioVolumePercent,
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .navigationBarsPadding()
+                        .padding(12.dp),
                 )
             }
         }
@@ -2037,6 +2106,128 @@ private fun ambientPalette(ambience: ReadingAmbience): Pair<Color, Color> = when
 }
 
 @Composable
+private fun AmbientAudioControl(
+    soundscape: AmbientSoundscape,
+    isPlaying: Boolean,
+    onTogglePlayback: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val soundscapeName = ambientSoundscapeName(soundscape)
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(50),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = 6.dp,
+        shadowElevation = 3.dp,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(start = 12.dp),
+        ) {
+            Icon(
+                Icons.Rounded.MusicNote,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.primary,
+            )
+            IconButton(onClick = onTogglePlayback, modifier = Modifier.size(44.dp)) {
+                Icon(
+                    imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                    contentDescription = if (isPlaying) {
+                        stringResource(R.string.pause_ambient_music, soundscapeName)
+                    } else {
+                        stringResource(R.string.play_ambient_music, soundscapeName)
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AmbientAudioSettings(
+    enabled: Boolean,
+    soundscape: AmbientSoundscape,
+    volumePercent: Int,
+    onEnabled: (Boolean) -> Unit,
+    onSoundscape: (AmbientSoundscape) -> Unit,
+    onVolume: (Int) -> Unit,
+) {
+    var volumeValue by remember(volumePercent) { mutableFloatStateOf(volumePercent.toFloat()) }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(stringResource(R.string.ambient_music), fontWeight = FontWeight.SemiBold)
+            Text(
+                stringResource(R.string.ambient_music_hint),
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Switch(checked = enabled, onCheckedChange = onEnabled)
+    }
+    AnimatedVisibility(visible = enabled) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                stringResource(R.string.ambient_music_soundscape),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                AmbientSoundscape.entries.chunked(2).forEach { optionRow ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        optionRow.forEach { option ->
+                            FilterChip(
+                                selected = soundscape == option,
+                                onClick = { onSoundscape(option) },
+                                label = { Text(ambientSoundscapeName(option), maxLines = 1) },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        if (optionRow.size == 1) Spacer(Modifier.weight(1f))
+                    }
+                }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(R.string.ambient_music_volume),
+                    modifier = Modifier.weight(1f),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    stringResource(R.string.ambient_music_volume_value, volumeValue.roundToInt()),
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Slider(
+                value = volumeValue,
+                onValueChange = { volumeValue = (it / AMBIENT_VOLUME_STEP).roundToInt() * AMBIENT_VOLUME_STEP },
+                onValueChangeFinished = { onVolume(volumeValue.roundToInt()) },
+                valueRange = MINIMUM_AMBIENT_VOLUME..MAXIMUM_AMBIENT_VOLUME,
+                steps = AMBIENT_VOLUME_SLIDER_STEPS,
+            )
+            Text(
+                stringResource(R.string.ambient_music_manual_start_hint),
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ambientSoundscapeName(soundscape: AmbientSoundscape): String = when (soundscape) {
+    AmbientSoundscape.CONCENTRATION -> stringResource(R.string.ambient_music_concentration)
+    AmbientSoundscape.RAIN -> stringResource(R.string.ambient_music_rain)
+    AmbientSoundscape.BROWN_NOISE -> stringResource(R.string.ambient_music_brown_noise)
+    AmbientSoundscape.QUIET_NIGHT -> stringResource(R.string.ambient_music_quiet_night)
+}
+
+@Composable
 private fun ReaderControls(
     state: ReaderState,
     onToggleFocus: () -> Unit,
@@ -2052,6 +2243,9 @@ private fun ReaderControls(
     onDeleteCustomAvatar: () -> Unit,
     onReaderControlsExpanded: (Boolean) -> Unit,
     onAmbientIntensity: (AmbientIntensity) -> Unit,
+    onAmbientAudioEnabled: (Boolean) -> Unit,
+    onAmbientSoundscape: (AmbientSoundscape) -> Unit,
+    onAmbientAudioVolume: (Int) -> Unit,
 ) {
     val customAvatarLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let(onImportCustomAvatar)
@@ -2096,6 +2290,17 @@ private fun ReaderControls(
                 }
                 Switch(checked = state.focusEnabled, onCheckedChange = { onToggleFocus() })
             }
+            Spacer(Modifier.height(8.dp))
+            AmbientAudioSettings(
+                enabled = state.settings.ambientAudioEnabled,
+                soundscape = state.settings.ambientSoundscape,
+                volumePercent = state.settings.ambientAudioVolumePercent,
+                onEnabled = onAmbientAudioEnabled,
+                onSoundscape = onAmbientSoundscape,
+                onVolume = onAmbientAudioVolume,
+            )
+            Spacer(Modifier.height(8.dp))
+            HorizontalDivider()
             Spacer(Modifier.height(8.dp))
             Text(
                 stringResource(R.string.focus_presentation),

@@ -9,6 +9,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.octomind.booksreader.domain.PageTheme
 import com.octomind.booksreader.domain.FocusPresentation
 import com.octomind.booksreader.domain.AmbientIntensity
+import com.octomind.booksreader.domain.AmbientSoundscape
 import com.octomind.booksreader.domain.NarratorAvatar
 import com.octomind.booksreader.domain.ReaderFontStyle
 import com.octomind.booksreader.domain.ReaderProfile
@@ -60,6 +61,14 @@ class UserPreferences(
                     preferences[AMBIENT_INTENSITY],
                     AmbientIntensity.SUBTLE,
                 ),
+                ambientAudioEnabled = preferences[AMBIENT_AUDIO_ENABLED] ?: false,
+                ambientSoundscape = enumPreference(
+                    preferences[AMBIENT_SOUNDSCAPE],
+                    AmbientSoundscape.CONCENTRATION,
+                ),
+                ambientAudioVolumePercent =
+                    (preferences[AMBIENT_AUDIO_VOLUME_PERCENT] ?: DEFAULT_AMBIENT_AUDIO_VOLUME_PERCENT)
+                        .coerceIn(MINIMUM_AMBIENT_AUDIO_VOLUME_PERCENT, MAXIMUM_AMBIENT_AUDIO_VOLUME_PERCENT),
                 focusEnabled = preferences[FOCUS_ENABLED] ?: false,
                 readerControlsExpanded = preferences[READER_CONTROLS_EXPANDED] ?: true,
                 narratorGestureHintDismissed = preferences[NARRATOR_GESTURE_HINT_DISMISSED] ?: false,
@@ -113,6 +122,10 @@ class UserPreferences(
             preferences[CUSTOM_NARRATOR_AVATAR_VERSION] =
                 settings.customNarratorAvatarVersion.coerceAtLeast(0)
             preferences[AMBIENT_INTENSITY] = settings.ambientIntensity.name
+            preferences[AMBIENT_AUDIO_ENABLED] = settings.ambientAudioEnabled
+            preferences[AMBIENT_SOUNDSCAPE] = settings.ambientSoundscape.name
+            preferences[AMBIENT_AUDIO_VOLUME_PERCENT] = settings.ambientAudioVolumePercent
+                .coerceIn(MINIMUM_AMBIENT_AUDIO_VOLUME_PERCENT, MAXIMUM_AMBIENT_AUDIO_VOLUME_PERCENT)
             preferences[FOCUS_ENABLED] = settings.focusEnabled
             preferences[READER_CONTROLS_EXPANDED] = settings.readerControlsExpanded
             preferences[NARRATOR_GESTURE_HINT_DISMISSED] = settings.narratorGestureHintDismissed
@@ -150,6 +163,9 @@ class UserPreferences(
     private companion object {
         const val MINIMUM_PROFILE_WORDS_PER_MINUTE = 100
         const val MAXIMUM_PROFILE_WORDS_PER_MINUTE = 700
+        const val DEFAULT_AMBIENT_AUDIO_VOLUME_PERCENT = 15
+        const val MINIMUM_AMBIENT_AUDIO_VOLUME_PERCENT = 0
+        const val MAXIMUM_AMBIENT_AUDIO_VOLUME_PERCENT = 50
         inline fun <reified T : Enum<T>> enumPreference(value: String?, fallback: T): T =
             runCatching { enumValueOf<T>(value.orEmpty()) }.getOrDefault(fallback)
 
@@ -169,6 +185,9 @@ class UserPreferences(
         val NARRATOR_AVATAR = stringPreferencesKey("narrator_avatar")
         val CUSTOM_NARRATOR_AVATAR_VERSION = intPreferencesKey("custom_narrator_avatar_version")
         val AMBIENT_INTENSITY = stringPreferencesKey("ambient_intensity")
+        val AMBIENT_AUDIO_ENABLED = booleanPreferencesKey("ambient_audio_enabled")
+        val AMBIENT_SOUNDSCAPE = stringPreferencesKey("ambient_soundscape")
+        val AMBIENT_AUDIO_VOLUME_PERCENT = intPreferencesKey("ambient_audio_volume_percent")
         val FOCUS_ENABLED = booleanPreferencesKey("focus_enabled")
         val READER_CONTROLS_EXPANDED = booleanPreferencesKey("reader_controls_expanded")
         val NARRATOR_GESTURE_HINT_DISMISSED = booleanPreferencesKey("narrator_gesture_hint_dismissed")
