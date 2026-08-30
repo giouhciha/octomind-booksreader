@@ -321,10 +321,17 @@ class LocalBookRepository(
     private fun queryDisplayName(uri: Uri): String {
         context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
             if (cursor.moveToFirst()) {
-                cursor.getString(0)?.trim()?.takeIf(String::isNotEmpty)?.let { return it }
+                cursor
+                    .getString(0)
+                    ?.trim()
+                    ?.takeIf(String::isNotEmpty)
+                    ?.let { return it }
             }
         }
-        return uri.lastPathSegment?.substringAfterLast('/')?.takeIf(String::isNotBlank) ?: "libro"
+        return uri.lastPathSegment
+            ?.substringAfterLast('/')
+            ?.takeIf(String::isNotBlank)
+            ?: "libro"
     }
 
     private fun queryFileSize(uri: Uri): Long? {
