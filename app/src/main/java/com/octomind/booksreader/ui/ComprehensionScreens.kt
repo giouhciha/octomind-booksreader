@@ -42,6 +42,8 @@ internal val ComprehensionBackground = Color(0xFF8A551F)
 internal val ComprehensionSurface = Color(0xFFF9E8C5)
 internal val ComprehensionText = Color(0xFF352817)
 internal val ComprehensionSecondaryText = Color(0xFF6C5B43)
+internal val ComprehensionAccent = Color(0xFF215A3D)
+private val ComprehensionTopBarColor = Color(0xFFF3D293)
 internal val ComprehensionShape = RoundedCornerShape(24.dp)
 
 @Composable
@@ -119,7 +121,7 @@ private fun QuestionProgress(state: ComprehensionCheckState) {
 private fun QuestionCard(question: ComprehensionQuestion) {
     Surface(shape = ComprehensionShape, color = ComprehensionSurface) {
         Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(question.type.localizedName(), color = Color(0xFF215A3D), fontWeight = FontWeight.Bold)
+            Text(question.type.localizedName(), color = ComprehensionAccent, fontWeight = FontWeight.Bold)
             Text(question.prompt, style = MaterialTheme.typography.headlineSmall, color = ComprehensionText)
             Text(stringResource(R.string.comprehension_recall_first), color = ComprehensionSecondaryText)
         }
@@ -209,7 +211,7 @@ internal fun ComprehensionTopBar(
     title: String,
     onBack: () -> Unit,
 ) {
-    Surface(color = Color(0xFFF3D293), shadowElevation = 4.dp) {
+    Surface(color = ComprehensionTopBarColor, shadowElevation = 4.dp) {
         Row(
             modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 8.dp, vertical = 8.dp),
         ) {

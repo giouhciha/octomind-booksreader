@@ -32,13 +32,14 @@ try {
     Write-Host "Jenkins no entrego un crumb CSRF; se intentara con el token de API."
 }
 
-$triggerResponse = Invoke-RestMethod `
+$triggerResponse = Invoke-WebRequest `
     -Uri "$jobUrl/build?delay=0sec" `
     -Headers $headers `
     -Method Post `
+    -UseBasicParsing `
     -TimeoutSec 30
 
-$queueUrl = $triggerResponse.Headers.Location
+$queueUrl = $triggerResponse.Headers["Location"]
 if ([string]::IsNullOrWhiteSpace($queueUrl)) {
     throw "Jenkins acepto la solicitud, pero no devolvio la ubicacion de la cola."
 }

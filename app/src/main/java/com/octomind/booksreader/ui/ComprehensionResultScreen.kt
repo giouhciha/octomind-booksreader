@@ -78,7 +78,7 @@ private fun ScoreSummary(
             Text(
                 stringResource(R.string.comprehension_session_score, ComprehensionScorer.score(latest)),
                 style = MaterialTheme.typography.headlineMedium,
-                color = Color(0xFF215A3D),
+                color = ComprehensionAccent,
                 fontWeight = FontWeight.Bold,
             )
             Text(

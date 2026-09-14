@@ -277,16 +277,16 @@ El APK de desarrollo se genera en `app/build/outputs/apk/debug/app-debug.apk`.
 ### Pruebas y análisis
 
 ```powershell
-.\gradlew.bat testDebugUnitTest
+.\gradlew.bat ktlintCheck detekt testDebugUnitTest --continue
 .\gradlew.bat lintDebug
-.\gradlew.bat ktlintCheck
-.\gradlew.bat detekt
 .\gradlew.bat --no-configuration-cache :app:dependencyCheckAnalyze
 ```
 
+La primera orden es el preflight recomendado antes de un commit: agrupa formato, análisis estático y pruebas unitarias, y `--continue` permite conocer todos sus fallos en una sola ejecución. No sustituye a Jenkins ni modifica los baselines.
+
 `dependencyCheckAnalyze` requiere una [clave de la NVD](https://nvd.nist.gov/developers/request-an-api-key) para consultar su base. En Jenkins debe guardarse como una credencial de tipo **Secret text** con el identificador `nvd-api-key`; el pipeline la expone temporalmente como `NVD_API_KEY`. Los hallazgos con CVSS 7 o superior detienen el pipeline. Gitleaks revisa el historial Git mediante `scripts/jenkins/Invoke-Gitleaks.ps1` y valida el checksum del binario fijado antes de ejecutarlo.
 
-Jenkins no utiliza emulador. Después de lint, formato, análisis estático, seguridad y pruebas unitarias, construye y archiva un APK debug identificable. La versión base se define en `app/build.gradle.kts`; cada build de Jenkins agrega su número, por ejemplo `0.51.0.123`, y produce `app/build/outputs/jenkins/octomind-booksreader-0.51.0.123.apk`. El mismo valor queda grabado como `versionName`, mientras `versionCode` se calcula de forma monotónica para permitir actualizaciones entre compilaciones.
+Jenkins no utiliza emulador. Ejecuta primero secretos y la calidad Kotlin, después Android Lint y el análisis de dependencias. Cada control informa su propio resultado aunque otro haya fallado, y el build completo conserva el estado `FAILURE`. El APK solo se construye cuando todos los controles pasan; entonces se archiva como un APK debug identificable. La versión base se define en `app/build.gradle.kts`; cada build de Jenkins agrega su número, por ejemplo `0.51.0.123`, y produce `app/build/outputs/jenkins/octomind-booksreader-0.51.0.123.apk`. El mismo valor queda grabado como `versionName`, mientras `versionCode` se calcula de forma monotónica para permitir actualizaciones entre compilaciones.
 
 Los baselines de Ktlint y Detekt registran únicamente la deuda existente. Una infracción nueva falla la validación; no se debe regenerar un baseline para ocultar un hallazgo sin revisarlo.
 

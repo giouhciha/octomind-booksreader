@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    options {
+        skipDefaultCheckout(true)
+        disableConcurrentBuilds()
+    }
+
     environment {
         JAVA_HOME = 'C:\\Program Files\\Android\\Android Studio\\jbr'
         ANDROID_HOME = 'C:\\Users\\gio_u\\AppData\\Local\\Android\\Sdk'
@@ -13,47 +18,46 @@ pipeline {
             }
         }
 
-        stage('Lint (Android)') {
-            steps {
-                bat '"%JAVA_HOME%\\bin\\java.exe" -version'
-                bat 'gradlew.bat --version'
-                bat 'gradlew.bat lintDebug'
-            }
-        }
-
-        stage('Formato Kotlin') {
-            steps {
-                bat 'gradlew.bat ktlintCheck'
-            }
-        }
-
-        stage('Analisis estatico') {
-            steps {
-                bat 'gradlew.bat detekt'
-            }
-        }
-
         stage('Secretos') {
             steps {
-                powershell '.\\scripts\\jenkins\\Invoke-Gitleaks.ps1'
+                catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                    powershell '.\\scripts\\jenkins\\Invoke-Gitleaks.ps1'
+                }
+            }
+        }
+
+        stage('Calidad Kotlin') {
+            steps {
+                catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                    bat 'gradlew.bat ktlintCheck detekt testDebugUnitTest --continue'
+                }
+            }
+        }
+
+        stage('Lint (Android)') {
+            steps {
+                catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                    bat '"%JAVA_HOME%\\bin\\java.exe" -version'
+                    bat 'gradlew.bat --version'
+                    bat 'gradlew.bat lintDebug'
+                }
             }
         }
 
         stage('Dependencias vulnerables') {
             steps {
-                withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_API_KEY')]) {
-                    bat 'gradlew.bat --no-configuration-cache :app:dependencyCheckAnalyze'
+                catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                    withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_API_KEY')]) {
+                        bat 'gradlew.bat --no-configuration-cache :app:dependencyCheckAnalyze'
+                    }
                 }
             }
         }
 
-        stage('Unit Tests') {
-            steps {
-                bat 'gradlew.bat testDebugUnitTest'
-            }
-        }
-
         stage('Construir APK') {
+            when {
+                expression { currentBuild.currentResult == 'SUCCESS' }
+            }
             steps {
                 bat 'gradlew.bat :app:stageDebugApk -PciBuildNumber=%BUILD_NUMBER%'
             }

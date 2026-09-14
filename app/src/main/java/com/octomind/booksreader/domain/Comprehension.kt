@@ -4,6 +4,8 @@ import java.util.UUID
 import kotlin.math.roundToInt
 
 const val LOCAL_READER_ID = "local-reader"
+private const val PARTIAL_COMPREHENSION_SCORE = 50
+private const val FULL_COMPREHENSION_SCORE = 100
 
 enum class ComprehensionQuestionType {
     LITERAL,
@@ -21,8 +23,8 @@ enum class ComprehensionRating(
     val score: Int,
 ) {
     NOT_YET(0),
-    PARTIAL(50),
-    UNDERSTOOD(100),
+    PARTIAL(PARTIAL_COMPREHENSION_SCORE),
+    UNDERSTOOD(FULL_COMPREHENSION_SCORE),
 }
 
 enum class ComprehensionAssessmentStatus {
@@ -128,37 +130,7 @@ class LocalRecallQuestionProvider(
         val secondEvidence = boundedEvidence(midpoint, safeEnd, preferEnd = true)
         val centralEvidence = centeredEvidence(safeStart, safeEnd)
         val finalEvidence = boundedEvidence(safeStart, safeEnd, preferEnd = true)
-        val questionSpecs =
-            listOf(
-                QuestionSpec(
-                    type = ComprehensionQuestionType.LITERAL,
-                    prompt = request.catalog.firstLiteralPrompt,
-                    expectedAnswer = request.catalog.literalExpectedAnswer,
-                    evidenceStart = firstEvidence.start,
-                    evidenceEnd = firstEvidence.end,
-                ),
-                QuestionSpec(
-                    type = ComprehensionQuestionType.LITERAL,
-                    prompt = request.catalog.secondLiteralPrompt,
-                    expectedAnswer = request.catalog.literalExpectedAnswer,
-                    evidenceStart = secondEvidence.start,
-                    evidenceEnd = secondEvidence.end,
-                ),
-                QuestionSpec(
-                    type = ComprehensionQuestionType.MAIN_IDEA,
-                    prompt = request.catalog.mainIdeaPrompt,
-                    expectedAnswer = request.catalog.mainIdeaExpectedAnswer,
-                    evidenceStart = centralEvidence.start,
-                    evidenceEnd = centralEvidence.end,
-                ),
-                QuestionSpec(
-                    type = ComprehensionQuestionType.INFERENCE,
-                    prompt = request.catalog.inferencePrompt,
-                    expectedAnswer = request.catalog.inferenceExpectedAnswer,
-                    evidenceStart = finalEvidence.start,
-                    evidenceEnd = finalEvidence.end,
-                ),
-            )
+        val questionSpecs = questionSpecs(request, firstEvidence, secondEvidence, centralEvidence, finalEvidence)
         return ComprehensionAssessment(
             id = idFactory(),
             userId = request.userId,
@@ -167,26 +139,65 @@ class LocalRecallQuestionProvider(
             bookTitle = request.bookTitle,
             sourceStartCharacterOffset = safeStart,
             sourceEndCharacterOffset = safeEnd,
-            questions =
-                questionSpecs.map { spec ->
-                    ComprehensionQuestion(
-                        id = idFactory(),
-                        userId = request.userId,
-                        bookId = request.bookId,
-                        type = spec.type,
-                        prompt = spec.prompt,
-                        expectedAnswer =
-                            spec.expectedAnswer +
-                                "\n\n" +
-                                request.text.substring(spec.evidenceStart, spec.evidenceEnd).trim(),
-                        rubric = request.catalog.rubric,
-                        evidenceStartCharacterOffset = spec.evidenceStart,
-                        evidenceEndCharacterOffset = spec.evidenceEnd,
-                    )
-                },
+            questions = createQuestions(request, questionSpecs),
             createdAtMillis = request.createdAtMillis,
         )
     }
+
+    private fun questionSpecs(
+        request: ComprehensionAssessmentRequest,
+        firstEvidence: EvidenceRange,
+        secondEvidence: EvidenceRange,
+        centralEvidence: EvidenceRange,
+        finalEvidence: EvidenceRange,
+    ): List<QuestionSpec> =
+        listOf(
+            QuestionSpec(
+                ComprehensionQuestionType.LITERAL,
+                request.catalog.firstLiteralPrompt,
+                request.catalog.literalExpectedAnswer,
+                firstEvidence,
+            ),
+            QuestionSpec(
+                ComprehensionQuestionType.LITERAL,
+                request.catalog.secondLiteralPrompt,
+                request.catalog.literalExpectedAnswer,
+                secondEvidence,
+            ),
+            QuestionSpec(
+                ComprehensionQuestionType.MAIN_IDEA,
+                request.catalog.mainIdeaPrompt,
+                request.catalog.mainIdeaExpectedAnswer,
+                centralEvidence,
+            ),
+            QuestionSpec(
+                ComprehensionQuestionType.INFERENCE,
+                request.catalog.inferencePrompt,
+                request.catalog.inferenceExpectedAnswer,
+                finalEvidence,
+            ),
+        )
+
+    private fun createQuestions(
+        request: ComprehensionAssessmentRequest,
+        specs: List<QuestionSpec>,
+    ): List<ComprehensionQuestion> =
+        specs.map { spec ->
+            ComprehensionQuestion(
+                id = idFactory(),
+                userId = request.userId,
+                bookId = request.bookId,
+                type = spec.type,
+                prompt = spec.prompt,
+                expectedAnswer =
+                    spec.expectedAnswer +
+                        "\n\n" +
+                        request.text.substring(spec.evidence.start, spec.evidence.end).trim(),
+                rubric = request.catalog.rubric,
+                evidenceStartCharacterOffset = spec.evidence.start,
+                evidenceEndCharacterOffset = spec.evidence.end,
+            )
+        }
 
     private fun findEvidenceBoundary(
         text: String,
@@ -224,8 +235,7 @@ class LocalRecallQuestionProvider(
         val type: ComprehensionQuestionType,
         val prompt: String,
         val expectedAnswer: String,
-        val evidenceStart: Int,
-        val evidenceEnd: Int,
+        val evidence: EvidenceRange,
     )
 
     private data class EvidenceRange(
@@ -278,7 +288,7 @@ object ComprehensionScorer {
     fun isStable(assessments: List<ComprehensionAssessment>): Boolean =
         assessments.count { it.status == ComprehensionAssessmentStatus.COMPLETED } >= STABLE_ASSESSMENT_COUNT
 
-    private const val MAXIMUM_SCORE = 100
+    private const val MAXIMUM_SCORE = FULL_COMPREHENSION_SCORE
     private const val STABLE_ASSESSMENT_COUNT = 3
     private val TYPE_WEIGHTS =
         mapOf(

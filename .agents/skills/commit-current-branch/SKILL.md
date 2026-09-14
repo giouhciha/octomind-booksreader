@@ -18,7 +18,9 @@ La invocación de esta habilidad no autoriza mutaciones por sí sola. Ejecutar `
 - Detenerse si HEAD está separado, no existe una rama actual o no hay un remoto adecuado.
 - Conservar cambios ajenos. Si no es posible distinguirlos de los cambios solicitados, pedir dirección antes de preparar el commit.
 - Revisar archivos nuevos y modificados para evitar secretos, credenciales, contenido privado, binarios temporales, capturas de validación y artefactos de compilación.
-- Ejecutar las verificaciones proporcionales al cambio antes de confirmar. Si fallan, no crear el commit salvo que el usuario ordene expresamente registrar el estado fallido.
+- Antes de confirmar cambios Kotlin o Android, ejecutar desde la raíz `gradlew.bat ktlintCheck detekt testDebugUnitTest --continue`. Esta verificación local anticipa los controles rápidos, pero Jenkins sigue siendo la autoridad final.
+- Corregir todos los fallos informados por la ejecución agrupada y repetirla hasta que termine correctamente. No regenerar ni ampliar baselines para ocultar hallazgos.
+- Para cambios que no afectan Kotlin ni Android, ejecutar verificaciones proporcionales al alcance. Si fallan, no crear el commit salvo que el usuario ordene expresamente registrar el estado fallido.
 
 ## Preparación y commit
 

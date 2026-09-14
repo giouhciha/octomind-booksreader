@@ -789,9 +789,10 @@ class OctomindViewModel(
     }
 
     fun rateComprehension(rating: ComprehensionRating) {
-        val screen = mutableState.value.screen as? AppScreen.ComprehensionCheck ?: return
-        val state = screen.state
-        val question = state.assessment.questions.getOrNull(state.currentQuestionIndex) ?: return
+        val screen = mutableState.value.screen as? AppScreen.ComprehensionCheck
+        val state = screen?.state
+        val question = state?.assessment?.questions?.getOrNull(state.currentQuestionIndex)
+        if (state == null || question == null) return
         val response =
             state.responseText.trim().ifEmpty {
                 if (rating == ComprehensionRating.NOT_YET) {

@@ -106,19 +106,24 @@ internal fun ComprehensionAssessment.validateOwnership() {
 }
 
 private fun ComprehensionAssessment.shouldBeReplacedBy(updated: ComprehensionAssessment): Boolean {
-    if (id == updated.id) return true
-    if (updated.status != ComprehensionAssessmentStatus.IN_PROGRESS) return false
-    return bookId == updated.bookId && status == ComprehensionAssessmentStatus.IN_PROGRESS
+    val replacesOpenAssessment =
+        updated.status == ComprehensionAssessmentStatus.IN_PROGRESS &&
+            bookId == updated.bookId &&
+            status == ComprehensionAssessmentStatus.IN_PROGRESS
+    return id == updated.id || replacesOpenAssessment
 }
 
 private fun ComprehensionQuestion.isValidFor(assessment: ComprehensionAssessment): Boolean {
-    if (prompt.isBlank() || expectedAnswer.isBlank()) return false
-    if (rubric.fullCredit.isBlank()) return false
-    if (rubric.partialCredit.isBlank()) return false
-    if (rubric.noCredit.isBlank()) return false
-    if (evidenceStartCharacterOffset < assessment.sourceStartCharacterOffset) return false
-    if (evidenceEndCharacterOffset > assessment.sourceEndCharacterOffset) return false
-    return evidenceEndCharacterOffset >= evidenceStartCharacterOffset
+    val hasQuestionContent = prompt.isNotBlank() && expectedAnswer.isNotBlank()
+    val hasCompleteRubric =
+        rubric.fullCredit.isNotBlank() &&
+            rubric.partialCredit.isNotBlank() &&
+            rubric.noCredit.isNotBlank()
+    val hasValidEvidenceRange =
+        evidenceStartCharacterOffset >= assessment.sourceStartCharacterOffset &&
+            evidenceEndCharacterOffset <= assessment.sourceEndCharacterOffset &&
+            evidenceEndCharacterOffset >= evidenceStartCharacterOffset
+    return hasQuestionContent && hasCompleteRubric && hasValidEvidenceRange
 }
 
 private fun ComprehensionAnswer.isValidFor(questionIds: Set<String>): Boolean {
