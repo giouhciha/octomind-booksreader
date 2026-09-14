@@ -126,6 +126,12 @@ class BackupRepository(
                 "Los metadatos de la biblioteca están dañados"
             }
         }
+        val comprehension = File(directory, "comprehension.json")
+        if (comprehension.exists()) {
+            require(runCatching { ComprehensionJsonCodec.decode(comprehension.readText()) }.isSuccess) {
+                "El historial de comprensión está dañado"
+            }
+        }
     }
 
     private fun replacePrivateDirectory(

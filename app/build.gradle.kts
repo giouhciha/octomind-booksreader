@@ -11,8 +11,8 @@ plugins {
     id("org.owasp.dependencycheck")
 }
 
-val baseVersionCode = 69
-val baseVersionName = "0.58.0"
+val baseVersionCode = 70
+val baseVersionName = "0.59.0"
 val ciBuildNumber = providers.gradleProperty("ciBuildNumber").orNull?.toIntOrNull()
 require(ciBuildNumber == null || ciBuildNumber in 1..99_999) {
     "ciBuildNumber debe ser un entero entre 1 y 99999."

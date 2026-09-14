@@ -199,6 +199,8 @@ data class ReaderSettings(
 )
 
 data class ReadingSessionSummary(
+    val sessionId: String = "",
+    val bookId: String = "",
     val bookTitle: String,
     val coverImagePath: String? = null,
     val elapsedMillis: Long,
@@ -208,4 +210,9 @@ data class ReadingSessionSummary(
     val pauses: Int,
     val backwardsMoves: Int,
     val fragmentsRead: Int,
-)
+    val startCharacterOffset: Int = 0,
+    val endCharacterOffset: Int = 0,
+) {
+    val comprehensionAvailable: Boolean
+        get() = sessionId.isNotBlank() && endCharacterOffset > startCharacterOffset
+}

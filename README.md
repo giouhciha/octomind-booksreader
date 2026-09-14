@@ -102,6 +102,12 @@ La importación guarda una copia privada del original, extrae metadatos y texto 
 
 ## Medición de comprensión
 
+La primera fase ya funciona completamente en el dispositivo y sin IA. Al terminar una sesión con suficiente contenido aparece **Comprobar comprensión**. La experiencia presenta cuatro ejercicios de recuperación activa: dos literales, uno de idea principal y uno de inferencia. El lector responde de memoria, indica su confianza y después revela el fragmento exacto que sirve como evidencia antes de autoevaluarse con una rúbrica visible.
+
+Cada evaluación conserva `userId`, `bookId`, `sessionId`, respuesta esperada, rúbrica y rangos estables del texto. El cálculo pondera recuerdo literal con 40 %, idea principal con 35 % e inferencia con 25 %. El resultado se identifica siempre como una estimación; el perfil se considera inicial durante las primeras dos evaluaciones y más estable a partir de tres. El historial se consulta desde el resumen de sesión, permanece separado por libro y forma parte del respaldo cifrado. El contenido no sale del dispositivo en esta fase.
+
+Las preguntas locales son deliberadamente transparentes y no califican semánticamente la redacción. El proveedor de preguntas está detrás de una interfaz propia para que una fase posterior pueda usar recuperación y Amazon Bedrock, manteniendo el mismo contrato de evidencia, propiedad y rúbrica.
+
 La evaluación debe combinar:
 
 - Comprensión literal de hechos e ideas explícitas.
@@ -188,7 +194,8 @@ Los directorios de servicios e infraestructura se agregarán cuando comience la 
 - [x] Registro local y reanudación exacta del progreso por libro.
 - [x] Temas de página claro, sepia y oscuro.
 - [x] Selección del inicio real, calibración por toques y perfil lector local.
-- [x] Pruebas unitarias y validación en emulador.
+- [x] Pruebas unitarias, análisis estático y construcción verificable en CI.
+- [x] Recuperación activa local con evidencia, rúbrica e historial de comprensión por libro.
 
 ### Fase 2: cuentas y nube
 
@@ -199,9 +206,10 @@ Los directorios de servicios e infraestructura se agregarán cuando comience la 
 
 ### Fase 3: comprensión e IA
 
-- Diagnóstico inicial.
-- Preguntas fundamentadas en el libro.
-- Tutor contextual.
+- Diagnóstico inicial adaptativo.
+- Preguntas específicas generadas con recuperación y evidencia del libro.
+- Evaluación semántica mediante rúbricas, con revisión del usuario.
+- Tutor contextual fundamentado.
 - Perfil lector y adaptación de velocidad.
 - Evaluaciones de retención.
 

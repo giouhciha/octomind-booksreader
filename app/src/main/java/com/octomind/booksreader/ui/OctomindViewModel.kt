@@ -6,10 +6,20 @@ import android.os.SystemClock
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.octomind.booksreader.OctomindApplication
+import com.octomind.booksreader.R
 import com.octomind.booksreader.domain.AmbientSoundscape
 import com.octomind.booksreader.domain.BookDocument
 import com.octomind.booksreader.domain.BookSummary
 import com.octomind.booksreader.domain.CompletedReading
+import com.octomind.booksreader.domain.ComprehensionAnswer
+import com.octomind.booksreader.domain.ComprehensionAssessment
+import com.octomind.booksreader.domain.ComprehensionAssessmentRequest
+import com.octomind.booksreader.domain.ComprehensionAssessmentStatus
+import com.octomind.booksreader.domain.ComprehensionConfidence
+import com.octomind.booksreader.domain.ComprehensionQuestionCatalog
+import com.octomind.booksreader.domain.ComprehensionRating
+import com.octomind.booksreader.domain.ComprehensionRubric
+import com.octomind.booksreader.domain.LOCAL_READER_ID
 import com.octomind.booksreader.domain.NarratorAvatar
 import com.octomind.booksreader.domain.PageTheme
 import com.octomind.booksreader.domain.ReaderFontStyle
@@ -30,6 +40,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.UUID
 import kotlin.math.roundToInt
 
 sealed interface AppScreen {
@@ -50,8 +61,29 @@ sealed interface AppScreen {
         val summary: ReadingSessionSummary,
         val previousReadings: List<CompletedReading> = emptyList(),
         val restartAvailable: Boolean = false,
+        val comprehensionHistory: List<ComprehensionAssessment> = emptyList(),
+    ) : AppScreen
+
+    data class ComprehensionCheck(
+        val state: ComprehensionCheckState,
+        val origin: SessionResult,
+    ) : AppScreen
+
+    data class ComprehensionResult(
+        val latestAssessment: ComprehensionAssessment,
+        val assessments: List<ComprehensionAssessment>,
+        val origin: SessionResult,
     ) : AppScreen
 }
+
+data class ComprehensionCheckState(
+    val document: BookDocument,
+    val assessment: ComprehensionAssessment,
+    val currentQuestionIndex: Int = 0,
+    val responseText: String = "",
+    val confidence: ComprehensionConfidence = ComprehensionConfidence.MEDIUM,
+    val evidenceVisible: Boolean = false,
+)
 
 data class ReaderState(
     val document: BookDocument,
@@ -109,6 +141,8 @@ class OctomindViewModel(
 ) : AndroidViewModel(application) {
     private val app = application as OctomindApplication
     private val repository = app.bookRepository
+    private val comprehensionRepository = app.comprehensionRepository
+    private val questionProvider = app.comprehensionQuestionProvider
     private val preferences = app.userPreferences
     private val mutableState = MutableStateFlow(OctomindUiState())
     val state: StateFlow<OctomindUiState> = mutableState.asStateFlow()
@@ -218,6 +252,7 @@ class OctomindViewModel(
     fun deleteBook(id: String) {
         viewModelScope.launch {
             repository.deleteBook(id)
+            comprehensionRepository.deleteForBook(id)
             reloadLibrary()
         }
     }
@@ -649,6 +684,8 @@ class OctomindViewModel(
         val average = cycleStats.averageWordsPerMinute()
         val summary =
             ReadingSessionSummary(
+                sessionId = UUID.randomUUID().toString(),
+                bookId = finalReader.document.summary.id,
                 bookTitle = finalReader.document.summary.title,
                 coverImagePath = finalReader.document.summary.coverImagePath,
                 elapsedMillis = cycleStats.activeDurationMillis,
@@ -658,18 +695,180 @@ class OctomindViewModel(
                 pauses = cycleStats.pauses,
                 backwardsMoves = cycleStats.backwardsMoves,
                 fragmentsRead = cycleStats.fragmentsRead,
+                startCharacterOffset =
+                    finalReader.plan.blocks
+                        .getOrNull(finalReader.sessionStartBlockIndex)
+                        ?.startCharacterOffset
+                        ?: 0,
+                endCharacterOffset =
+                    finalReader.plan.blocks
+                        .getOrNull(finalReader.furthestBlockIndex)
+                        ?.endCharacterOffset
+                        ?: finalReader.currentCharacterOffset,
             )
+        viewModelScope.launch {
+            val history = completedComprehensionForBook(finalReader.document.summary.id)
+            mutableState.update {
+                it.copy(
+                    screen =
+                        AppScreen.SessionResult(
+                            bookId = finalReader.document.summary.id,
+                            summary = summary,
+                            previousReadings = finalReader.document.summary.completedReadings,
+                            restartAvailable = finalReader.completed,
+                            comprehensionHistory = history,
+                        ),
+                )
+            }
+        }
+    }
+
+    fun startComprehension(origin: AppScreen.SessionResult) {
+        if (!origin.summary.comprehensionAvailable) return
+        viewModelScope.launch {
+            mutableState.update { it.copy(busy = true, message = null) }
+            runCatching {
+                val document = repository.loadBook(origin.bookId)
+                val existing =
+                    comprehensionRepository
+                        .listForBook(origin.bookId)
+                        .firstOrNull {
+                            it.sessionId == origin.summary.sessionId &&
+                                it.status == ComprehensionAssessmentStatus.IN_PROGRESS
+                        }
+                val assessment =
+                    existing
+                        ?: questionProvider.createAssessment(
+                            ComprehensionAssessmentRequest(
+                                userId = LOCAL_READER_ID,
+                                sessionId = origin.summary.sessionId,
+                                bookId = origin.bookId,
+                                bookTitle = origin.summary.bookTitle,
+                                text = document.text,
+                                startCharacterOffset = origin.summary.startCharacterOffset,
+                                endCharacterOffset = origin.summary.endCharacterOffset,
+                                catalog = comprehensionQuestionCatalog(),
+                                createdAtMillis = System.currentTimeMillis(),
+                            ),
+                        ) ?: error(app.getString(R.string.comprehension_session_too_short))
+                if (existing == null) comprehensionRepository.save(assessment)
+                val answeredQuestionIds = assessment.answers.map { it.questionId }.toSet()
+                val currentQuestionIndex =
+                    assessment.questions.indexOfFirst { it.id !in answeredQuestionIds }.coerceAtLeast(0)
+                AppScreen.ComprehensionCheck(
+                    state =
+                        ComprehensionCheckState(
+                            document = document,
+                            assessment = assessment,
+                            currentQuestionIndex = currentQuestionIndex,
+                        ),
+                    origin = origin,
+                )
+            }.onSuccess { destination ->
+                mutableState.update { it.copy(screen = destination, busy = false) }
+            }.onFailure { error ->
+                mutableState.update {
+                    it.copy(busy = false, message = error.userMessage(app.getString(R.string.comprehension_error)))
+                }
+            }
+        }
+    }
+
+    fun updateComprehensionResponse(response: String) {
+        updateComprehension {
+            it.copy(responseText = response.take(MAXIMUM_COMPREHENSION_RESPONSE_CHARACTERS))
+        }
+    }
+
+    fun updateComprehensionConfidence(confidence: ComprehensionConfidence) {
+        updateComprehension { it.copy(confidence = confidence) }
+    }
+
+    fun revealComprehensionEvidence() {
+        updateComprehension { it.copy(evidenceVisible = true) }
+    }
+
+    fun rateComprehension(rating: ComprehensionRating) {
+        val screen = mutableState.value.screen as? AppScreen.ComprehensionCheck ?: return
+        val state = screen.state
+        val question = state.assessment.questions.getOrNull(state.currentQuestionIndex) ?: return
+        val response =
+            state.responseText.trim().ifEmpty {
+                if (rating == ComprehensionRating.NOT_YET) {
+                    app.getString(R.string.comprehension_no_recall_answer)
+                } else {
+                    mutableState.update { it.copy(message = app.getString(R.string.comprehension_response_required)) }
+                    return
+                }
+            }
+        val updated =
+            state.assessment.answer(
+                ComprehensionAnswer(
+                    questionId = question.id,
+                    responseText = response,
+                    confidence = state.confidence,
+                    rating = rating,
+                    answeredAtMillis = System.currentTimeMillis(),
+                ),
+            )
+        viewModelScope.launch {
+            comprehensionRepository.save(updated)
+            if (updated.status == ComprehensionAssessmentStatus.COMPLETED) {
+                val assessments = completedComprehensionForBook(updated.bookId)
+                mutableState.update {
+                    it.copy(
+                        screen =
+                            AppScreen.ComprehensionResult(
+                                latestAssessment = updated,
+                                assessments = assessments,
+                                origin = screen.origin.copy(comprehensionHistory = assessments),
+                            ),
+                    )
+                }
+            } else {
+                mutableState.update {
+                    it.copy(
+                        screen =
+                            screen.copy(
+                                state =
+                                    state.copy(
+                                        assessment = updated,
+                                        currentQuestionIndex = state.currentQuestionIndex + 1,
+                                        responseText = "",
+                                        confidence = ComprehensionConfidence.MEDIUM,
+                                        evidenceVisible = false,
+                                    ),
+                            ),
+                    )
+                }
+            }
+        }
+    }
+
+    fun showComprehensionHistory(origin: AppScreen.SessionResult) {
+        val completed = origin.comprehensionHistory.filter { it.status == ComprehensionAssessmentStatus.COMPLETED }
+        val latest = completed.firstOrNull() ?: return
         mutableState.update {
             it.copy(
                 screen =
-                    AppScreen.SessionResult(
-                        bookId = finalReader.document.summary.id,
-                        summary = summary,
-                        previousReadings = finalReader.document.summary.completedReadings,
-                        restartAvailable = finalReader.completed,
+                    AppScreen.ComprehensionResult(
+                        latestAssessment = latest,
+                        assessments = completed,
+                        origin = origin,
                     ),
             )
         }
+    }
+
+    fun returnToSessionResult() {
+        val screen = mutableState.value.screen
+        val origin =
+            when (screen) {
+                is AppScreen.ComprehensionCheck -> screen.origin
+                is AppScreen.ComprehensionResult -> screen.origin
+                else -> return
+            }
+        mutableState.update { it.copy(screen = origin) }
     }
 
     fun restartCompletedBook(bookId: String) {
@@ -798,9 +997,39 @@ class OctomindViewModel(
         }
     }
 
+    private fun updateComprehension(transform: (ComprehensionCheckState) -> ComprehensionCheckState) {
+        mutableState.update { ui ->
+            val screen = ui.screen as? AppScreen.ComprehensionCheck ?: return@update ui
+            ui.copy(screen = screen.copy(state = transform(screen.state)))
+        }
+    }
+
+    private fun comprehensionQuestionCatalog() =
+        ComprehensionQuestionCatalog(
+            firstLiteralPrompt = app.getString(R.string.comprehension_literal_first_prompt),
+            secondLiteralPrompt = app.getString(R.string.comprehension_literal_second_prompt),
+            mainIdeaPrompt = app.getString(R.string.comprehension_main_idea_prompt),
+            inferencePrompt = app.getString(R.string.comprehension_inference_prompt),
+            literalExpectedAnswer = app.getString(R.string.comprehension_literal_expected),
+            mainIdeaExpectedAnswer = app.getString(R.string.comprehension_main_idea_expected),
+            inferenceExpectedAnswer = app.getString(R.string.comprehension_inference_expected),
+            rubric =
+                ComprehensionRubric(
+                    fullCredit = app.getString(R.string.comprehension_rubric_full),
+                    partialCredit = app.getString(R.string.comprehension_rubric_partial),
+                    noCredit = app.getString(R.string.comprehension_rubric_none),
+                ),
+        )
+
+    private suspend fun completedComprehensionForBook(bookId: String): List<ComprehensionAssessment> =
+        comprehensionRepository
+            .listForBook(bookId)
+            .filter { it.status == ComprehensionAssessmentStatus.COMPLETED }
+
     private companion object {
         const val MINIMUM_AMBIENT_AUDIO_VOLUME_PERCENT = 0
         const val MAXIMUM_AMBIENT_AUDIO_VOLUME_PERCENT = 50
+        const val MAXIMUM_COMPREHENSION_RESPONSE_CHARACTERS = 4_000
     }
 
     private fun completeReading(reader: ReaderState) {
@@ -863,7 +1092,7 @@ class OctomindViewModel(
             (wordsRead * 60_000.0 / activeDurationMillis).roundToInt()
         }
 
-    private fun completedBookResult(book: BookSummary): AppScreen.SessionResult {
+    private suspend fun completedBookResult(book: BookSummary): AppScreen.SessionResult {
         val latest = book.completedReadings.lastOrNull()
         val summary =
             ReadingSessionSummary(
@@ -882,6 +1111,7 @@ class OctomindViewModel(
             summary = summary,
             previousReadings = book.completedReadings.dropLast(1).asReversed(),
             restartAvailable = true,
+            comprehensionHistory = completedComprehensionForBook(book.id),
         )
     }
 

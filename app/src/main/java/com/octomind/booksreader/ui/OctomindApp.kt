@@ -272,8 +272,29 @@ fun OctomindApp(viewModel: OctomindViewModel = viewModel()) {
                     summary = screen.summary,
                     previousReadings = screen.previousReadings,
                     restartAvailable = screen.restartAvailable,
-                    onFinish = viewModel::returnToLibrary,
-                    onRestart = { viewModel.restartCompletedBook(screen.bookId) },
+                    comprehensionHistoryAvailable = screen.comprehensionHistory.isNotEmpty(),
+                    actions =
+                        SessionResultActions(
+                            onFinish = viewModel::returnToLibrary,
+                            onRestart = { viewModel.restartCompletedBook(screen.bookId) },
+                            onStartComprehension = { viewModel.startComprehension(screen) },
+                            onShowComprehensionHistory = { viewModel.showComprehensionHistory(screen) },
+                        ),
+                )
+            is AppScreen.ComprehensionCheck ->
+                ComprehensionCheckScreen(
+                    state = screen.state,
+                    onBack = viewModel::returnToSessionResult,
+                    onResponseChange = viewModel::updateComprehensionResponse,
+                    onConfidenceChange = viewModel::updateComprehensionConfidence,
+                    onRevealEvidence = viewModel::revealComprehensionEvidence,
+                    onRate = viewModel::rateComprehension,
+                )
+            is AppScreen.ComprehensionResult ->
+                ComprehensionResultScreen(
+                    latestAssessment = screen.latestAssessment,
+                    assessments = screen.assessments,
+                    onBack = viewModel::returnToSessionResult,
                 )
         }
 
@@ -2948,10 +2969,10 @@ private fun SessionResultScreen(
     summary: ReadingSessionSummary,
     previousReadings: List<CompletedReading>,
     restartAvailable: Boolean,
-    onFinish: () -> Unit,
-    onRestart: () -> Unit,
+    comprehensionHistoryAvailable: Boolean,
+    actions: SessionResultActions,
 ) {
-    BackHandler(onBack = onFinish)
+    BackHandler(onBack = actions.onFinish)
     Scaffold(
         topBar = {
             Surface(color = Color(0xFFF3D293), shadowElevation = 4.dp) {
@@ -2983,9 +3004,27 @@ private fun SessionResultScreen(
                             .navigationBarsPadding()
                             .padding(horizontal = 24.dp, vertical = 12.dp),
                 ) {
+                    if (summary.comprehensionAvailable) {
+                        Button(
+                            onClick = actions.onStartComprehension,
+                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                        ) {
+                            Text(stringResource(R.string.comprehension_check))
+                        }
+                        Spacer(Modifier.height(8.dp))
+                    }
+                    if (comprehensionHistoryAvailable) {
+                        OutlinedButton(
+                            onClick = actions.onShowComprehensionHistory,
+                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                        ) {
+                            Text(stringResource(R.string.comprehension_history))
+                        }
+                        Spacer(Modifier.height(8.dp))
+                    }
                     if (restartAvailable) {
                         Button(
-                            onClick = onRestart,
+                            onClick = actions.onRestart,
                             modifier = Modifier.fillMaxWidth().height(52.dp),
                         ) {
                             Text(stringResource(R.string.restart_book))
@@ -2993,7 +3032,7 @@ private fun SessionResultScreen(
                         Spacer(Modifier.height(8.dp))
                     }
                     Button(
-                        onClick = onFinish,
+                        onClick = actions.onFinish,
                         modifier = Modifier.fillMaxWidth().height(52.dp),
                     ) {
                         Text(stringResource(R.string.return_library))
@@ -3106,6 +3145,13 @@ private fun SessionResultScreen(
         }
     }
 }
+
+private data class SessionResultActions(
+    val onFinish: () -> Unit,
+    val onRestart: () -> Unit,
+    val onStartComprehension: () -> Unit,
+    val onShowComprehensionHistory: () -> Unit,
+)
 
 @Composable
 private fun PreviousReadingCard(
