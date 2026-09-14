@@ -118,7 +118,8 @@ private fun JSONObject.toAnswer(): ComprehensionAnswer =
     )
 
 private fun <T> JSONArray.objects(transform: (JSONObject) -> T): List<T> {
-    return List(length()) { index -> transform(getJSONObject(index)) }
+    val itemCount = length()
+    return List(itemCount) { index -> transform(getJSONObject(index)) }
 }
 
 private fun JSONObject.optLongOrNull(name: String): Long? = if (isNull(name) || !has(name)) null else getLong(name)
