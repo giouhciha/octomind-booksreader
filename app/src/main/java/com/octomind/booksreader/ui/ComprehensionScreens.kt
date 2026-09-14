@@ -3,6 +3,7 @@ package com.octomind.booksreader.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -63,7 +64,7 @@ internal fun ComprehensionCheckScreen(
                 Modifier
                     .fillMaxSize()
                     .padding(padding),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(18.dp),
+            contentPadding = PaddingValues(18.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             item { QuestionProgress(state) }

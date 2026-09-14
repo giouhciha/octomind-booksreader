@@ -117,8 +117,8 @@ private fun JSONObject.toAnswer(): ComprehensionAnswer =
         answeredAtMillis = getLong("answeredAtMillis"),
     )
 
-private fun <T> JSONArray.objects(transform: (JSONObject) -> T): List<T> = List(length()) { index ->
-    transform(getJSONObject(index))
+private fun <T> JSONArray.objects(transform: (JSONObject) -> T): List<T> {
+    return List(length()) { index -> transform(getJSONObject(index)) }
 }
 
 private fun JSONObject.optLongOrNull(name: String): Long? = if (isNull(name) || !has(name)) null else getLong(name)
