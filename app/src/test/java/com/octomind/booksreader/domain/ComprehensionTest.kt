@@ -45,7 +45,8 @@ class ComprehensionTest {
                 text.substring(
                     question.evidenceStartCharacterOffset,
                     question.evidenceEndCharacterOffset,
-                ).trim()
+                )
+                    .trim()
             assertTrue(question.expectedAnswer.contains(evidence))
         }
     }
