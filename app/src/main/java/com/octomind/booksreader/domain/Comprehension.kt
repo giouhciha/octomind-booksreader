@@ -253,14 +253,26 @@ object ComprehensionScorer {
         assessment: ComprehensionAssessment,
         type: ComprehensionQuestionType,
     ): Double {
-        val questionIds = assessment.questions.filter { it.type == type }.map { it.id }.toSet()
-        val ratings = assessment.answers.filter { it.questionId in questionIds }.map { it.rating.score }
+        val questionIds =
+            assessment.questions
+                .filter { it.type == type }
+                .map { it.id }
+                .toSet()
+        val ratings =
+            assessment.answers
+                .filter { it.questionId in questionIds }
+                .map { it.rating.score }
         return ratings.takeIf { it.isNotEmpty() }?.average() ?: 0.0
     }
 
     fun accumulatedScore(assessments: List<ComprehensionAssessment>): Int {
         val completed = assessments.filter { it.status == ComprehensionAssessmentStatus.COMPLETED }
-        return completed.takeIf { it.isNotEmpty() }?.map(::score)?.average()?.roundToInt() ?: 0
+        return completed
+            .takeIf { it.isNotEmpty() }
+            ?.map(::score)
+            ?.average()
+            ?.roundToInt()
+            ?: 0
     }
 
     fun isStable(assessments: List<ComprehensionAssessment>): Boolean =
