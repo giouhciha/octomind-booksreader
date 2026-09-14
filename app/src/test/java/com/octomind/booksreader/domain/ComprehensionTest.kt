@@ -42,11 +42,11 @@ class ComprehensionTest {
             assertTrue(question.rubric.partialCredit.isNotBlank())
             assertTrue(question.rubric.noCredit.isNotBlank())
             val evidence =
-                text.substring(
-                    question.evidenceStartCharacterOffset,
-                    question.evidenceEndCharacterOffset,
-                )
-                    .trim()
+                text
+                    .substring(
+                        question.evidenceStartCharacterOffset,
+                        question.evidenceEndCharacterOffset,
+                    ).trim()
             assertTrue(question.expectedAnswer.contains(evidence))
         }
     }
